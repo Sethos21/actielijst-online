@@ -12,6 +12,10 @@ on:
         description: "Git ref (commit SHA, tag or branch) to redeploy to production"
         required: true
 
+permissions:
+  contents: read
+  checks: write
+
 jobs:
   rollback:
     runs-on: ubuntu-latest
@@ -22,7 +26,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - run: npm ci
