@@ -1,33 +1,27 @@
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-} from 'firebase/auth'
+import { signInWithEmailAndPassword } from 'firebase/auth'
 import { useState, type FormEvent } from 'react'
 import { auth } from '../../lib/firebase'
 
+// BVC werkt met één gedeeld teamaccount (aangemaakt door de beheerder in de
+// Firebase Console), niet met individuele accounts — dus geen registratie hier.
 export function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [mode, setMode] = useState<'inloggen' | 'registreren'>('inloggen')
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setError(null)
     try {
-      if (mode === 'inloggen') {
-        await signInWithEmailAndPassword(auth, email, password)
-      } else {
-        await createUserWithEmailAndPassword(auth, email, password)
-      }
+      await signInWithEmailAndPassword(auth, email, password)
     } catch {
       setError('Inloggen is niet gelukt. Controleer je gegevens.')
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} aria-label={mode}>
-      <h2>{mode === 'inloggen' ? 'Inloggen' : 'Account aanmaken'}</h2>
+    <form onSubmit={handleSubmit} aria-label="inloggen">
+      <h2>Inloggen</h2>
       <label>
         E-mailadres
         <input
@@ -48,17 +42,7 @@ export function LoginForm() {
         />
       </label>
       {error && <p role="alert">{error}</p>}
-      <button type="submit">
-        {mode === 'inloggen' ? 'Inloggen' : 'Registreren'}
-      </button>
-      <button
-        type="button"
-        onClick={() => setMode(mode === 'inloggen' ? 'registreren' : 'inloggen')}
-      >
-        {mode === 'inloggen'
-          ? 'Nog geen account? Registreer'
-          : 'Al een account? Log in'}
-      </button>
+      <button type="submit">Inloggen</button>
     </form>
   )
 }

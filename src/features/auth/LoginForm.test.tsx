@@ -7,35 +7,29 @@ import { LoginForm } from './LoginForm'
 vi.mock('../../lib/firebase', () => ({ auth: {} }))
 vi.mock('firebase/auth', () => ({
   signInWithEmailAndPassword: vi.fn().mockResolvedValue(undefined),
-  createUserWithEmailAndPassword: vi.fn().mockResolvedValue(undefined),
 }))
 
 describe('LoginForm', () => {
-  it('logt in met e-mail en wachtwoord', async () => {
+  it('logt in met e-mail en wachtwoord van het gedeelde teamaccount', async () => {
     const user = userEvent.setup()
     render(<LoginForm />)
 
-    await user.type(screen.getByLabelText('E-mailadres'), 'test@example.com')
+    await user.type(screen.getByLabelText('E-mailadres'), 'info@bvc.nl')
     await user.type(screen.getByLabelText('Wachtwoord'), 'geheim123')
     await user.click(screen.getByRole('button', { name: 'Inloggen' }))
 
     expect(signInWithEmailAndPassword).toHaveBeenCalledWith(
       {},
-      'test@example.com',
+      'info@bvc.nl',
       'geheim123',
     )
   })
 
-  it('wisselt naar registreren', async () => {
-    const user = userEvent.setup()
+  it('biedt geen registratie-optie (één gedeeld teamaccount, geen zelfregistratie)', () => {
     render(<LoginForm />)
 
-    await user.click(
-      screen.getByRole('button', { name: /nog geen account/i }),
-    )
-
     expect(
-      screen.getByRole('heading', { name: 'Account aanmaken' }),
-    ).toBeInTheDocument()
+      screen.queryByRole('button', { name: /registreren/i }),
+    ).not.toBeInTheDocument()
   })
 })
