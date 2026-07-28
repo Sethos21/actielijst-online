@@ -1,7 +1,42 @@
-import { ActielijstPage } from './features/actielijst/ActielijstPage'
+import { signOut } from 'firebase/auth'
+import { useState } from 'react'
+import { ActielijstPage } from './features/acties/ActielijstPage'
+import { LoginForm } from './features/auth/LoginForm'
+import { useAuthUser } from './features/auth/useAuthUser'
+import { KlantoverzichtPage } from './features/klanten/KlantoverzichtPage'
+import type { Klant } from './features/klanten/types'
+import { auth } from './lib/firebase'
 
 function App() {
-  return <ActielijstPage />
+  const { user, loading } = useAuthUser()
+  const [geselecteerdeKlant, setGeselecteerdeKlant] = useState<Klant | null>(null)
+
+  if (loading) {
+    return <p>Laden...</p>
+  }
+
+  if (!user) {
+    return <LoginForm />
+  }
+
+  return (
+    <div>
+      <header>
+        <span>{user.email}</span>
+        <button onClick={() => signOut(auth)}>Uitloggen</button>
+      </header>
+
+      {geselecteerdeKlant ? (
+        <ActielijstPage
+          klantId={geselecteerdeKlant.id}
+          klantNaam={geselecteerdeKlant.naam}
+          onTerug={() => setGeselecteerdeKlant(null)}
+        />
+      ) : (
+        <KlantoverzichtPage onSelectKlant={setGeselecteerdeKlant} />
+      )}
+    </div>
+  )
 }
 
 export default App
