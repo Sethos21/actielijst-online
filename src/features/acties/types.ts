@@ -30,6 +30,7 @@ export interface ActieItem {
   klantId: string
   ref: string
   onderwerp: string
+  bedrijf: string // eigenaar-entiteit van het pand (bv. "Bowog Beheer B.V."), los van de klant-relatie
   vestiging: string
   actie: string
   verantw: string[]
