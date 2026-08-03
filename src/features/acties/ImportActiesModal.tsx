@@ -16,6 +16,43 @@ interface Props {
 }
 
 const VOORVERTONING_LIMIET = 20
+const IMPORT_TIMEOUT_MS = 30_000
+
+class TimeoutFout extends Error {}
+
+/**
+ * Voorkomt dat de UI oneindig op "Bezig..." blijft staan als een
+ * Firestore-schrijfactie om wat voor reden dan ook nooit resolvet of
+ * afwijst (bv. een netwerkprobleem dat geen directe foutmelding geeft).
+ */
+function metTimeout<T>(belofte: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new TimeoutFout(`Duurde langer dan ${ms / 1000} seconden`)),
+      ms,
+    )
+    belofte.then(
+      (waarde) => {
+        clearTimeout(timer)
+        resolve(waarde)
+      },
+      (fout: unknown) => {
+        clearTimeout(timer)
+        reject(fout)
+      },
+    )
+  })
+}
+
+function foutmelding(fout: unknown): string {
+  if (fout instanceof TimeoutFout) {
+    return 'Dit duurt ongewoon lang — controleer je internetverbinding en probeer het opnieuw.'
+  }
+  if (fout instanceof Error) {
+    return `Importeren is niet gelukt: ${fout.message}`
+  }
+  return 'Importeren is niet gelukt. Probeer het opnieuw.'
+}
 
 export function ImportActiesModal({ onSluiten }: Props) {
   const { klanten, addKlant } = useKlanten()
@@ -71,20 +108,25 @@ export function ImportActiesModal({ onSluiten }: Props) {
     setBezig(true)
     setFout(null)
     try {
-      const klantId = gekozenKlantId || (await addKlant(nieuweKlantNaam))
+      const klantId =
+        gekozenKlantId ||
+        (await metTimeout(addKlant(nieuweKlantNaam), IMPORT_TIMEOUT_MS))
       if (!klantId) {
         setFout('Klant aanmaken is niet gelukt. Probeer het opnieuw.')
         return
       }
-      const aantal = await importeerActies(klantId, geparsed)
+      const aantal = await metTimeout(
+        importeerActies(klantId, geparsed),
+        IMPORT_TIMEOUT_MS,
+      )
       toon(
         overgeslagen > 0
           ? `${aantal} open acties geïmporteerd (${overgeslagen} afgeronde acties overgeslagen)`
           : `${aantal} acties geïmporteerd`,
       )
       onSluiten()
-    } catch {
-      setFout('Importeren is niet gelukt. Probeer het opnieuw.')
+    } catch (err) {
+      setFout(foutmelding(err))
     } finally {
       setBezig(false)
     }

@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { initializeFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,4 +13,15 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
-export const db = getFirestore(app)
+// Sommige (vaak zakelijke) netwerken/proxy's laten Firestore's standaard
+// streaming-verbinding niet goed door: de verbinding wordt telkens
+// opgestart en na korte tijd weer afgebroken (te zien in de browser als
+// herhaalde "channel"-verzoeken met wisselende gsessionid, deels
+// "canceled"), waardoor schrijfacties nooit resolven of afwijzen. De
+// auto-detect variant concludeerde hier ten onrechte dat een normale
+// verbinding werkte; force long polling slaat die (foutieve) detectie
+// over en gebruikt altijd long-polling, wat door zulke netwerken wél
+// heen komt.
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+})

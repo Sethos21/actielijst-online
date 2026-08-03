@@ -1,8 +1,9 @@
-import { addDoc, collection } from 'firebase/firestore'
+import { collection, doc, writeBatch } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import type { GeimporteerdeActie } from './excelImport'
 
 const COLLECTION = 'acties'
+const MAX_PER_BATCH = 500
 
 /**
  * Historische imports kennen geen "doorlooptijd" (dat bestaat pas sinds deze
@@ -11,15 +12,31 @@ const COLLECTION = 'acties'
  */
 const STANDAARD_DOORLOOPTIJD = '2w'
 
-// TODO (volgende bouwfase): schrijven via writeBatch (max. 500 writes per
-// batch, chunk bij grotere imports) i.p.v. losse addDoc-calls per actie —
-// efficiënter en minder Firestore-round-trips bij grotere bestanden.
+function chunk<T>(items: T[], grootte: number): T[][] {
+  const resultaat: T[][] = []
+  for (let i = 0; i < items.length; i += grootte) {
+    resultaat.push(items.slice(i, i + grootte))
+  }
+  return resultaat
+}
+
+/**
+ * Schrijft alle acties in batches (max. 500 writes per Firestore-batch) i.p.v.
+ * losse addDoc-calls per actie. Voordeel t.o.v. losse writes: elke batch is
+ * atomair (alles of niets, geen stille deelmislukkingen die als een hang
+ * aanvoelen) en een mislukking geeft één duidelijke fout in plaats van een
+ * Promise.all die op de eerste afwijzing stopt terwijl andere writes nog
+ * onderweg zijn.
+ */
 export async function importeerActies(
   klantId: string,
   acties: GeimporteerdeActie[],
 ): Promise<number> {
-  await Promise.all(
-    acties.map((actie) => {
+  const batches = chunk(acties, MAX_PER_BATCH)
+
+  for (const groep of batches) {
+    const batch = writeBatch(db)
+    for (const actie of groep) {
       const data: Record<string, unknown> = {
         ...actie,
         klantId,
@@ -27,8 +44,10 @@ export async function importeerActies(
       }
       // Firestore accepteert geen expliciete `undefined`-waarden.
       if (data.dueDateOverride === undefined) delete data.dueDateOverride
-      return addDoc(collection(db, COLLECTION), data)
-    }),
-  )
+      batch.set(doc(collection(db, COLLECTION)), data)
+    }
+    await batch.commit()
+  }
+
   return acties.length
 }
