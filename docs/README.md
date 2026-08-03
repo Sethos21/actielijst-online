@@ -15,8 +15,10 @@ beschreven.
   functionele scope: Module 1 (Actielijsten) en Module 2 (Huurdersmutaties),
   inclusief openstaande/nog te bouwen onderdelen.
 - **BVC_UI_UX_DESIGN.md** — design-tokens, componenten en UX-principes,
-  geëxtraheerd uit `bvc_actielijst_v17.html`. Leidend voor de huisstijl in de
-  React-versie.
+  vertaald naar de React-architectuur (`src/styles/tokens.css` +
+  classnamen in `src/index.css`, geen inline styles/CSS-in-JS/Tailwind). De
+  visuele tokens zelf zijn ongewijzigd overgenomen uit `bvc_actielijst_v17.html`.
+  Leidend voor de huisstijl bij nieuwe/aangepaste componenten.
 - **bvc_actielijst_v17.html** — de laatste werkversie van de oorspronkelijke
   single-file HTML-prototype (localStorage, geen backend). Dient als
   functionele/visuele referentie, wordt niet meer actief doorontwikkeld.
