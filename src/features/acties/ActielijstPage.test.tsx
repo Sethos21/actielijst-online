@@ -2,6 +2,10 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { ActielijstPage } from './ActielijstPage'
 
+vi.mock('../../components/useToast', () => ({
+  useToast: () => vi.fn(),
+}))
+
 vi.mock('./useActies', () => ({
   useActies: () => ({
     acties: [
@@ -10,6 +14,7 @@ vi.mock('./useActies', () => ({
         klantId: 'klant-1',
         ref: 'A1',
         onderwerp: 'Onderhoud',
+        bedrijf: 'Bowog Beheer B.V.',
         vestiging: 'Hoofdkantoor',
         actie: 'Lift laten keuren',
         verantw: ['Ton'],
@@ -23,6 +28,7 @@ vi.mock('./useActies', () => ({
         klantId: 'klant-1',
         ref: 'A2',
         onderwerp: 'Onderhoud',
+        bedrijf: 'Bowog Beheer B.V.',
         vestiging: 'Bijkantoor',
         actie: 'Op hold gezette actie',
         verantw: [],
@@ -47,7 +53,7 @@ describe('ActielijstPage', () => {
     )
 
     expect(screen.getByDisplayValue('Lift laten keuren')).toBeInTheDocument()
-    expect(screen.getByText('Due')).toBeInTheDocument()
+    expect(document.querySelectorAll('.badge-due')).toHaveLength(1)
   })
 
   it('markeert een on-hold actie nooit als Due, ondanks verlopen datum', () => {
@@ -56,6 +62,15 @@ describe('ActielijstPage', () => {
     )
 
     // Er is precies 1 "Due"-badge: de on-hold actie (zelfde verlopen datum) telt niet mee.
-    expect(screen.getAllByText('Due')).toHaveLength(1)
+    expect(document.querySelectorAll('.badge-due')).toHaveLength(1)
+  })
+
+  it('toont een avatar-chip per teamlid, actief voor de toegewezen verantwoordelijke', () => {
+    render(
+      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+    )
+
+    const tonChips = screen.getAllByLabelText('Ton')
+    expect(tonChips[0]).toHaveClass('actief')
   })
 })

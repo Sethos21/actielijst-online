@@ -24,12 +24,13 @@ export function useKlanten() {
     return unsubscribe
   }, [])
 
-  async function addKlant(naam: string) {
-    if (!naam.trim()) return
-    await addDoc(collection(db, COLLECTION), {
+  async function addKlant(naam: string): Promise<string | undefined> {
+    if (!naam.trim()) return undefined
+    const ref = await addDoc(collection(db, COLLECTION), {
       naam: naam.trim(),
       aangemaaktOp: Date.now(),
     })
+    return ref.id
   }
 
   return { klanten, loading, addKlant }

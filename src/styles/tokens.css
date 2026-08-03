@@ -1,0 +1,28 @@
+/* Design-tokens uit BVC_UI_UX_DESIGN.md — pas bij wijzigingen altijd dat
+   document aan, dit zijn de brontokens voor de hele app. */
+:root {
+  --navy: #1a3a5c;
+  --navy-light: #1e4a7a;
+  --gold: #c8a84b;
+  --gold-light: #f0e4b8;
+
+  --surface: #f7f8fa;
+  --white: #ffffff;
+  --border: #e2e6ed;
+  --border-strong: #c8d0dc;
+
+  --text: #1a1a2e;
+  --text-secondary: #5a6070;
+  --text-muted: #9aa0ad;
+
+  --red: #c0392b;
+  --red-bg: #fdf0ef;
+  --green: #1d7a45;
+  --green-bg: #edf7f1;
+  --amber: #b06800;
+  --amber-bg: #fef5e4;
+  --blue-bg: #edf2fb;
+
+  --radius: 6px;
+  --shadow: 0 2px 8px rgba(26, 58, 92, 0.08);
+}

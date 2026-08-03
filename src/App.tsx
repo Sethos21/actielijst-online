@@ -1,6 +1,7 @@
 import { signOut } from 'firebase/auth'
 import { useState } from 'react'
 import { ActielijstPage } from './features/acties/ActielijstPage'
+import { ImportActiesModal } from './features/acties/ImportActiesModal'
 import { LoginForm } from './features/auth/LoginForm'
 import { useAuthUser } from './features/auth/useAuthUser'
 import { KlantoverzichtPage } from './features/klanten/KlantoverzichtPage'
@@ -10,6 +11,7 @@ import { auth } from './lib/firebase'
 function App() {
   const { user, loading } = useAuthUser()
   const [geselecteerdeKlant, setGeselecteerdeKlant] = useState<Klant | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
 
   if (loading) {
     return <p>Laden...</p>
@@ -33,7 +35,14 @@ function App() {
           onTerug={() => setGeselecteerdeKlant(null)}
         />
       ) : (
-        <KlantoverzichtPage onSelectKlant={setGeselecteerdeKlant} />
+        <KlantoverzichtPage
+          onSelectKlant={setGeselecteerdeKlant}
+          onImporteren={() => setImportOpen(true)}
+        />
+      )}
+
+      {importOpen && (
+        <ImportActiesModal onSluiten={() => setImportOpen(false)} />
       )}
     </div>
   )

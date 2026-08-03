@@ -1,13 +1,17 @@
 import { useMemo, useState, type FormEvent } from 'react'
+import { Badge } from '../../components/Badge'
+import { useActieStats } from '../acties/useActieStats'
 import type { Klant } from './types'
 import { useKlanten } from './useKlanten'
 
 interface Props {
   onSelectKlant: (klant: Klant) => void
+  onImporteren: () => void
 }
 
-export function KlantoverzichtPage({ onSelectKlant }: Props) {
+export function KlantoverzichtPage({ onSelectKlant, onImporteren }: Props) {
   const { klanten, loading, addKlant } = useKlanten()
+  const stats = useActieStats()
   const [zoekterm, setZoekterm] = useState('')
   const [nieuweKlant, setNieuweKlant] = useState('')
   const [sortRichting, setSortRichting] = useState<'asc' | 'desc'>('asc')
@@ -38,50 +42,57 @@ export function KlantoverzichtPage({ onSelectKlant }: Props) {
         value={zoekterm}
         onChange={(e) => setZoekterm(e.target.value)}
       />
+      <button
+        type="button"
+        onClick={() =>
+          setSortRichting(sortRichting === 'asc' ? 'desc' : 'asc')
+        }
+      >
+        Naam {sortRichting === 'asc' ? '▲' : '▼'}
+      </button>
+      <button type="button" onClick={onImporteren}>
+        Excel importeren
+      </button>
 
       <form onSubmit={handleSubmit}>
-        <label htmlFor="nieuwe-klant">Nieuwe klant</label>
-        <input
-          id="nieuwe-klant"
-          value={nieuweKlant}
-          onChange={(e) => setNieuweKlant(e.target.value)}
-          placeholder="Klantnaam"
-        />
-        <button type="submit">Toevoegen</button>
+        <label>
+          Nieuwe klant
+          <input
+            value={nieuweKlant}
+            onChange={(e) => setNieuweKlant(e.target.value)}
+            placeholder="Klantnaam"
+          />
+        </label>
+        <button type="submit" className="primary">
+          Toevoegen
+        </button>
       </form>
 
       {loading ? (
         <p>Klanten laden...</p>
       ) : zichtbareKlanten.length === 0 ? (
-        <p>Geen klanten gevonden.</p>
+        <p>Geen klanten gevonden. Voeg er hierboven eentje toe.</p>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSortRichting(sortRichting === 'asc' ? 'desc' : 'asc')
-                  }
-                >
-                  Naam {sortRichting === 'asc' ? '▲' : '▼'}
+        <div>
+          {zichtbareKlanten.map((klant) => {
+            const klantStats = stats[klant.id]
+            return (
+              <div key={klant.id} className="kaart">
+                <button type="button" onClick={() => onSelectKlant(klant)}>
+                  {klant.naam}
                 </button>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {zichtbareKlanten.map((klant) => (
-              <tr key={klant.id}>
-                <td>
-                  <button type="button" onClick={() => onSelectKlant(klant)}>
-                    {klant.naam}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                {klantStats && (
+                  <>
+                    <Badge variant="open">{klantStats.open} open</Badge>
+                    {klantStats.due > 0 && (
+                      <Badge variant="due">{klantStats.due} due</Badge>
+                    )}
+                  </>
+                )}
+              </div>
+            )
+          })}
+        </div>
       )}
     </div>
   )

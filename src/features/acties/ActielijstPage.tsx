@@ -1,7 +1,15 @@
 import { useMemo, useState, type FormEvent } from 'react'
+import { AvatarChip } from '../../components/AvatarChip'
+import { Badge } from '../../components/Badge'
+import { useToast } from '../../components/useToast'
 import { TEAMLEDEN } from '../team/teamleden'
 import { berekenDueDate, isDue } from './dueDate'
-import { DOORLOOPTIJD_OPTIES, type ActieItem, type ActieStatus, type Doorlooptijd } from './types'
+import {
+  DOORLOOPTIJD_OPTIES,
+  type ActieItem,
+  type ActieStatus,
+  type Doorlooptijd,
+} from './types'
 import { useActies } from './useActies'
 
 interface Props {
@@ -11,6 +19,7 @@ interface Props {
 }
 
 type SortVeld = 'onderwerp' | 'vestiging' | 'aangemaaktOp' | 'due' | 'status'
+type FilterPil = 'open' | 'done' | 'hold' | 'due'
 
 const UITSTEL_OPTIES: { label: string; eenheid: 'w' | 'm'; aantal: number }[] = [
   { label: '1 week', eenheid: 'w', aantal: 1 },
@@ -28,9 +37,18 @@ const UITSTEL_OPTIES: { label: string; eenheid: 'w' | 'm'; aantal: number }[] = 
 export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
   const { acties, loading, addActie, updateActie, deleteActie, uitstellen } =
     useActies(klantId)
+  const toon = useToast()
   const [sortVeld, setSortVeld] = useState<SortVeld>('due')
   const [sortRichting, setSortRichting] = useState<'asc' | 'desc'>('asc')
-  const [nieuw, setNieuw] = useState({ onderwerp: '', vestiging: '', actie: '' })
+  const [actieveFilters, setActieveFilters] = useState<Set<FilterPil>>(new Set())
+  const [nieuw, setNieuw] = useState({ onderwerp: '', bedrijf: '', vestiging: '', actie: '' })
+
+  function toggleFilter(pil: FilterPil) {
+    const nieuweSet = new Set(actieveFilters)
+    if (nieuweSet.has(pil)) nieuweSet.delete(pil)
+    else nieuweSet.add(pil)
+    setActieveFilters(nieuweSet)
+  }
 
   function sorteerOp(veld: SortVeld) {
     if (veld === sortVeld) {
@@ -41,16 +59,28 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
     }
   }
 
+  const gefilterdeActies = useMemo(() => {
+    if (actieveFilters.size === 0) return acties
+    return acties.filter((actie) => {
+      const matches: boolean[] = []
+      if (actieveFilters.has('open')) matches.push(actie.status === 'open')
+      if (actieveFilters.has('done')) matches.push(actie.status === 'done')
+      if (actieveFilters.has('hold')) matches.push(actie.status === 'hold')
+      if (actieveFilters.has('due')) matches.push(isDue(actie))
+      return matches.some(Boolean)
+    })
+  }, [acties, actieveFilters])
+
   const gesorteerdeActies = useMemo(() => {
     const waarde = (actie: ActieItem) => {
       if (sortVeld === 'due') return berekenDueDate(actie)
       return actie[sortVeld]
     }
-    const gesorteerd = [...acties].sort((a, b) =>
+    const gesorteerd = [...gefilterdeActies].sort((a, b) =>
       waarde(a).localeCompare(waarde(b)),
     )
     return sortRichting === 'asc' ? gesorteerd : gesorteerd.reverse()
-  }, [acties, sortVeld, sortRichting])
+  }, [gefilterdeActies, sortVeld, sortRichting])
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -58,6 +88,7 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
     await addActie({
       ref: '',
       onderwerp: nieuw.onderwerp,
+      bedrijf: nieuw.bedrijf,
       vestiging: nieuw.vestiging,
       actie: nieuw.actie,
       verantw: [],
@@ -66,7 +97,8 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
       status: 'open',
       opmerking: '',
     })
-    setNieuw({ onderwerp: '', vestiging: '', actie: '' })
+    setNieuw({ onderwerp: '', bedrijf: '', vestiging: '', actie: '' })
+    toon('Actie toegevoegd')
   }
 
   function toggleVerantw(actie: ActieItem, naam: string) {
@@ -74,6 +106,16 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
       ? actie.verantw.filter((v) => v !== naam)
       : [...actie.verantw, naam]
     updateActie(actie.id, { verantw: nieuweVerantw })
+  }
+
+  async function handleUitstellen(
+    actieId: string,
+    eenheid: 'w' | 'm',
+    aantal: number,
+    label: string,
+  ) {
+    await uitstellen(actieId, eenheid, aantal)
+    toon(`Uitgesteld met ${label}`)
   }
 
   function kolomkop(label: string, veld: SortVeld) {
@@ -93,37 +135,66 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
       </button>
       <h1>Actielijst — {klantNaam}</h1>
 
+      <div>
+        {(['open', 'done', 'hold', 'due'] as FilterPil[]).map((pil) => (
+          <button
+            key={pil}
+            type="button"
+            className={`filter-pill ${actieveFilters.has(pil) ? 'actief' : ''}`}
+            onClick={() => toggleFilter(pil)}
+          >
+            {pil === 'open' && 'Open'}
+            {pil === 'done' && 'Gereed'}
+            {pil === 'hold' && 'On hold'}
+            {pil === 'due' && 'Due'}
+          </button>
+        ))}
+      </div>
+
       <form onSubmit={handleSubmit}>
-        <label htmlFor="nieuw-onderwerp">Onderwerp</label>
-        <input
-          id="nieuw-onderwerp"
-          value={nieuw.onderwerp}
-          onChange={(e) => setNieuw({ ...nieuw, onderwerp: e.target.value })}
-        />
-        <label htmlFor="nieuw-vestiging">Vestiging</label>
-        <input
-          id="nieuw-vestiging"
-          value={nieuw.vestiging}
-          onChange={(e) => setNieuw({ ...nieuw, vestiging: e.target.value })}
-        />
-        <label htmlFor="nieuw-actie">Actiepunt</label>
-        <input
-          id="nieuw-actie"
-          value={nieuw.actie}
-          onChange={(e) => setNieuw({ ...nieuw, actie: e.target.value })}
-        />
-        <button type="submit">Actie toevoegen</button>
+        <label>
+          Onderwerp
+          <input
+            value={nieuw.onderwerp}
+            onChange={(e) => setNieuw({ ...nieuw, onderwerp: e.target.value })}
+          />
+        </label>
+        <label>
+          Bedrijf
+          <input
+            value={nieuw.bedrijf}
+            onChange={(e) => setNieuw({ ...nieuw, bedrijf: e.target.value })}
+          />
+        </label>
+        <label>
+          Vestiging
+          <input
+            value={nieuw.vestiging}
+            onChange={(e) => setNieuw({ ...nieuw, vestiging: e.target.value })}
+          />
+        </label>
+        <label>
+          Actiepunt
+          <input
+            value={nieuw.actie}
+            onChange={(e) => setNieuw({ ...nieuw, actie: e.target.value })}
+          />
+        </label>
+        <button type="submit" className="primary">
+          Actie toevoegen
+        </button>
       </form>
 
       {loading ? (
         <p>Acties laden...</p>
       ) : gesorteerdeActies.length === 0 ? (
-        <p>Nog geen acties voor deze klant.</p>
+        <p>Nog geen acties voor deze klant. Voeg er hierboven eentje toe.</p>
       ) : (
-        <table>
+        <table className="actielijst">
           <thead>
             <tr>
               {kolomkop('Onderwerp', 'onderwerp')}
+              <th>Bedrijf</th>
               {kolomkop('Vestiging', 'vestiging')}
               <th>Actiepunt</th>
               <th>Verantw.</th>
@@ -142,42 +213,58 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
               return (
                 <tr key={actie.id}>
                   <td>
-                    <input
-                      aria-label={`Onderwerp voor ${actie.actie}`}
-                      value={actie.onderwerp}
-                      onChange={(e) =>
-                        updateActie(actie.id, { onderwerp: e.target.value })
-                      }
-                    />
+                    <span className="cel-scroll">
+                      <input
+                        aria-label={`Onderwerp voor ${actie.actie}`}
+                        value={actie.onderwerp}
+                        onChange={(e) =>
+                          updateActie(actie.id, { onderwerp: e.target.value })
+                        }
+                      />
+                    </span>
                   </td>
                   <td>
-                    <input
-                      aria-label={`Vestiging voor ${actie.actie}`}
-                      value={actie.vestiging}
-                      onChange={(e) =>
-                        updateActie(actie.id, { vestiging: e.target.value })
-                      }
-                    />
+                    <span className="cel-scroll">
+                      <input
+                        aria-label={`Bedrijf voor ${actie.actie}`}
+                        value={actie.bedrijf}
+                        onChange={(e) =>
+                          updateActie(actie.id, { bedrijf: e.target.value })
+                        }
+                      />
+                    </span>
                   </td>
                   <td>
-                    <input
-                      aria-label="Actiepunt"
-                      value={actie.actie}
-                      onChange={(e) =>
-                        updateActie(actie.id, { actie: e.target.value })
-                      }
-                    />
+                    <span className="cel-scroll">
+                      <input
+                        aria-label={`Vestiging voor ${actie.actie}`}
+                        value={actie.vestiging}
+                        onChange={(e) =>
+                          updateActie(actie.id, { vestiging: e.target.value })
+                        }
+                      />
+                    </span>
+                  </td>
+                  <td>
+                    <span className="cel-scroll">
+                      <input
+                        aria-label="Actiepunt"
+                        value={actie.actie}
+                        onChange={(e) =>
+                          updateActie(actie.id, { actie: e.target.value })
+                        }
+                      />
+                    </span>
                   </td>
                   <td>
                     {TEAMLEDEN.map((naam) => (
-                      <label key={naam}>
-                        <input
-                          type="checkbox"
-                          checked={actie.verantw.includes(naam)}
-                          onChange={() => toggleVerantw(actie, naam)}
-                        />
-                        {naam}
-                      </label>
+                      <AvatarChip
+                        key={naam}
+                        naam={naam}
+                        alleNamen={TEAMLEDEN}
+                        actief={actie.verantw.includes(naam)}
+                        onToggle={() => toggleVerantw(actie, naam)}
+                      />
                     ))}
                   </td>
                   <td>
@@ -206,7 +293,7 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                     </select>
                   </td>
                   <td>
-                    {due} {due_ && <strong>Due</strong>}
+                    {due} {due_ && <Badge variant="due">Due</Badge>}
                   </td>
                   <td>
                     <select
@@ -224,13 +311,15 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                     </select>
                   </td>
                   <td>
-                    <input
-                      aria-label={`Opmerking voor ${actie.actie}`}
-                      value={actie.opmerking}
-                      onChange={(e) =>
-                        updateActie(actie.id, { opmerking: e.target.value })
-                      }
-                    />
+                    <span className="cel-scroll">
+                      <input
+                        aria-label={`Opmerking voor ${actie.actie}`}
+                        value={actie.opmerking}
+                        onChange={(e) =>
+                          updateActie(actie.id, { opmerking: e.target.value })
+                        }
+                      />
+                    </span>
                   </td>
                   <td>
                     <select
@@ -240,7 +329,14 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                         const keuze = UITSTEL_OPTIES.find(
                           (o) => o.label === e.target.value,
                         )
-                        if (keuze) uitstellen(actie.id, keuze.eenheid, keuze.aantal)
+                        if (keuze) {
+                          handleUitstellen(
+                            actie.id,
+                            keuze.eenheid,
+                            keuze.aantal,
+                            keuze.label,
+                          )
+                        }
                       }}
                     >
                       <option value="" disabled>
