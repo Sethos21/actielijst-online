@@ -23,7 +23,7 @@ function App() {
 
   return (
     <div>
-      <header>
+      <header className="app-header">
         <span>{user.email}</span>
         <button onClick={() => signOut(auth)}>Uitloggen</button>
       </header>

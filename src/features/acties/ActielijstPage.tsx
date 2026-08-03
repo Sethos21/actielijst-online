@@ -257,58 +257,64 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                     </span>
                   </td>
                   <td>
-                    {TEAMLEDEN.map((naam) => (
-                      <AvatarChip
-                        key={naam}
-                        naam={naam}
-                        alleNamen={TEAMLEDEN}
-                        actief={actie.verantw.includes(naam)}
-                        onToggle={() => toggleVerantw(actie, naam)}
-                      />
-                    ))}
+                    <span className="cel-scroll verantw-cel">
+                      {TEAMLEDEN.map((naam) => (
+                        <AvatarChip
+                          key={naam}
+                          naam={naam}
+                          alleNamen={TEAMLEDEN}
+                          actief={actie.verantw.includes(naam)}
+                          onToggle={() => toggleVerantw(actie, naam)}
+                        />
+                      ))}
+                    </span>
                   </td>
                   <td>
-                    <input
-                      aria-label={`Aangemaakt op voor ${actie.actie}`}
-                      type="date"
-                      value={actie.aangemaaktOp}
-                      onChange={(e) =>
-                        updateActie(actie.id, { aangemaaktOp: e.target.value })
-                      }
-                    />
-                    <select
-                      aria-label={`Doorlooptijd voor ${actie.actie}`}
-                      value={actie.doorlooptijd}
-                      onChange={(e) =>
-                        updateActie(actie.id, {
-                          doorlooptijd: e.target.value as Doorlooptijd,
-                        })
-                      }
-                    >
-                      {DOORLOOPTIJD_OPTIES.map((optie) => (
-                        <option key={optie} value={optie}>
-                          {optie}
-                        </option>
-                      ))}
-                    </select>
+                    <span className="cel-scroll">
+                      <input
+                        aria-label={`Aangemaakt op voor ${actie.actie}`}
+                        type="date"
+                        value={actie.aangemaaktOp}
+                        onChange={(e) =>
+                          updateActie(actie.id, { aangemaaktOp: e.target.value })
+                        }
+                      />
+                      <select
+                        aria-label={`Doorlooptijd voor ${actie.actie}`}
+                        value={actie.doorlooptijd}
+                        onChange={(e) =>
+                          updateActie(actie.id, {
+                            doorlooptijd: e.target.value as Doorlooptijd,
+                          })
+                        }
+                      >
+                        {DOORLOOPTIJD_OPTIES.map((optie) => (
+                          <option key={optie} value={optie}>
+                            {optie}
+                          </option>
+                        ))}
+                      </select>
+                    </span>
                   </td>
                   <td>
                     {due} {due_ && <Badge variant="due">Due</Badge>}
                   </td>
                   <td>
-                    <select
-                      aria-label={`Status voor ${actie.actie}`}
-                      value={actie.status}
-                      onChange={(e) =>
-                        updateActie(actie.id, {
-                          status: e.target.value as ActieStatus,
-                        })
-                      }
-                    >
-                      <option value="open">Open</option>
-                      <option value="done">Gereed</option>
-                      <option value="hold">On hold</option>
-                    </select>
+                    <span className="cel-scroll">
+                      <select
+                        aria-label={`Status voor ${actie.actie}`}
+                        value={actie.status}
+                        onChange={(e) =>
+                          updateActie(actie.id, {
+                            status: e.target.value as ActieStatus,
+                          })
+                        }
+                      >
+                        <option value="open">Open</option>
+                        <option value="done">Gereed</option>
+                        <option value="hold">On hold</option>
+                      </select>
+                    </span>
                   </td>
                   <td>
                     <span className="cel-scroll">
@@ -322,32 +328,34 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                     </span>
                   </td>
                   <td>
-                    <select
-                      aria-label={`Uitstellen voor ${actie.actie}`}
-                      value=""
-                      onChange={(e) => {
-                        const keuze = UITSTEL_OPTIES.find(
-                          (o) => o.label === e.target.value,
-                        )
-                        if (keuze) {
-                          handleUitstellen(
-                            actie.id,
-                            keuze.eenheid,
-                            keuze.aantal,
-                            keuze.label,
+                    <span className="cel-scroll">
+                      <select
+                        aria-label={`Uitstellen voor ${actie.actie}`}
+                        value=""
+                        onChange={(e) => {
+                          const keuze = UITSTEL_OPTIES.find(
+                            (o) => o.label === e.target.value,
                           )
-                        }
-                      }}
-                    >
-                      <option value="" disabled>
-                        Uitstellen...
-                      </option>
-                      {UITSTEL_OPTIES.map((optie) => (
-                        <option key={optie.label} value={optie.label}>
-                          {optie.label}
+                          if (keuze) {
+                            handleUitstellen(
+                              actie.id,
+                              keuze.eenheid,
+                              keuze.aantal,
+                              keuze.label,
+                            )
+                          }
+                        }}
+                      >
+                        <option value="" disabled>
+                          Uitstellen...
                         </option>
-                      ))}
-                    </select>
+                        {UITSTEL_OPTIES.map((optie) => (
+                          <option key={optie.label} value={optie.label}>
+                            {optie.label}
+                          </option>
+                        ))}
+                      </select>
+                    </span>
                   </td>
                   <td>
                     <button type="button" onClick={() => deleteActie(actie.id)}>
