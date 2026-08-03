@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { initializeFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,4 +13,11 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
-export const db = getFirestore(app)
+// Sommige (vaak zakelijke) netwerken/proxy's laten Firestore's standaard
+// streaming-verbinding niet goed door, waardoor schrijfacties nooit
+// resolven of afwijzen — ze blijven simpelweg hangen. auto-detect long
+// polling laat de SDK zelf herkennen wanneer dat het geval is en
+// schakelt dan over op long-polling, wat door zulke netwerken wél heen komt.
+export const db = initializeFirestore(app, {
+  experimentalAutoDetectLongPolling: true,
+})
