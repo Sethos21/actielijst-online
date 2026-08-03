@@ -1,7 +1,7 @@
 # BVC Webapp — UI/UX Design Referentie (React-architectuur)
-*Vertaald vanuit bvc_actielijst_v17.html (single-file HTML) naar React + CSS custom properties | 3 augustus 2026*
+*Basis: bvc_actielijst_v17.html, aangevuld met later ontworpen schermen (Startscherm, Klantoverzicht, Huurdersmutaties) | bijgewerkt 3 augustus 2026*
 
-Dit document is de React-versie van het originele UI/UX-document. De **visuele tokens (kleuren, maten, typografie) zijn ongewijzigd** — dat is wat er is goedgekeurd en getest in v17. Wat is aangepast: hoe die tokens worden geïmplementeerd, nu gemapt naar de bestandsstructuur die je met Claude Code gebruikt.
+Dit document dekt **alles wat in deze chat is ontworpen en goedgekeurd**, niet alleen v17. De **visuele tokens (kleuren, maten, typografie) uit v17 zijn ongewijzigd** — dat is getest en goedgekeurd. Sectie 5b bevat schermen die ná v17 zijn ontworpen (in mockups, nooit in de single-file HTML gebouwd) — die specificatie staat er nu ook expliciet in, zodat er geen schermen ontbreken t.o.v. wat is afgesproken.
 
 **Architectuur:**
 - `src/styles/tokens.css` — alle CSS custom properties (design-tokens)
@@ -141,6 +141,63 @@ Onderaan gecentreerd, `background: var(--navy)`, witte tekst, transform-transiti
 
 ---
 
+## 5b. Schermen die nog niet in v17 zaten (later ontworpen, wél goedgekeurd)
+
+Deze schermen zijn in de chat besproken. Ze horen bij dezelfde visuele taal (tokens uit sectie 1). Belangrijk verschil in verificatieniveau tussen de twee:
+
+- **Huurdersmutaties**: gebaseerd op twee losse HTML-mockup-bestanden die zijn teruggelezen en gecontroleerd (zie hieronder) — structuur en kleuren zijn geverifieerd tegen de daadwerkelijke bestandsinhoud.
+- **Startscherm en Klantoverzicht**: nooit als los mockup-bestand gebouwd, alleen tekstueel beschreven en besproken in de chat. De specificatie hieronder is een samenvatting van die beschrijving, **niet geverifieerd tegen een visueel bestand**. Zie dit als het beste beschikbare uitgangspunt, niet als pixel-perfecte waarheid — bij twijfel tijdens het bouwen, terugvragen in de chat waar dit is ontworpen.
+
+### Startscherm → `StartScreen.tsx`
+Landingspagina met twee gelijkwaardige keuzetegels: **"Actielijsten"** en **"Huurdersmutaties"**.
+- Achtergrond: `var(--navy)`, volledige viewport-hoogte
+- Twee `.kaart`-tegels naast elkaar (desktop) — witte achtergrond, elk met een titel + korte omschrijving van wat je er kunt doen
+- Klik op "Actielijsten" → navigeert naar Klantoverzicht (niet direct een klant openen)
+- Klik op "Huurdersmutaties" → navigeert direct naar de maandweergave (geen tussenstap, want er is geen "klant" om eerst te kiezen)
+- Dit scherm heeft geen sidebar en geen "terug"-link — het is het startpunt
+
+### Klantoverzicht → `KlantOverzicht.tsx`
+Tussenscherm tussen Startscherm en de individuele actielijst van een klant. Doel: in één oogopslag zien welke klanten aandacht nodig hebben, ook bij veel klanten.
+- Compacte lijst (geen grote kaarten) — elke rij: klantnaam, status-badges (open/due-telling), laatste versiedatum
+- Zoekbalk bovenaan, filtert live op klantnaam
+- **Sorteerbare kolommen** — met name klantnaam én **laatste versiedatum** moeten beide te sorteren zijn (oplopend/aflopend), dit was een expliciete eis
+- Klik op een rij → navigeert naar de actielijst van die klant (bestaand v17-scherm)
+- "← Terug naar start" bovenaan, conform het navigatie-principe uit sectie 6
+
+### Huurdersmutaties → `Huurdersmutaties.tsx` + submodule
+Los van de actielijst-module, eigen datamodel (huurders in/uit, geen "acties"). Gebaseerd op de goedgekeurde mockups (`huurdersmutatie_invoer_mockup.html`, `huurdersmutaties_mockup.html`, beide 15 juli).
+
+**⚠️ Kleurmigratie — expliciet bevestigd, niet vanzelfsprekend:**
+Deze twee mockups zijn ouder dan v17 en gebruiken een eerdere kleuriteratie: primair `#1a4fa0` (helderder blauw) in plaats van `--navy` (`#1a3a5c`), en `#27ae60`/`#e67e22` in plaats van `--green`/`--amber`. **Afgesproken: bij het bouwen gebruik je overal de huidige tokens uit sectie 1**, dus vervang in onderstaande structuur elke `#1a4fa0` door `var(--navy)`, elke `#27ae60` door `var(--green)`, elke `#e67e22` door `var(--amber)`. De structuur/layout van de mockups blijft wel leidend — alleen de kleurwaarden migreren.
+
+**Overzichtsweergave — 3-koloms grid, niet 2:**
+```
+grid-template-columns: 1fr 44px 1fr;
+```
+- Links: ingaande huurder, rechts: vertrekkende huurder, **midden: een pijl-kolom** (↔ of →, kleur `--text-muted`, niet decoratief weggelaten — dit visualiseert de mutatie als overdracht van dezelfde locatie)
+- Gegroepeerd per maand, nieuwste maand bovenaan, maandheader met lichte achtergrond (`--blue-bg`) en telling rechts uitgelijnd
+- Kolomkoppen boven de rijen: "Vertrekkend" / "Ingaand" in uppercase, 10px, conform sectie 3
+- Elke zijde toont: locatienaam (bold), sub-label (bijv. bedrijfsnaam), huurdernaam in statuskleur (rood voor vertrekkend, groen voor ingaand), eventueel datum/reden/huurprijs als kleinere regels eronder
+- Status-tags per mutatie: bijv. "Bevestigd" (`--green-bg`/`--green`), "Leegstand verwacht" (`--amber-bg`/`--amber`) — gebruik de bestaande `.badge`-component uit sectie 5, niet een eigen tag-stijl
+- Lege zijde (nog geen huurder bekend): `--text-muted`, cursief, conform het "lege staten wijzen naar actie"-principe
+
+**Statistiekenrij (ontbrak eerder in dit document, wél in de mockup):**
+Boven de maandenlijst: 4 stat-cards naast elkaar (`grid-template-columns: repeat(4, 1fr)`), elk met een label en een grote waarde. Kleurcodering van de waarde volgt hetzelfde rood/groen/amber-systeem als de rest van de app.
+
+**Invoerflow (`MutatieInvoer.tsx`) — slide-in paneel, geen modal:**
+- Layout: de bestaande lijst blijft zichtbaar maar gedimd (`filter: brightness(0.92)` + lichte overlay), paneel schuift in vanaf rechts, vaste breedte (~420px op desktop)
+- Paneel-header met titel + sluitkruisje
+- **Stap-indicator bovenaan** — cirkels genummerd, met status done/actief/todo (respectievelijk groen/navy/grijs gevuld), verbonden door lijnen die meekleuren met de voortgang
+- Gedimde achtergrond-lijst toont ter context het object waar de mutatie bij hoort
+- Formuliervelden: label boven het veld (11px, `--text-muted`), input met `--border-strong`-rand, focus-state navy
+- Radiogroep voor vaste keuzevelden (bijv. reden van vertrek) — pill-vormig zoals `.filter-pill`, maar **hier bewust exclusief** (uitzondering op de "filters zijn optellend"-regel uit sectie 6, want dit is een dataveld met precies één geldige waarde, geen filter)
+- Hint-vak voor optionele/uit te stellen stappen: gestreepte rand, lichte navy-tint achtergrond, met icoon — voor bijv. "nog geen nieuwe huurder bekend, later aan te vullen"
+- Footer: Annuleren / Vorige / Opslaan, rechts uitgelijnd, primaire knop in `--navy`
+
+**Belangrijk verschil met de actielijst-tabel:** dit scherm gebruikt geen 78px-vaste-rij-patroon — het is een leesweergave + apart invoerpaneel, geen bewerkbare tabel. Pas sectie 5's tabelregels hier niet automatisch toe.
+
+---
+
 ## 6. UX-principes (architectuur-onafhankelijk, gelden ook in React)
 
 **Inline boven modal.** Actielijst-cellen zijn direct bewerkbaar in de tabel, geen apart bewerkscherm. In React: `EditableCell` met lokale state + onBlur/onChange die naar Firestore schrijft, geen aparte edit-route of modal voor veldwijzigingen.
@@ -151,7 +208,7 @@ Onderaan gecentreerd, `background: var(--navy)`, witte tekst, transform-transiti
 
 **Filters zijn optellend (OR), niet exclusief.** Zie `.filter-pill` hierboven — dit is de meest waarschijnlijke plek waar "het lijkt er niet op" vandaan komt als filters nu als radiobuttons werken.
 
-**Navigatie is hiërarchisch met expliciete terug-link.** Start → Klantoverzicht → Klant-detail, elke laag heeft een zichtbare "← Terug", nooit alleen de browser-back-knop.
+**Navigatie is hiërarchisch met expliciete terug-link.** `StartScreen` → `KlantOverzicht` → klant-detail (bestaande actielijst-tabel), elke laag heeft een zichtbare "← Terug", nooit alleen de browser-back-knop. `Huurdersmutaties` is een aparte tak direct vanaf `StartScreen`, geen tussenscherm nodig.
 
 **Lege staten wijzen naar de eerstvolgende actie**, niet alleen "geen data" tonen.
 
@@ -181,11 +238,15 @@ Onderaan gecentreerd, `background: var(--navy)`, witte tekst, transform-transiti
 
 Loop dit na in de React-implementatie, in volgorde van waarschijnlijkheid:
 
-1. **Bestaat `tokens.css` en wordt het daadwerkelijk geïmporteerd** in de root van de app (bijv. `main.tsx` of `App.tsx`)?
-2. **Gebruiken de componenten de classnamen uit `index.css`**, of zijn er per ongeluk inline styles / Tailwind-utility-classes gebruikt die de tokens negeren?
-3. **Tabelrijen: vaste hoogte (78px) of auto-height?** Dit is het meest voorkomende visuele verschil met v17.
-4. **Filters: optelbaar of exclusief?** Zie sectie 6.
-5. **Kleurwaarden: exact de hex-codes uit sectie 1, of zijn het benaderingen/Tailwind-standaardkleuren** (bijv. `blue-600` in plaats van `--navy`)?
+1. **Bestaan alle vier hoofdschermen** — `StartScreen`, `KlantOverzicht`, de actielijst-tabel, en `Huurdersmutaties`? Als er direct wordt ingelogd op de actielijst-tabel zonder start/overzicht ertussen, mist er een hele navigatielaag (zie sectie 5b).
+2. **Bestaat `tokens.css` en wordt het daadwerkelijk geïmporteerd** in de root van de app (bijv. `main.tsx` of `App.tsx`)?
+3. **Gebruiken de componenten de classnamen uit `index.css`**, of zijn er per ongeluk inline styles / Tailwind-utility-classes gebruikt die de tokens negeren?
+4. **Tabelrijen (alleen de actielijst!): vaste hoogte (78px) of auto-height?** Dit geldt niet voor Huurdersmutaties, dat heeft een ander patroon (zie sectie 5b).
+5. **Filters: optelbaar of exclusief?** Zie sectie 6. Let op: dit geldt voor status/verantwoordelijke-filters, niet voor het reden-van-vertrek-veld in de mutatie-invoer, dat is bewust wél exclusief.
+6. **Kleurwaarden: exact de hex-codes uit sectie 1, of zijn het benaderingen/Tailwind-standaardkleuren** (bijv. `blue-600` in plaats van `--navy`)?
+7. **Klantoverzicht: is sorteren op laatste versiedatum daadwerkelijk geïmplementeerd**, niet alleen op naam? Dit was een expliciete eis, makkelijk over het hoofd te zien.
+8. **Huurdersmutaties: is de originele mockup-kleur (`#1a4fa0` e.d.) per ongeluk letterlijk overgenomen** in plaats van gemigreerd naar de huidige tokens (`--navy` etc.)? Zie de kleurmigratie-notitie in sectie 5b — dit is een reële valkuil omdat de mockup-bestanden zelf de oude kleuren bevatten.
+9. **Huurdersmutaties: staat de pijl-kolom (midden, 44px) er nog in**, of is het per ongeluk teruggebracht tot een simpele 2-koloms layout?
 
 ---
 
