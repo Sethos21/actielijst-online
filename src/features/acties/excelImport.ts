@@ -103,3 +103,17 @@ export function parseerActies(
 
   return resultaat
 }
+
+/**
+ * Historische afgeronde acties (status "done") voegen niets toe aan een
+ * actieve actielijst — alleen open acties worden daadwerkelijk geïmporteerd.
+ * Het aantal overgeslagen acties wordt teruggegeven zodat de gebruiker kan
+ * zien dat er bewust iets is weggelaten, niet dat de import onvolledig is.
+ */
+export function filterOpenActies(acties: GeimporteerdeActie[]): {
+  open: GeimporteerdeActie[]
+  overgeslagen: number
+} {
+  const open = acties.filter((actie) => actie.status === 'open')
+  return { open, overgeslagen: acties.length - open.length }
+}

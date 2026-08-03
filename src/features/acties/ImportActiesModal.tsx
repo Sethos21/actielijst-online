@@ -5,7 +5,11 @@ import { useToast } from '../../components/useToast'
 import { useKlanten } from '../klanten/useKlanten'
 import { TEAMLEDEN } from '../team/teamleden'
 import { importeerActies } from './bulkImporteren'
-import { parseerActies, type GeimporteerdeActie } from './excelImport'
+import {
+  filterOpenActies,
+  parseerActies,
+  type GeimporteerdeActie,
+} from './excelImport'
 
 interface Props {
   onSluiten: () => void
@@ -19,6 +23,7 @@ export function ImportActiesModal({ onSluiten }: Props) {
   const [gekozenKlantId, setGekozenKlantId] = useState('')
   const [nieuweKlantNaam, setNieuweKlantNaam] = useState('')
   const [geparsed, setGeparsed] = useState<GeimporteerdeActie[] | null>(null)
+  const [overgeslagen, setOvergeslagen] = useState(0)
   const [bezig, setBezig] = useState(false)
   const [fout, setFout] = useState<string | null>(null)
 
@@ -40,7 +45,17 @@ export function ImportActiesModal({ onSluiten }: Props) {
         setFout('Geen acties gevonden — controleer of dit het juiste bestand is.')
         return
       }
-      setGeparsed(acties)
+      // Afgeronde acties uit het verleden voegen niets toe aan een actieve
+      // actielijst — alleen open acties worden geïmporteerd.
+      const { open, overgeslagen: aantalOvergeslagen } = filterOpenActies(acties)
+      if (open.length === 0) {
+        setFout(
+          `Geen open acties gevonden (${aantalOvergeslagen} afgeronde acties overgeslagen).`,
+        )
+        return
+      }
+      setGeparsed(open)
+      setOvergeslagen(aantalOvergeslagen)
     } catch {
       setFout('Kon het bestand niet lezen. Is het een geldig Excel-bestand?')
     }
@@ -62,7 +77,11 @@ export function ImportActiesModal({ onSluiten }: Props) {
         return
       }
       const aantal = await importeerActies(klantId, geparsed)
-      toon(`${aantal} acties geïmporteerd`)
+      toon(
+        overgeslagen > 0
+          ? `${aantal} open acties geïmporteerd (${overgeslagen} afgeronde acties overgeslagen)`
+          : `${aantal} acties geïmporteerd`,
+      )
       onSluiten()
     } catch {
       setFout('Importeren is niet gelukt. Probeer het opnieuw.')
@@ -126,8 +145,10 @@ export function ImportActiesModal({ onSluiten }: Props) {
       {geparsed && (
         <>
           <p>
-            {geparsed.length} acties gevonden. Controleer de voorvertoning
-            voordat je bevestigt.
+            {geparsed.length} open acties gevonden
+            {overgeslagen > 0 &&
+              ` (${overgeslagen} afgeronde acties worden overgeslagen)`}
+            . Controleer de voorvertoning voordat je bevestigt.
           </p>
           <table className="actielijst">
             <thead>
@@ -137,7 +158,6 @@ export function ImportActiesModal({ onSluiten }: Props) {
                 <th>Vestiging</th>
                 <th>Actiepunt</th>
                 <th>Verantw.</th>
-                <th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -148,7 +168,6 @@ export function ImportActiesModal({ onSluiten }: Props) {
                   <td>{actie.vestiging}</td>
                   <td>{actie.actie}</td>
                   <td>{actie.verantw.join(', ')}</td>
-                  <td>{actie.status === 'done' ? 'Gereed' : 'Open'}</td>
                 </tr>
               ))}
             </tbody>

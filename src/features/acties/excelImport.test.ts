@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseerActies, vindHeaderRij } from './excelImport'
+import { filterOpenActies, parseerActies, vindHeaderRij } from './excelImport'
 
 const TEAMLEDEN = ['Ton', 'Seth', 'Gertjan', 'Marjan', 'Eigenaar'] as const
 
@@ -75,5 +75,17 @@ describe('parseerActies', () => {
 
   it('laat dueDateOverride leeg als er geen Gereed-op-datum is', () => {
     expect(acties[1].dueDateOverride).toBeUndefined()
+  })
+})
+
+describe('filterOpenActies', () => {
+  const acties = parseerActies(RUWE_RIJEN, TEAMLEDEN)
+
+  it('laat alleen open acties over en telt de overgeslagen (done) acties', () => {
+    const { open, overgeslagen } = filterOpenActies(acties)
+
+    expect(open).toHaveLength(2)
+    expect(open.every((actie) => actie.status === 'open')).toBe(true)
+    expect(overgeslagen).toBe(1)
   })
 })

@@ -11,6 +11,9 @@ const COLLECTION = 'acties'
  */
 const STANDAARD_DOORLOOPTIJD = '2w'
 
+// TODO (volgende bouwfase): schrijven via writeBatch (max. 500 writes per
+// batch, chunk bij grotere imports) i.p.v. losse addDoc-calls per actie —
+// efficiënter en minder Firestore-round-trips bij grotere bestanden.
 export async function importeerActies(
   klantId: string,
   acties: GeimporteerdeActie[],
