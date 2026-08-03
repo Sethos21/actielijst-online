@@ -1,0 +1,2185 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BVC Actielijst</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@media print {
+  .sidebar, .topbar-right, .filter-bar, .stats-bar, .row-actions, .col-actions,
+  .versions-panel, .modal-bg, .toast, .sidebar-add-client { display: none !important; }
+  .app { display: block; }
+  .main { overflow: visible; }
+  .table-wrap { overflow: visible; }
+  body { font-size: 11px; }
+  table { width: 100%; }
+  thead th { background: #1a3a5c !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-header { display: block !important; }
+}
+.print-header { display: none; padding: 0 20px 12px; }
+.print-header h2 { font-size: 16px; color: #1a3a5c; }
+.print-header p { font-size: 11px; color: #888; margin-top: 2px; }
+</style>
+<style>
+/* === TOKENS === */
+:root {
+  --navy: #1a3a5c;
+  --navy-light: #1e4a7a;
+  --gold: #c8a84b;
+  --gold-light: #f0e4b8;
+  --surface: #f7f8fa;
+  --white: #ffffff;
+  --border: #e2e6ed;
+  --border-strong: #c8d0dc;
+  --text: #1a1a2e;
+  --text-secondary: #5a6070;
+  --text-muted: #9aa0ad;
+  --red: #c0392b;
+  --red-bg: #fdf0ef;
+  --green: #1d7a45;
+  --green-bg: #edf7f1;
+  --amber: #b06800;
+  --amber-bg: #fef5e4;
+  --blue-bg: #edf2fb;
+  --radius: 6px;
+  --shadow: 0 2px 8px rgba(26,58,92,0.08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--surface); color: var(--text); min-height: 100vh; font-size: 13px; }
+
+/* === STARTSCHERM === */
+.startscherm { min-height: 100vh; background: var(--navy); display: flex; align-items: center; justify-content: center; padding: 40px; box-sizing: border-box; }
+.start-inner { width: 100%; max-width: 640px; text-align: center; }
+.start-logo { font-size: 26px; font-weight: 700; color: #fff; letter-spacing: 0.05em; margin-bottom: 4px; }
+.start-sub { font-size: 12px; color: var(--gold); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 48px; }
+.start-keuzes { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.start-kaart { background: #fff; border-radius: 14px; padding: 36px 24px; cursor: pointer; transition: transform 0.15s; }
+.start-kaart:hover { transform: translateY(-2px); }
+.start-icon { font-size: 34px; margin-bottom: 14px; }
+.start-titel { font-size: 17px; font-weight: 600; color: var(--navy); margin-bottom: 6px; }
+.start-tekst { font-size: 12px; color: #888; line-height: 1.5; }
+
+/* === KLANTOVERZICHT === */
+.klantoverzicht { min-height: 100vh; background: var(--surface); padding: 24px; box-sizing: border-box; }
+.ko-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.ko-terug { font-size: 12px; color: #888; margin-bottom: 2px; cursor: pointer; }
+.ko-terug:hover { color: var(--navy); }
+.ko-titel { font-size: 19px; font-weight: 600; color: var(--navy); }
+.ko-filters { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
+.ko-tabel { background: #fff; border-radius: 8px; border: 1px solid var(--border); overflow: hidden; }
+.ko-rij { display: grid; grid-template-columns: 1fr auto auto 90px; gap: 12px; align-items: center; padding: 11px 14px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+.ko-rij:last-child { border-bottom: none; }
+.ko-rij:hover { background: var(--blue-bg); }
+.ko-head { cursor: default; font-size: 10px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.04em; }
+.ko-head:hover { background: transparent; }
+.ko-sort { cursor: pointer; user-select: none; }
+.ko-sort:hover { color: var(--navy); }
+.ko-naam { font-size: 13px; font-weight: 500; color: #1a1a2e; }
+.ko-badges { display: flex; gap: 5px; }
+.ko-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; }
+.ko-versie { font-size: 11px; color: #999; }
+.ko-open { font-size: 11px; color: #1a4fa0; text-align: right; }
+
+/* === HUURDERSMUTATIES === */
+.huurdersscherm { min-height: 100vh; background: var(--surface); padding: 24px; box-sizing: border-box; }
+.hm-topbar { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+.hm-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 18px; }
+.hm-stat { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; }
+.hm-stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+.hm-stat-val { font-size: 20px; font-weight: 700; }
+.hm-kolhead { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 0 6px; }
+.hm-kolhead-in { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--green); }
+.hm-kolhead-out { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--red); }
+.hm-maand { margin-bottom: 22px; }
+.hm-maand-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.hm-maand-label { font-size: 13px; font-weight: 600; color: var(--navy); min-width: 100px; }
+.hm-maand-line { flex: 1; height: 1px; background: var(--border); }
+.hm-maand-count { font-size: 11px; color: var(--text-muted); }
+.hm-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 6px; }
+.hm-card { background: #fff; border: 1px solid var(--border); border-left: 3px solid transparent; border-radius: var(--radius); padding: 8px 10px; }
+.hm-card.in { border-left-color: var(--green); }
+.hm-card.out { border-left-color: var(--red); }
+.hm-card.empty { background: transparent; border: 1px dashed var(--border); }
+.hm-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.hm-loc { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+.hm-admin { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.hm-opmerking { font-size: 11px; color: var(--navy); margin-top: 3px; font-style: italic; }
+.hm-newcard { border: 1px dashed var(--border-strong); border-radius: var(--radius); padding: 7px 10px; font-size: 12px; color: var(--navy); cursor: pointer; }
+.hm-newcard.out { color: var(--red); }
+.hm-newcard:hover { background: var(--blue-bg); }
+.hm-field { width: 100%; font-size: 12px; border: 1px solid #d0d8e8; border-radius: 3px; padding: 4px 6px; margin-bottom: 3px; font-family: inherit; background: #fff; }
+.hm-autocomplete { position: relative; }
+.hm-suggesties { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--border-strong); border-radius: 4px; box-shadow: var(--shadow); z-index: 20; max-height: 120px; overflow-y: auto; }
+.hm-suggestie { padding: 6px 8px; font-size: 12px; cursor: pointer; }
+.hm-suggestie:hover { background: var(--blue-bg); }
+
+/* === LAYOUT === */
+.app { display: flex; height: 100vh; overflow: hidden; }
+.sidebar { width: 220px; background: var(--navy); display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; }
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* === SIDEBAR === */
+.sidebar-logo { padding: 18px 16px 14px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.sidebar-logo .bvc { font-size: 18px; font-weight: 700; color: var(--white); letter-spacing: 0.05em; }
+.sidebar-logo .sub { font-size: 11px; color: var(--gold); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px; }
+
+.nav-section { padding: 14px 14px 4px; font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 14px; font-size: 13px; color: rgba(255,255,255,0.7); cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; }
+.nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.nav-item.active { background: rgba(200,168,75,0.15); color: var(--gold); border-left-color: var(--gold); }
+.nav-item .icon { font-size: 15px; width: 18px; text-align: center; }
+
+.nav-clients { padding: 4px 0 8px; }
+.client-item { display: flex; align-items: center; gap: 8px; padding: 7px 14px 7px 22px; font-size: 12px; color: rgba(255,255,255,0.6); cursor: pointer; border-left: 3px solid transparent; }
+.client-item:hover { color: #fff; background: rgba(255,255,255,0.05); }
+.client-item.active { color: #fff; border-left-color: var(--gold); }
+.client-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.3); flex-shrink: 0; }
+.client-dot.has-open { background: var(--red); }
+.client-count { margin-left: auto; font-size: 10px; background: rgba(255,255,255,0.12); border-radius: 10px; padding: 1px 6px; }
+
+.sidebar-add-client { margin: 8px 14px; padding: 7px 10px; background: rgba(255,255,255,0.07); border: 1px dashed rgba(255,255,255,0.2); border-radius: var(--radius); font-size: 12px; color: rgba(255,255,255,0.4); cursor: pointer; text-align: center; }
+.sidebar-add-client:hover { color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.4); }
+
+/* === TOPBAR === */
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: var(--white); border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 12px; }
+.topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.topbar-title { font-size: 15px; font-weight: 600; color: var(--navy); white-space: nowrap; }
+.topbar-vergadering { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+.topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.badge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+.badge-open { background: var(--red-bg); color: var(--red); }
+.badge-done { background: var(--green-bg); color: var(--green); }
+.badge-due { background: var(--amber-bg); color: var(--amber); }
+
+.btn { font-size: 12px; font-weight: 500; padding: 6px 13px; border-radius: var(--radius); border: 1px solid var(--border-strong); background: var(--white); color: var(--text-secondary); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.12s; white-space: nowrap; }
+.btn:hover { background: var(--surface); border-color: var(--navy); color: var(--navy); }
+.btn-primary { background: var(--navy); color: var(--white); border-color: var(--navy); }
+.btn-primary:hover { background: var(--navy-light); border-color: var(--navy-light); color: var(--white); }
+.btn-gold { background: var(--gold); color: var(--navy); border-color: var(--gold); font-weight: 600; }
+.btn-gold:hover { background: #d4b05a; }
+
+/* === STATS === */
+.stats-bar { display: flex; gap: 10px; padding: 12px 20px; background: var(--white); border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap; }
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 14px; min-width: 100px; }
+.stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+.stat-value { font-size: 20px; font-weight: 700; color: var(--text); }
+.stat-value.red { color: var(--red); }
+.stat-value.green { color: var(--green); }
+.stat-value.amber { color: var(--amber); }
+
+/* === FILTER BAR === */
+.filter-bar { display: flex; align-items: center; gap: 8px; padding: 9px 20px; background: var(--white); border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap; }
+.filter-btn { font-size: 12px; padding: 4px 11px; border-radius: 20px; border: 1px solid var(--border); background: var(--white); color: var(--text-secondary); cursor: pointer; transition: all 0.12s; }
+.filter-btn:hover { border-color: var(--navy); color: var(--navy); }
+.filter-btn.active { background: var(--navy); color: var(--white); border-color: var(--navy); }
+.filter-sep { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+.search-input { font-size: 12px; padding: 5px 10px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--text); outline: none; width: 180px; }
+.search-input:focus { border-color: var(--navy); background: var(--white); }
+
+/* === TABLE === */
+.table-wrap { flex: 1; overflow-y: auto; }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+thead th { padding: 8px 10px; text-align: left; font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); background: var(--white); position: sticky; top: 0; z-index: 2; }
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; height: 78px; max-height: 78px; }
+tbody tr:hover { background: var(--blue-bg); }
+tbody tr.done-row { opacity: 0.6; }
+td { padding: 4px 8px; vertical-align: middle; overflow: hidden; max-width: 0; }
+
+/* Kolom breedtes */
+.col-ref { width: 40px; }
+.col-invoerdatum { width: 84px; }
+.col-onderwerp { width: 110px; }
+.col-vestiging { width: 120px; }
+.col-actie { }
+.col-verantw { width: 90px; }
+.col-doorloop { width: 100px; }
+.col-duedate { width: 90px; }
+.col-status { width: 84px; }
+.col-opmerking { width: 180px; }
+.col-actions { width: 36px; }
+.th-sort { cursor: pointer; user-select: none; white-space: nowrap; }
+.th-sort:hover { color: var(--navy); }
+
+.td-ref { font-size: 11px; color: var(--text-muted); }
+.td-onderwerp { font-weight: 500; }
+.td-vestiging { color: var(--text-secondary); font-size: 12px; }
+.td-actie { color: var(--text-secondary); font-size: 12px; line-height: 1.4; }
+.td-datum { font-size: 11px; color: var(--text-muted); }
+.td-datum.overdue { color: var(--red); font-weight: 600; }
+
+/* Cellen: wit met border, VASTE hoogte, scrollen bij overflow */
+.cel-scroll {
+  display: block;
+  height: 62px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  outline: none;
+  background: #fff;
+  border: 1px solid #d0d8e8;
+  border-radius: 3px;
+  padding: 6px 8px;
+  font-size: 12px;
+  cursor: text;
+  width: 100%;
+  box-sizing: border-box;
+}
+.cel-scroll:focus {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 2px rgba(26,58,92,0.13);
+}
+/* Rijen zelf transparant */
+tbody tr { background: transparent; }
+
+/* Kolomnaam hernoem ballon */
+.th-hernoem { cursor: pointer; user-select: none; }
+.th-hernoem:hover { color: var(--navy); }
+.col-balloon {
+  position: fixed; background: var(--white); border: 1px solid var(--border-strong);
+  border-radius: var(--radius); box-shadow: var(--shadow); z-index: 60;
+  padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 200px;
+}
+.col-balloon-title { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.col-balloon input { font-size: 13px; padding: 6px 8px; border: 1px solid var(--border-strong); border-radius: 4px; outline: none; font-family: inherit; }
+.col-balloon input:focus { border-color: var(--navy); }
+.col-balloon-btns { display: flex; gap: 6px; justify-content: flex-end; }
+
+/* Beheer popup (verantw + statussen) */
+.beheer-popup {
+  position: fixed; background: var(--white); border: 1px solid var(--border-strong);
+  border-radius: var(--radius); box-shadow: var(--shadow); z-index: 60;
+  padding: 14px; min-width: 220px;
+}
+.beheer-popup h4 { font-size: 12px; font-weight: 700; color: var(--navy); margin-bottom: 10px; }
+.beheer-item { display: flex; align-items: center; gap: 6px; padding: 4px 0; font-size: 13px; }
+.beheer-item .del-btn { margin-left: auto; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; }
+.beheer-item .del-btn:hover { color: var(--red); }
+.beheer-add { display: flex; gap: 6px; margin-top: 8px; }
+.beheer-add input { flex: 1; font-size: 12px; padding: 5px 8px; border: 1px solid var(--border-strong); border-radius: 4px; outline: none; font-family: inherit; }
+.beheer-add input:focus { border-color: var(--navy); }
+.beheer-add button { font-size: 12px; padding: 5px 10px; border-radius: 4px; border: none; background: var(--navy); color: #fff; cursor: pointer; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* Verantwoordelijke avatar */
+.avatar { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+.av-MG { background: #dce8fb; color: #1a4fa0; }
+.av-GE { background: #fef0e0; color: #b06800; }
+.av-SE { background: #e8f7ef; color: #1d7a45; }
+.av-TH { background: #f0e8fb; color: #6a1ab0; }
+
+.verantw-cell { display: flex; align-items: center; gap: 6px; }
+.verantw-name { font-size: 12px; }
+
+/* Status tags */
+.tag { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+.tag-open { background: var(--red-bg); color: var(--red); }
+.tag-done { background: var(--green-bg); color: var(--green); }
+.tag-hold { background: var(--amber-bg); color: var(--amber); }
+.tag-due { background: #fff0e0; color: #b06800; }
+
+/* Row actions */
+.row-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.1s; }
+tbody tr:hover .row-actions { opacity: 1; }
+.row-btn { width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--border); background: var(--white); color: var(--text-muted); cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+.row-btn:hover { background: var(--surface); color: var(--text); }
+
+/* Nieuwe actie rij — zelfde formaat als bestaande rijen */
+.new-row { height: 78px; max-height: 78px; }
+.new-row td { padding: 4px 8px; vertical-align: middle; overflow: hidden; max-width: 0; }
+.new-row input, .new-row select {
+  font-size: 12px; padding: 0 7px; border-radius: 3px;
+  border: 1px solid #d0d8e8; background: #fff;
+  color: var(--text); font-family: inherit; width: 100%; outline: none;
+  height: 36px; box-sizing: border-box;
+}
+.new-row textarea {
+  font-size: 12px; padding: 6px 7px; border-radius: 3px;
+  border: 1px solid #d0d8e8; background: #fff;
+  color: var(--text); font-family: inherit; width: 100%; outline: none;
+  height: 62px; resize: none; box-sizing: border-box; line-height: 1.4;
+}
+.new-row input:focus, .new-row select:focus, .new-row textarea:focus { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(26,58,92,0.13); }
+
+/* Vergadering modal */
+.modal-bg { position: fixed; inset: 0; background: rgba(26,58,92,0.5); z-index: 100; display: flex; align-items: center; justify-content: center; }
+.modal { background: var(--white); border-radius: 10px; box-shadow: var(--shadow); padding: 24px; width: 400px; max-width: 95vw; }
+.modal-title { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 16px; }
+.modal-field { margin-bottom: 12px; }
+.modal-field label { display: block; font-size: 11px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+.modal-field input, .modal-field textarea { width: 100%; font-size: 13px; padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--border-strong); font-family: inherit; outline: none; color: var(--text); }
+.modal-field input:focus, .modal-field textarea:focus { border-color: var(--navy); }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+/* Versies panel */
+.versions-panel { position: fixed; right: 0; top: 0; bottom: 0; width: 320px; background: var(--white); border-left: 1px solid var(--border); box-shadow: -4px 0 16px rgba(0,0,0,0.08); z-index: 50; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.25s; }
+.versions-panel.open { transform: translateX(0); }
+.vp-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--navy); }
+.vp-title { font-size: 14px; font-weight: 600; color: var(--white); }
+.vp-close { background: none; border: none; color: rgba(255,255,255,0.6); font-size: 18px; cursor: pointer; }
+.vp-body { flex: 1; overflow-y: auto; padding: 12px; }
+.version-item { padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; cursor: pointer; transition: all 0.12s; }
+.version-item:hover { border-color: var(--navy); background: var(--blue-bg); }
+.vi-date { font-size: 13px; font-weight: 600; color: var(--navy); }
+.vi-meta { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+.vi-counts { display: flex; gap: 8px; margin-top: 6px; }
+.vi-c { font-size: 11px; padding: 2px 7px; border-radius: 20px; }
+
+/* Toast */
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--navy); color: var(--white); padding: 10px 20px; border-radius: var(--radius); font-size: 13px; font-weight: 500; z-index: 200; transition: transform 0.25s; box-shadow: var(--shadow); }
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* Postpone dropdown */
+.postpone-menu { position: absolute; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); z-index: 30; min-width: 160px; }
+.postpone-opt { padding: 9px 14px; font-size: 12px; cursor: pointer; color: var(--text); }
+.postpone-opt:hover { background: var(--blue-bg); }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+.empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+
+/* Opmerking cel scrollbaar */
+.td-opmerking { font-size: 12px; color: var(--text-secondary); line-height: 1.4; max-height: 56px; overflow-y: auto; display: block; outline: none; min-width: 120px; }
+.td-opmerking:focus { box-shadow: inset 0 0 0 2px var(--navy); border-radius: 4px; padding: 4px 6px; background: var(--white); }
+
+/* Verantw multi-select */
+.verantw-display { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; cursor: pointer; min-width: 80px; padding: 3px 5px; border-radius: 4px; border: 1px solid transparent; }
+.verantw-display:hover { border-color: var(--border); background: var(--surface); }
+.verantw-popup { position: fixed; background: var(--white); border: 1px solid var(--border-strong); border-radius: var(--radius); box-shadow: var(--shadow); z-index: 50; padding: 6px; min-width: 150px; }
+.verantw-popup label { display: flex; align-items: center; gap: 8px; padding: 6px 10px; font-size: 13px; cursor: pointer; border-radius: 4px; color: var(--text); }
+.verantw-popup label:hover { background: var(--blue-bg); }
+.verantw-popup input[type=checkbox] { accent-color: var(--navy); width: 14px; height: 14px; }
+.av-chip { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+.av-Ton { background: #f0e8fb; color: #6a1ab0; }
+.av-Seth { background: #e8f7ef; color: #1d7a45; }
+.av-Gertjan { background: #fef0e0; color: #b06800; }
+.av-Marjan { background: #dce8fb; color: #1a4fa0; }
+.av-Eigenaar { background: #f5f5f5; color: #555; }
+</style>
+</head>
+<body>
+
+<!-- STARTSCHERM -->
+<div class="startscherm" id="startscherm">
+  <div class="start-inner">
+    <div class="start-logo">BVC</div>
+    <div class="start-sub">Vastgoed Consultants</div>
+    <div class="start-keuzes">
+      <div class="start-kaart" onclick="gaNaarActielijsten()">
+        <div class="start-icon">☑</div>
+        <div class="start-titel">Actielijsten</div>
+        <div class="start-tekst">Acties per klant bijhouden, dashboard en versiebeheer</div>
+      </div>
+      <div class="start-kaart" onclick="gaNaarHuurdersmutaties()">
+        <div class="start-icon">🏠</div>
+        <div class="start-titel">Huurdersmutaties</div>
+        <div class="start-tekst">Ingaande en vertrekkende huurders per maand</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KLANTOVERZICHT -->
+<div class="klantoverzicht" id="klantoverzicht" style="display:none">
+  <div class="ko-header">
+    <div>
+      <div class="ko-terug" onclick="gaNaarStart()">← Terug naar start</div>
+      <div class="ko-titel">Actielijsten — overzicht</div>
+    </div>
+    <button class="btn btn-primary" onclick="openNieuweKlantModal()">+ Nieuwe actielijst</button>
+  </div>
+  <div class="ko-filters">
+    <input class="search-input" id="koZoek" placeholder="Zoek klant..." oninput="renderKlantoverzicht()" style="flex:1;max-width:280px;">
+    <div class="filter-btn active" id="koFilterAlle" onclick="setKoFilter('alle',this)">Alle</div>
+    <div class="filter-btn" onclick="setKoFilter('due',this)">Met due</div>
+  </div>
+  <div class="ko-tabel">
+    <div class="ko-rij ko-head">
+      <div class="ko-sort" onclick="setKoSort('naam')">Klant<span id="koArrow-naam"></span></div>
+      <div>Status</div>
+      <div class="ko-sort" onclick="setKoSort('versie')">Laatste versie<span id="koArrow-versie"></span></div>
+      <div></div>
+    </div>
+    <div id="koRijen"></div>
+  </div>
+</div>
+
+<div class="app" id="appScherm" style="display:none">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="bvc">BVC</div>
+      <div class="sub">Actielijsten</div>
+    </div>
+    <div class="nav-item" onclick="gaNaarKlantoverzicht()" style="font-size:11px;color:rgba(255,255,255,0.5);">
+      <span class="icon">←</span> Klantoverzicht
+    </div>
+
+    <div class="nav-section">Menu</div>
+    <div class="nav-item" onclick="setView('acties')">
+      <span class="icon">☑</span> Actielijst
+    </div>
+    <div class="nav-item" onclick="setView('mijn')">
+      <span class="icon">👤</span> Mijn acties
+    </div>
+    <div class="nav-item" onclick="setView('dashboard')">
+      <span class="icon">📊</span> Dashboard
+    </div>
+
+    <div class="nav-section">Klanten</div>
+    <div class="nav-clients" id="clientNav"></div>
+    <div class="sidebar-add-client" onclick="openNieuweKlantModal()">+ Nieuwe actielijst</div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title" id="mainTitle">Selecteer een klant</div>
+        <div class="topbar-vergadering" id="vergaderingLabel"></div>
+      </div>
+      <div class="topbar-right">
+        <span class="badge badge-open" id="badgeOpen" style="display:none"></span>
+        <span class="badge badge-due" id="badgeDue" style="display:none"></span>
+        <span class="badge badge-done" id="badgeDone" style="display:none"></span>
+        <button class="btn" onclick="showVersions()" id="btnVersions" style="display:none">📋 Versies</button>
+        <button class="btn" onclick="printLijst()" id="btnPrint" style="display:none">🖨 Print</button>
+        <button class="btn" onclick="exportExcel()" id="btnExcel" style="display:none">⬇ Excel</button>
+        <button class="btn" onclick="document.getElementById('importFileInput').click()" id="btnImport" style="display:none">⬆ Excel importeren</button>
+        <input type="file" id="importFileInput" accept=".xlsx,.xls" style="display:none" onchange="handleImportFile(event)">
+        <button class="btn btn-gold" onclick="sluitVergadering()" id="btnSluit" style="display:none">📋 Vergadering afsluiten</button>
+        <button class="btn btn-primary" onclick="nieuweActie()" id="btnNieuw" style="display:none">+ Nieuwe actie</button>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-bar" id="statsBar" style="display:none">
+      <div class="stat">
+        <div class="stat-label">Open</div>
+        <div class="stat-value red" id="statOpen">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Due (verlopen)</div>
+        <div class="stat-value amber" id="statDue">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Afgerond</div>
+        <div class="stat-value green" id="statDone">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">On hold</div>
+        <div class="stat-value" id="statHold">0</div>
+      </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar" id="filterBar" style="display:none">
+      <button class="filter-btn active" onclick="toggleAlleFilter(this)" id="filterAlleBtn">Alle</button>
+      <button class="filter-btn" onclick="toggleStatusFilter('open',this)">Open</button>
+      <button class="filter-btn" onclick="toggleStatusFilter('due',this)">Due</button>
+      <button class="filter-btn" onclick="toggleStatusFilter('done',this)">Done</button>
+      <button class="filter-btn" onclick="toggleStatusFilter('hold',this)">On hold</button>
+      <div class="filter-sep"></div>
+      <div id="teamFilters"></div>
+      <div class="filter-sep"></div>
+      <input class="search-input" placeholder="Zoeken..." oninput="setSearch(this.value)" id="searchInput">
+    </div>
+
+    <!-- PRINT HEADER (alleen zichtbaar bij afdrukken) -->
+    <div class="print-header" id="printHeader">
+      <h2 id="printTitle"></h2>
+      <p id="printMeta"></p>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap" id="tableWrap">
+      <div class="empty-state" id="emptyState">
+        <div class="icon">📋</div>
+        <p>Selecteer een klant in de zijbalk om te beginnen</p>
+      </div>
+      <table id="mainTable" style="display:none">
+        <thead id="tableHead"><tr></tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- HUURDERSMUTATIES SCHERM -->
+<div class="huurdersscherm" id="huurdersscherm" style="display:none">
+  <div class="hm-topbar">
+    <div>
+      <div class="ko-terug" onclick="gaNaarStart()">← Terug naar start</div>
+      <div class="ko-titel">Huurdersmutaties</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input class="search-input" id="hmZoek" placeholder="Zoek huurder of locatie..." oninput="renderHuurdersmutaties()">
+      <select id="hmJaarFilter" onchange="renderHuurdersmutaties()" style="font-size:12px;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"></select>
+      <button class="btn" onclick="voegJaarToe()">+ Jaar</button>
+    </div>
+  </div>
+
+  <div class="hm-stats" id="hmStats"></div>
+
+  <div class="hm-kolhead">
+    <div class="hm-kolhead-in">↓ Ingaand</div>
+    <div class="hm-kolhead-out">↑ Vertrekkend</div>
+  </div>
+
+  <div id="hmMaanden"></div>
+</div>
+
+<!-- VERSIES PANEL -->
+<div class="versions-panel" id="versionsPanel">
+  <div class="vp-header">
+    <div class="vp-title">Versiegeschiedenis</div>
+    <button class="vp-close" onclick="hideVersions()">✕</button>
+  </div>
+  <div class="vp-body" id="versionsBody"></div>
+</div>
+
+<!-- MODAL Excel import -->
+<div class="modal-bg" id="importModalBg" style="display:none">
+  <div class="modal" style="width:640px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;">
+    <div class="modal-title">Excel-bestand importeren</div>
+    <div id="importBody" style="overflow-y:auto;flex:1;">
+      <div style="color:var(--text-muted);font-size:13px;">Bestand wordt gelezen...</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="document.getElementById('importModalBg').style.display='none'">Annuleren</button>
+      <button class="btn btn-primary" id="importConfirmBtn" onclick="bevestigImport()" style="display:none">Importeren</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL nieuwe actielijst / klant -->
+<div class="modal-bg" id="nieuweKlantModalBg" style="display:none" onclick="closeNieuweKlantModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Nieuwe actielijst aanmaken</div>
+    <div class="modal-field">
+      <label>Klantnaam</label>
+      <input type="text" id="nkNaam" placeholder="bijv. Malcon B.V." autofocus>
+    </div>
+    <div class="modal-field">
+      <label>Vergaderingsnaam (optioneel)</label>
+      <input type="text" id="nkVergadering" placeholder="bijv. Werkoverleg – BVC">
+    </div>
+    <div class="modal-field">
+      <label>Datum eerste vergadering</label>
+      <input type="date" id="nkDatum">
+    </div>
+    <div class="modal-field">
+      <label>Aanwezigen (optioneel)</label>
+      <input type="text" id="nkAanwezigen" placeholder="bijv. Seth, Gerie, Margriet">
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="document.getElementById('nieuweKlantModalBg').style.display='none'">Annuleren</button>
+      <button class="btn btn-primary" onclick="maakNieuweActielijst()">Aanmaken</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL vergadering afsluiten -->
+<div class="modal-bg" id="modalBg" style="display:none" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Vergadering afsluiten & versie opslaan</div>
+    <div class="modal-field">
+      <label>Vergaderingsnaam</label>
+      <input type="text" id="modalNaam" placeholder="bijv. Werkoverleg Malcon – BVC">
+    </div>
+    <div class="modal-field">
+      <label>Datum</label>
+      <input type="date" id="modalDatum">
+    </div>
+    <div class="modal-field">
+      <label>Aanwezigen</label>
+      <input type="text" id="modalAanwezigen" placeholder="bijv. Seth, Gerie, Margriet, Ton">
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="document.getElementById('modalBg').style.display='none'">Annuleren</button>
+      <button class="btn btn-primary" onclick="opslaanVersie()">Versie opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// Constanten moeten als eerste staan (worden al gebruikt tijdens eerste render)
+const DOORLOOP_DAGEN = { '1w': 7, '2w': 14, '3w': 21, '4w': 28, '1m': 30, '2m': 61, '3m': 91, '4m': 122, '5m': 152, '6m': 182 };
+const DOORLOOPTIJDEN = [
+  { id: '', label: '—' },
+  { id: '1w', label: '1 week' },
+  { id: '2w', label: '2 weken' },
+  { id: '3w', label: '3 weken' },
+  { id: '4w', label: '4 weken' },
+  { id: '1m', label: '1 maand' },
+  { id: '2m', label: '2 maanden' },
+  { id: '3m', label: '3 maanden' },
+  { id: '4m', label: '4 maanden' },
+  { id: '5m', label: '5 maanden' },
+  { id: '6m', label: '6 maanden' },
+];
+// === DATA ===
+// Teamleden en statussen komen uit data (dynamisch)
+function getTeamleden() { return data.teamleden || ['Ton', 'Seth', 'Gertjan', 'Marjan', 'Eigenaar']; }
+function getStatussen() { return data.statussen || [{id:'open',label:'Open',kleur:'#c0392b'},{id:'done',label:'Done',kleur:'#1d7a45'},{id:'hold',label:'On hold',kleur:'#b06800'}]; }
+function getKolommen() { return data.kolommen || ['Onderwerp','Vestiging','Actiepunt','Opmerking']; }
+
+function verAntwNamen(a) {
+  if (!a.verantw) return [];
+  if (Array.isArray(a.verantw)) return a.verantw;
+  const map = { MG: 'Marjan', GE: 'Gertjan', SE: 'Seth', TH: 'Ton' };
+  return [map[a.verantw] || a.verantw];
+}
+
+function loadData() {
+  return JSON.parse(localStorage.getItem('bvc_data') || 'null') || {
+    klanten: [
+      { id: 'malcon', naam: 'Malcon B.V.' },
+      { id: 'spronsen', naam: 'Spronsen Vastgoed' },
+      { id: 'bowog', naam: 'Bowog Beheer' },
+    ],
+    acties: [
+      { id: 1, klantId: 'malcon', ref: '4', onderwerp: 'Grote renovatie', vestiging: 'Malcon – Vlijmen', actie: 'Kas eraf en renovatie van het pand. Investering 800K–900K.', verantw: 'MG', doorlooptijd: '4w', status: 'open', aangemaaktOp: '2026-06-15', postponedTot: null, opmerking: '' },
+      { id: 2, klantId: 'malcon', ref: '29', onderwerp: 'Administratie', vestiging: '', actie: 'Afspraak inplannen met BDO voor afstemming administratie.', verantw: 'MG', doorlooptijd: '2w', status: 'open', aangemaaktOp: '2026-07-01', postponedTot: null, opmerking: '' },
+      { id: 3, klantId: 'malcon', ref: '1', onderwerp: 'Grote renovatie', vestiging: 'Spronsen – Hoogerheide', actie: 'Asbestsanering + renovatie. Investering €75.000 + asbest.', verantw: 'MG', doorlooptijd: '', status: 'done', aangemaaktOp: '2020-05-01', postponedTot: null, opmerking: 'Afgerond 1-10-2021' },
+      { id: 4, klantId: 'malcon', ref: '5', onderwerp: 'Schilderwerk', vestiging: 'Spronsen – Gemert', actie: 'Offerte €5.215,- excl. BTW akkoord. Opdracht gegeven.', verantw: 'GE', doorlooptijd: '', status: 'done', aangemaaktOp: '2021-01-10', postponedTot: null, opmerking: 'Afgerond 1-7-2021' },
+      { id: 5, klantId: 'malcon', ref: '38', onderwerp: 'Onderhoud', vestiging: 'Bowog – Velden', actie: 'Schilderwerk ±€24.000. Locatie wordt verkocht — vervalt.', verantw: 'TH', doorlooptijd: '4w', status: 'hold', aangemaaktOp: '2021-01-20', postponedTot: null, opmerking: '' },
+      { id: 6, klantId: 'bowog', ref: '1', onderwerp: 'Dakluik', vestiging: 'Bowog – Tilburg', actie: '2e offerte opvragen bij Dirk Jan. Eerste te hoog.', verantw: 'GE', doorlooptijd: '4w', status: 'open', aangemaaktOp: '2026-06-20', postponedTot: null, opmerking: '' },
+    ],
+    versies: [],
+    nextId: 7,
+    kolommen: ['Onderwerp', 'Vestiging', 'Actiepunt', 'Opmerking'],
+    statussen: [
+      { id: 'open', label: 'Open', kleur: '#c0392b' },
+      { id: 'done', label: 'Done', kleur: '#1d7a45' },
+      { id: 'hold', label: 'On hold', kleur: '#b06800' },
+    ],
+    teamleden: ['Ton', 'Seth', 'Gertjan', 'Marjan', 'Eigenaar'],
+    mutaties: [
+      { id: 1, richting: 'in', jaar: 2026, maand: 6, datum: '2026-06-08', naam: 'Geobase B.V.', locatie: 'Stationsstraat 4, Veghel', administratie: 'MTS CV Commercieel', opmerking: 'Sleuteloverdracht 8-7' },
+      { id: 2, richting: 'uit', jaar: 2026, maand: 6, datum: '2026-06-07', naam: 'Randstad', locatie: 'Stationsstraat 4, Veghel', administratie: 'MTS CV Commercieel', opmerking: 'Oplevering 7 juni 2026' },
+    ],
+    mutatiesNextId: 3,
+    mutatiesJaren: [2024, 2025, 2026, 2027],
+  };
+}
+
+function saveData(d) {
+  localStorage.setItem('bvc_data', JSON.stringify(d));
+}
+
+// === STATE ===
+let data = loadData();
+let activeKlantId = null;
+let activeView = 'acties';
+let filterStatussen = new Set(); // leeg = alle tonen
+let filterTeamleden = new Set(); // leeg = iedereen tonen
+let searchQuery = '';
+
+// === INIT ===
+renderTeamFilters();
+// renderSidebar() wordt pas aangeroepen zodra de gebruiker naar het actielijst-scherm navigeert
+
+// === NAVIGATIE TUSSEN SCHERMEN ===
+function gaNaarStart() {
+  document.getElementById('startscherm').style.display = '';
+  document.getElementById('klantoverzicht').style.display = 'none';
+  document.getElementById('appScherm').style.display = 'none';
+  document.getElementById('huurdersscherm').style.display = 'none';
+}
+
+function gaNaarActielijsten() {
+  document.getElementById('startscherm').style.display = 'none';
+  document.getElementById('klantoverzicht').style.display = '';
+  document.getElementById('appScherm').style.display = 'none';
+  document.getElementById('huurdersscherm').style.display = 'none';
+  renderKlantoverzicht();
+}
+
+function gaNaarKlantoverzicht() {
+  activeKlantId = null;
+  document.getElementById('startscherm').style.display = 'none';
+  document.getElementById('klantoverzicht').style.display = '';
+  document.getElementById('appScherm').style.display = 'none';
+  document.getElementById('huurdersscherm').style.display = 'none';
+  renderKlantoverzicht();
+}
+
+function gaNaarHuurdersmutaties() {
+  document.getElementById('startscherm').style.display = 'none';
+  document.getElementById('klantoverzicht').style.display = 'none';
+  document.getElementById('appScherm').style.display = 'none';
+  document.getElementById('huurdersscherm').style.display = '';
+  renderHuurdersmutaties();
+}
+
+function openKlant(id) {
+  document.getElementById('klantoverzicht').style.display = 'none';
+  document.getElementById('appScherm').style.display = '';
+  renderSidebar();
+  selectKlant(id);
+}
+
+// === KLANTOVERZICHT ===
+let koSortField = 'naam';
+let koSortDir = 'asc';
+let koFilter = 'alle';
+
+function setKoFilter(f, el) {
+  koFilter = f;
+  document.querySelectorAll('.ko-filters .filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderKlantoverzicht();
+}
+
+function setKoSort(field) {
+  if (koSortField === field) koSortDir = koSortDir === 'asc' ? 'desc' : 'asc';
+  else { koSortField = field; koSortDir = 'asc'; }
+  renderKlantoverzicht();
+}
+
+function renderKlantoverzicht() {
+  const zoek = (document.getElementById('koZoek')?.value || '').toLowerCase();
+  let rijen = data.klanten.map(k => {
+    const acties = data.acties.filter(a => a.klantId === k.id);
+    const open = acties.filter(a => a.status === 'open' && !isDue(a)).length;
+    const due = acties.filter(a => isDue(a)).length;
+    const versies = data.versies.filter(v => v.klantId === k.id);
+    const laatsteVersie = versies.length ? versies[versies.length - 1] : null;
+    return { klant: k, open, due, versieDatum: laatsteVersie ? laatsteVersie.datum : null };
+  });
+
+  if (zoek) rijen = rijen.filter(r => r.klant.naam.toLowerCase().includes(zoek));
+  if (koFilter === 'due') rijen = rijen.filter(r => r.due > 0);
+
+  rijen.sort((a, b) => {
+    let va, vb;
+    if (koSortField === 'naam') { va = a.klant.naam.toLowerCase(); vb = b.klant.naam.toLowerCase(); }
+    else { va = a.versieDatum || ''; vb = b.versieDatum || ''; }
+    if (va < vb) return koSortDir === 'asc' ? -1 : 1;
+    if (va > vb) return koSortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  ['naam', 'versie'].forEach(f => {
+    const arrow = document.getElementById('koArrow-' + f);
+    if (!arrow) return;
+    if (koSortField !== f) arrow.innerHTML = ' <span style="opacity:.25">↕</span>';
+    else arrow.innerHTML = koSortDir === 'asc' ? ' <span style="color:var(--navy)">▲</span>' : ' <span style="color:var(--navy)">▼</span>';
+  });
+
+  const wrap = document.getElementById('koRijen');
+  if (rijen.length === 0) {
+    wrap.innerHTML = `<div style="padding:30px;text-align:center;color:var(--text-muted);font-size:13px;">Geen klanten gevonden</div>`;
+    return;
+  }
+
+  wrap.innerHTML = rijen.map(r => `
+    <div class="ko-rij" onclick="openKlant('${r.klant.id}')">
+      <div class="ko-naam">${esc(r.klant.naam)}</div>
+      <div class="ko-badges">
+        ${r.open > 0 ? `<span class="ko-badge" style="background:var(--red-bg);color:var(--red)">${r.open}</span>` : ''}
+        ${r.due > 0 ? `<span class="ko-badge" style="background:var(--amber-bg);color:var(--amber)">${r.due}</span>` : ''}
+        ${r.open === 0 && r.due === 0 ? `<span class="ko-badge" style="background:var(--green-bg);color:var(--green)">gereed</span>` : ''}
+      </div>
+      <div class="ko-versie">${r.versieDatum ? formatDate(r.versieDatum) : '—'}</div>
+      <div class="ko-open">Openen →</div>
+    </div>
+  `).join('');
+}
+
+// === TABEL HEADER ===
+function renderTableHead() {
+  const kols = getKolommen();
+  const tr = document.querySelector('#tableHead tr');
+  tr.innerHTML = `
+    <th class="col-ref th-sort" onclick="setSort('ref')">#${sortArrow('ref')}</th>
+    <th class="col-invoerdatum th-sort" onclick="setSort('aangemaaktOp')">Invoerdatum${sortArrow('aangemaaktOp')}</th>
+    <th class="col-onderwerp th-hernoem" onclick="showColBalloon(0,this)">${kols[0]} ▾</th>
+    <th class="col-vestiging th-hernoem" onclick="showColBalloon(1,this)">${kols[1]} ▾</th>
+    <th class="col-actie th-hernoem" onclick="showColBalloon(2,this)">${kols[2]} ▾</th>
+    <th class="col-verantw">
+      Verantwoordelijke
+      <button onclick="openBeheerPopup('verantw',this)" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:11px;padding:0 3px" title="Beheer">⚙</button>
+    </th>
+    <th class="col-doorloop th-sort" onclick="setSort('doorlooptijd')">Doorlooptijd${sortArrow('doorlooptijd')}</th>
+    <th class="col-duedate th-sort" onclick="setSort('duedate')">Due date${sortArrow('duedate')}</th>
+    <th class="col-status th-sort" onclick="setSort('status')">
+      Status${sortArrow('status')}
+      <button onclick="event.stopPropagation();openBeheerPopup('status',this)" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:11px;padding:0 3px" title="Beheer">⚙</button>
+    </th>
+    <th class="col-opmerking th-hernoem" onclick="showColBalloon(3,this)">${kols[3]} ▾</th>
+    <th class="col-actions"></th>
+  `;
+}
+
+// === SORTEREN ===
+let sortField = null;
+let sortDir = 'asc';
+
+function setSort(field) {
+  if (sortField === field) {
+    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortField = field;
+    sortDir = 'asc';
+  }
+  renderTableHead();
+  renderTable();
+}
+
+function sortArrow(field) {
+  if (sortField !== field) return ' <span style="opacity:.25">↕</span>';
+  return sortDir === 'asc' ? ' <span style="color:var(--navy)">▲</span>' : ' <span style="color:var(--navy)">▼</span>';
+}
+
+function applySort(acties) {
+  if (!sortField) return acties;
+  const arr = [...acties];
+  arr.sort((a, b) => {
+    let va, vb;
+    if (sortField === 'duedate') { va = getDueDate(a) || ''; vb = getDueDate(b) || ''; }
+    else if (sortField === 'ref') { va = parseInt(a.ref) || 0; vb = parseInt(b.ref) || 0; }
+    else if (sortField === 'status') { va = a.effectiefDue ? 'due' : a.status; vb = b.effectiefDue ? 'due' : b.status; }
+    else { va = a[sortField] || ''; vb = b[sortField] || ''; }
+    if (va < vb) return sortDir === 'asc' ? -1 : 1;
+    if (va > vb) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  return arr;
+}
+
+// === KOLOM HERNOEMEN ===
+function showColBalloon(idx, th) {
+  document.querySelectorAll('.col-balloon').forEach(b => b.remove());
+  const kols = getKolommen();
+  const rect = th.getBoundingClientRect();
+  const balloon = document.createElement('div');
+  balloon.className = 'col-balloon';
+  balloon.style.top = (rect.bottom + 4) + 'px';
+  balloon.style.left = rect.left + 'px';
+  balloon.innerHTML = `
+    <div class="col-balloon-title">Kolom hernoemen</div>
+    <input id="colNaamInput" value="${kols[idx]}" maxlength="30">
+    <div class="col-balloon-btns">
+      <button class="btn" onclick="this.closest('.col-balloon').remove()">Annuleren</button>
+      <button class="btn btn-primary" onclick="slaKolomOp(${idx})">Opslaan</button>
+    </div>
+  `;
+  document.body.appendChild(balloon);
+  setTimeout(() => {
+    document.getElementById('colNaamInput').focus();
+    document.addEventListener('click', function h(e) {
+      if (!balloon.contains(e.target) && !th.contains(e.target)) { balloon.remove(); document.removeEventListener('click', h); }
+    });
+  }, 50);
+}
+
+function slaKolomOp(idx) {
+  const val = document.getElementById('colNaamInput').value.trim();
+  if (!val) return;
+  if (!data.kolommen) data.kolommen = ['Onderwerp','Vestiging','Actiepunt','Opmerking'];
+  data.kolommen[idx] = val;
+  saveData(data);
+  document.querySelectorAll('.col-balloon').forEach(b => b.remove());
+  renderTableHead();
+}
+
+// === BEHEER POPUP (verantw / status) ===
+function openBeheerPopup(type, btn) {
+  document.querySelectorAll('.beheer-popup').forEach(p => p.remove());
+  const rect = btn.getBoundingClientRect();
+  const popup = document.createElement('div');
+  popup.className = 'beheer-popup';
+  popup.style.top = (rect.bottom + 4) + 'px';
+  popup.style.left = Math.max(0, rect.left - 160) + 'px';
+
+  if (type === 'verantw') {
+    const lijst = getTeamleden();
+    popup.innerHTML = `
+      <h4>Verantwoordelijken beheren</h4>
+      <div id="verAntwLijst">
+        ${lijst.map((n,i) => `
+          <div class="beheer-item">
+            <span class="av-chip av-${n}">${n.substring(0,2).toUpperCase()}</span>
+            ${n}
+            <button class="del-btn" onclick="verwijderTeamlid(${i})" title="Verwijderen">✕</button>
+          </div>`).join('')}
+      </div>
+      <div class="beheer-add">
+        <input id="nieuwTeamlid" placeholder="Naam toevoegen..." maxlength="30" onkeydown="if(event.key==='Enter')voegTeamlidToe()">
+        <button onclick="voegTeamlidToe()">+</button>
+      </div>
+    `;
+  } else {
+    const lijst = getStatussen();
+    popup.innerHTML = `
+      <h4>Statussen beheren</h4>
+      <div id="statusLijst">
+        ${lijst.map((s,i) => `
+          <div class="beheer-item">
+            <span class="status-dot" style="background:${s.kleur}"></span>
+            ${s.label}
+            ${i >= 3 ? `<button class="del-btn" onclick="verwijderStatus(${i})" title="Verwijderen">✕</button>` : '<span style="font-size:10px;color:var(--text-muted);margin-left:auto">vast</span>'}
+          </div>`).join('')}
+      </div>
+      <div class="beheer-add">
+        <input id="nieuweStatus" placeholder="Naam nieuwe status..." maxlength="20" onkeydown="if(event.key==='Enter')voegStatusToe()">
+        <button onclick="voegStatusToe()">+</button>
+      </div>
+    `;
+  }
+
+  document.body.appendChild(popup);
+  setTimeout(() => {
+    document.addEventListener('click', function h(e) {
+      if (!popup.contains(e.target) && !btn.contains(e.target)) { popup.remove(); document.removeEventListener('click', h); }
+    });
+  }, 50);
+}
+
+function voegTeamlidToe() {
+  const naam = document.getElementById('nieuwTeamlid').value.trim();
+  if (!naam) return;
+  if (!data.teamleden) data.teamleden = ['Ton','Seth','Gertjan','Marjan','Eigenaar'];
+  if (!data.teamleden.includes(naam)) { data.teamleden.push(naam); saveData(data); }
+  document.querySelectorAll('.beheer-popup').forEach(p => p.remove());
+  renderTeamFilters();
+  renderTableHead();
+  showToast(`${naam} toegevoegd`);
+}
+
+function verwijderTeamlid(idx) {
+  if (!confirm('Verwijderen?')) return;
+  data.teamleden.splice(idx, 1);
+  saveData(data);
+  document.querySelectorAll('.beheer-popup').forEach(p => p.remove());
+  renderTeamFilters();
+  renderTableHead();
+}
+
+function voegStatusToe() {
+  const label = document.getElementById('nieuweStatus').value.trim();
+  if (!label) return;
+  const kleuren = ['#5b6af0','#8e44ad','#16a085','#d35400','#2c3e50'];
+  const kleur = kleuren[getStatussen().length % kleuren.length];
+  if (!data.statussen) data.statussen = [];
+  data.statussen.push({ id: label.toLowerCase().replace(/\s+/g,'_'), label, kleur });
+  saveData(data);
+  document.querySelectorAll('.beheer-popup').forEach(p => p.remove());
+  renderTable();
+  showToast(`Status "${label}" toegevoegd`);
+}
+
+function verwijderStatus(idx) {
+  if (!confirm('Status verwijderen?')) return;
+  data.statussen.splice(idx, 1);
+  saveData(data);
+  document.querySelectorAll('.beheer-popup').forEach(p => p.remove());
+  renderTable();
+}
+
+function renderSidebar() {
+  const nav = document.getElementById('clientNav');
+  nav.innerHTML = '';
+  data.klanten.forEach(k => {
+    const klantActies = data.acties.filter(a => a.klantId === k.id);
+    const dueCount = klantActies.filter(a => isDue(a)).length;
+    const openCount = klantActies.filter(a => a.status === 'open' && !isDue(a)).length;
+    const hasOpen = openCount > 0 || dueCount > 0;
+    const isActive = activeKlantId === k.id && activeView === 'acties';
+    const div = document.createElement('div');
+    div.className = 'client-item' + (isActive ? ' active' : '');
+    div.innerHTML = `<span class="client-dot${hasOpen ? ' has-open' : ''}"></span>${k.naam}<span class="client-count" title="${openCount} open, ${dueCount} due">${openCount + dueCount}</span>`;
+    div.onclick = () => selectKlant(k.id);
+    nav.appendChild(div);
+  });
+}
+
+function renderTeamFilters() {
+  const wrap = document.getElementById('teamFilters');
+  wrap.innerHTML = '';
+  getTeamleden().forEach(naam => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (filterTeamleden.has(naam) ? ' active' : '');
+    btn.textContent = naam;
+    btn.style.marginRight = '4px';
+    btn.onclick = () => {
+      if (filterTeamleden.has(naam)) filterTeamleden.delete(naam);
+      else filterTeamleden.add(naam);
+      renderTeamFilters();
+      renderTable();
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+function setView(v) {
+  activeView = v;
+  if (v === 'acties' && activeKlantId) {
+    renderActielijst();
+  } else if (v === 'mijn') {
+    renderMijnActies();
+  } else if (v === 'dashboard') {
+    renderDashboard();
+  }
+}
+
+function selectKlant(id) {
+  activeKlantId = id;
+  activeView = 'acties';
+  renderActielijst();
+  renderSidebar();
+}
+
+function renderActielijst() {
+  const klant = data.klanten.find(k => k.id === activeKlantId);
+  document.getElementById('mainTitle').textContent = klant ? klant.naam : '';
+
+  // Vergadering label: laatste versie
+  const versions = data.versies.filter(v => v.klantId === activeKlantId);
+  const lastV = versions[versions.length - 1];
+  document.getElementById('vergaderingLabel').textContent = lastV
+    ? `Laatste versie: ${lastV.naam} (${formatDate(lastV.datum)})`
+    : 'Nog geen versie opgeslagen';
+
+  document.getElementById('btnVersions').style.display = '';
+  document.getElementById('btnSluit').style.display = '';
+  document.getElementById('btnNieuw').style.display = '';
+  document.getElementById('btnPrint').style.display = '';
+  document.getElementById('btnExcel').style.display = '';
+  document.getElementById('btnImport').style.display = '';
+  // Print header
+  document.getElementById('printTitle').textContent = `Actielijst – ${klant ? klant.naam : ''}`;
+  const now = new Date().toLocaleDateString('nl-NL', { day:'2-digit', month:'long', year:'numeric' });
+  document.getElementById('printMeta').textContent = `BVC Vastgoed Consultants · Afgedrukt op ${now}`;
+  document.getElementById('statsBar').style.display = '';
+  document.getElementById('filterBar').style.display = '';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('mainTable').style.display = '';
+
+  renderTableHead();
+  updateStats();
+  renderTable();
+}
+
+function getFilteredActies() {
+  let acties = data.acties.filter(a => a.klantId === activeKlantId);
+
+  // Bereken due status
+  acties = acties.map(a => ({
+    ...a,
+    effectiefDue: isDue(a),
+  }));
+
+  if (filterStatussen.size > 0) {
+    acties = acties.filter(a => {
+      if (filterStatussen.has('open') && a.status === 'open' && !a.effectiefDue) return true;
+      if (filterStatussen.has('due') && a.effectiefDue) return true;
+      if (filterStatussen.has('done') && a.status === 'done') return true;
+      if (filterStatussen.has('hold') && a.status === 'hold') return true;
+      return false;
+    });
+  }
+
+  if (filterTeamleden.size > 0) {
+    acties = acties.filter(a => verAntwNamen(a).some(n => filterTeamleden.has(n)));
+  }
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    acties = acties.filter(a =>
+      (a.onderwerp || '').toLowerCase().includes(q) ||
+      (a.actie || '').toLowerCase().includes(q) ||
+      (a.vestiging || '').toLowerCase().includes(q)
+    );
+  }
+  return applySort(acties);
+}
+
+function isDue(actie) {
+  if (actie.status === 'done' || actie.status === 'hold') return false;
+  const due = getDueDate(actie);
+  if (!due) return false;
+  return new Date(due) < new Date(new Date().toISOString().split('T')[0]);
+}
+
+// Due date = aangemaaktOp + doorlooptijd (of postponedTot als die er is)
+function getDueDate(actie) {
+  if (actie.postponedTot) return actie.postponedTot;
+  if (actie.dueDateOverride) return actie.dueDateOverride;
+  if (!actie.doorlooptijd || !actie.aangemaaktOp) return null;
+  const d = new Date(actie.aangemaaktOp);
+  const dagen = DOORLOOP_DAGEN[actie.doorlooptijd];
+  if (!dagen) return null;
+  d.setDate(d.getDate() + dagen);
+  return d.toISOString().split('T')[0];
+}
+
+function saveDueDateOverride(id, val) {
+  const a = data.acties.find(a => a.id === id);
+  if (!a) return;
+  a.postponedTot = null;
+  a.dueDateOverride = val || null;
+  saveData(data);
+  updateStats();
+  renderTable();
+}
+
+
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  const acties = getFilteredActies();
+  tbody.innerHTML = '';
+
+  if (acties.length === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="11" style="text-align:center;padding:40px;color:var(--text-muted)">Geen acties gevonden</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+
+  acties.forEach(a => {
+    const tr = document.createElement('tr');
+    tr.className = a.status === 'done' ? 'done-row' : '';
+    tr.dataset.id = a.id;
+    const namen = verAntwNamen(a);
+    const isOverdue = a.effectiefDue;
+
+    tr.innerHTML = `
+      <td class="col-ref td-ref">${a.ref || ''}</td>
+      <td class="col-invoerdatum">
+        <input type="date" value="${a.aangemaaktOp || ''}" onchange="saveInvoerdatum(${a.id},this.value)" style="font-size:11px;border:1px solid #d0d8e8;border-radius:3px;background:#fff;padding:4px;width:100%;height:36px;box-sizing:border-box;">
+      </td>
+      <td class="col-onderwerp td-onderwerp">
+        <div class="cel-scroll" contenteditable="true" onblur="saveCell(${a.id},'onderwerp',this)">${esc(a.onderwerp)}</div>
+      </td>
+      <td class="col-vestiging td-vestiging">
+        <div class="cel-scroll" contenteditable="true" onblur="saveCell(${a.id},'vestiging',this)">${esc(a.vestiging)}</div>
+      </td>
+      <td class="col-actie td-actie">
+        <div class="cel-scroll" contenteditable="true" onblur="saveCell(${a.id},'actie',this)">${esc(a.actie)}</div>
+      </td>
+      <td class="col-verantw">
+        <div class="verantw-display" onclick="openVerantwPopup(${a.id}, this)">
+          ${namen.map(n => `<span class="av-chip av-${n}" title="${n}">${n.substring(0,2).toUpperCase()}</span>`).join('')}
+          ${namen.length === 0 ? '<span style="font-size:11px;color:var(--text-muted)">—</span>' : ''}
+        </div>
+      </td>
+      <td class="col-doorloop">
+        <select onchange="setDoorlooptijd(${a.id},this.value)" style="font-size:11px;border:1px solid #d0d8e8;border-radius:3px;background:#fff;cursor:pointer;color:inherit;width:100%;padding:4px;">
+          ${DOORLOOPTIJDEN.map(d => `<option value="${d.id}" ${(a.doorlooptijd||'')===d.id?'selected':''}>${d.label}</option>`).join('')}
+        </select>
+      </td>
+      <td class="col-duedate">
+        <input type="date" value="${getDueDate(a) || ''}" onchange="saveDueDateOverride(${a.id},this.value)"
+          style="font-size:11px;border:1px solid #d0d8e8;border-radius:3px;background:#fff;padding:4px;width:100%;height:36px;box-sizing:border-box;color:${isOverdue ? 'var(--red)' : 'inherit'};font-weight:${isOverdue ? '700' : '400'};">
+      </td>
+      <td class="col-status">
+        ${isOverdue
+          ? '<span class="tag tag-due">Due</span>'
+          : `<select onchange="changeStatus(${a.id},this.value)" style="font-size:11px;border:none;background:transparent;cursor:pointer;color:inherit;width:100%;">
+              ${getStatussen().map(s => `<option value="${s.id}" ${a.status===s.id?'selected':''}>${s.label}</option>`).join('')}
+            </select>`
+        }
+      </td>
+      <td class="col-opmerking">
+        <div class="cel-scroll" contenteditable="true" onblur="saveCell(${a.id},'opmerking',this)">${esc(a.opmerking || '')}</div>
+      </td>
+      <td class="col-actions">
+        <div class="row-actions">
+          ${a.status === 'open' ? `<button class="row-btn" title="Uitstellen" onclick="showPostpone(${a.id}, this)">⏱</button>` : ''}
+          <button class="row-btn" title="Verwijderen" onclick="deleteActie(${a.id})">🗑</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Rij onderaan om snel een nieuwe actie toe te voegen
+  const addTr = document.createElement('tr');
+  addTr.id = 'addRowTrigger';
+  addTr.style.cursor = 'pointer';
+  addTr.innerHTML = `<td colspan="11" style="padding:10px;text-align:left;color:var(--navy);font-size:12px;font-weight:500;border-top:1px dashed var(--border-strong);" onclick="nieuweActie()">+ Nieuwe actie toevoegen</td>`;
+  tbody.appendChild(addTr);
+}
+
+function updateStats() {
+  const acties = data.acties.filter(a => a.klantId === activeKlantId);
+  const due = acties.filter(a => isDue(a)).length;
+  const open = acties.filter(a => a.status === 'open' && !isDue(a)).length;
+  const done = acties.filter(a => a.status === 'done').length;
+  const hold = acties.filter(a => a.status === 'hold').length;
+
+  document.getElementById('statOpen').textContent = open;
+  document.getElementById('statDue').textContent = due;
+  document.getElementById('statDone').textContent = done;
+  document.getElementById('statHold').textContent = hold;
+
+  const bo = document.getElementById('badgeOpen');
+  const bd = document.getElementById('badgeDue');
+  const bdone = document.getElementById('badgeDone');
+  bo.textContent = `${open} open`; bo.style.display = open > 0 ? '' : 'none';
+  bd.textContent = `${due} due`; bd.style.display = due > 0 ? '' : 'none';
+  bdone.textContent = `${done} done`; bdone.style.display = '';
+}
+
+// === INLINE EDIT ===
+function saveCell(id, field, el) {
+  const a = data.acties.find(a => a.id === id);
+  if (!a) return;
+  a[field] = el.textContent.trim();
+  saveData(data);
+  updateStats();
+  renderSidebar();
+}
+
+function saveInvoerdatum(id, val) {
+  const a = data.acties.find(a => a.id === id);
+  if (!a) return;
+  a.aangemaaktOp = val;
+  saveData(data);
+  updateStats();
+  renderTable();
+}
+
+function changeStatus(id, val) {
+  const a = data.acties.find(a => a.id === id);
+  if (!a) return;
+  a.status = val;
+  saveData(data);
+  updateStats();
+  renderSidebar();
+  renderTable();
+}
+
+function setDoorlooptijd(id, val) {
+  const a = data.acties.find(a => a.id === id);
+  if (!a) return;
+  a.doorlooptijd = val;
+  a.postponedTot = null; // reset uitstel bij nieuwe doorlooptijd
+  saveData(data);
+  updateStats();
+  renderSidebar();
+  renderTable();
+}
+
+// === VERANTW POPUP ===
+function openVerantwPopup(id, displayEl) {
+  document.querySelectorAll('.verantw-popup').forEach(p => p.remove());
+  const a = data.acties.find(a => a.id === id);
+  if (!a) return;
+  const huidig = verAntwNamen(a);
+
+  const popup = document.createElement('div');
+  popup.className = 'verantw-popup';
+  const rect = displayEl.getBoundingClientRect();
+  popup.style.top = (rect.bottom + 4) + 'px';
+  popup.style.left = rect.left + 'px';
+
+  popup.innerHTML = getTeamleden().map(naam => `
+    <label>
+      <input type="checkbox" value="${naam}" ${huidig.includes(naam) ? 'checked' : ''} onchange="saveVerantw(${id})">
+      <span class="av-chip av-${naam}">${naam.substring(0,2).toUpperCase()}</span>
+      ${naam}
+    </label>
+  `).join('');
+
+  document.body.appendChild(popup);
+
+  // Sluit bij klik buiten
+  setTimeout(() => {
+    document.addEventListener('click', function handler(e) {
+      if (!popup.contains(e.target) && !displayEl.contains(e.target)) {
+        popup.remove();
+        document.removeEventListener('click', handler);
+      }
+    });
+  }, 50);
+}
+
+function saveVerantw(id) {
+  const a = data.acties.find(a => a.id === id);
+  if (!a) return;
+  const checkboxes = document.querySelectorAll('.verantw-popup input[type=checkbox]:checked');
+  a.verantw = Array.from(checkboxes).map(cb => cb.value);
+  saveData(data);
+
+  // Update display zonder volledige re-render
+  const tr = document.querySelector(`tr[data-id="${id}"]`);
+  if (tr) {
+    const display = tr.querySelector('.verantw-display');
+    if (display) {
+      display.innerHTML = a.verantw.length > 0
+        ? a.verantw.map(n => `<span class="av-chip av-${n}" title="${n}">${n.substring(0,2).toUpperCase()}</span>`).join('')
+        : '<span style="font-size:11px;color:var(--text-muted)">—</span>';
+    }
+  }
+  renderSidebar();
+}
+
+// === NIEUWE ACTIE ===
+function nieuweActie() {
+  if (!activeKlantId) return;
+  // Verwijder eerder nieuwe-rij als die er al is
+  const existing = document.getElementById('newActieRow');
+  if (existing) existing.remove();
+  const trigger = document.getElementById('addRowTrigger');
+  if (trigger) trigger.remove();
+
+  const tbody = document.getElementById('tableBody');
+  const tr = document.createElement('tr');
+  tr.className = 'new-row';
+  tr.id = 'newActieRow';
+
+  const nextRef = Math.max(0, ...data.acties.filter(a => a.klantId === activeKlantId).map(a => parseInt(a.ref) || 0)) + 1;
+
+  tr.innerHTML = `
+    <td class="col-ref"><input value="${nextRef}" id="newRef" style="width:36px"></td>
+    <td class="col-invoerdatum"><input type="date" id="newInvoerdatum" value="${new Date().toISOString().split('T')[0]}"></td>
+    <td class="col-onderwerp"><textarea id="newOnderwerp" placeholder="Onderwerp"></textarea></td>
+    <td class="col-vestiging"><textarea id="newVestiging" placeholder="Vestiging"></textarea></td>
+    <td class="col-actie"><textarea id="newActie" placeholder="Actiepunt omschrijving"></textarea></td>
+    <td class="col-verantw">
+      <select id="newVerantw" multiple size="1" style="font-size:12px;min-width:90px;border:1px solid var(--border-strong);border-radius:4px;padding:3px;height:36px;">
+        ${getTeamleden().map(n => `<option value="${n}">${n}</option>`).join('')}
+      </select>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Ctrl+klik voor meerdere</div>
+    </td>
+    <td class="col-doorloop">
+      <select id="newDoorloop">
+        ${DOORLOOPTIJDEN.map(d => `<option value="${d.id}">${d.label}</option>`).join('')}
+      </select>
+    </td>
+    <td class="col-duedate"><span style="font-size:10px;color:var(--text-muted)">automatisch</span></td>
+    <td class="col-status">
+      <select id="newStatus">
+        ${getStatussen().map(s => `<option value="${s.id}">${s.label}</option>`).join('')}
+      </select>
+    </td>
+    <td class="col-opmerking"><textarea id="newOpmerking" placeholder="Opmerking..."></textarea></td>
+    <td class="col-actions">
+      <button class="row-btn" onclick="saveNieuweActie()" title="Opslaan" style="background:var(--navy);color:#fff;border-color:var(--navy)">✓</button>
+    </td>
+  `;
+  tbody.appendChild(tr);
+  document.getElementById('newOnderwerp').focus();
+  tr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  // Enter = opslaan, Escape = annuleren
+  tr.addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveNieuweActie();
+    if (e.key === 'Escape') { tr.remove(); renderTable(); }
+  });
+}
+
+function saveNieuweActie() {
+  const verantwSel = document.getElementById('newVerantw');
+  const gekozenNamen = Array.from(verantwSel.selectedOptions).map(o => o.value);
+  const actie = {
+    id: data.nextId++,
+    klantId: activeKlantId,
+    ref: document.getElementById('newRef').value.trim(),
+    onderwerp: document.getElementById('newOnderwerp').value.trim(),
+    vestiging: document.getElementById('newVestiging').value.trim(),
+    actie: document.getElementById('newActie').value.trim(),
+    verantw: gekozenNamen,
+    doorlooptijd: document.getElementById('newDoorloop').value,
+    status: document.getElementById('newStatus').value,
+    opmerking: document.getElementById('newOpmerking').value.trim(),
+    aangemaaktOp: document.getElementById('newInvoerdatum').value || new Date().toISOString().split('T')[0],
+    postponedTot: null,
+  };
+
+  if (!actie.actie) { showToast('Vul minimaal een actiepunt in'); return; }
+
+  data.acties.push(actie);
+  saveData(data);
+  document.getElementById('newActieRow').remove();
+  updateStats();
+  renderSidebar();
+  renderTable();
+  showToast('Actie toegevoegd');
+}
+
+// === DELETE ===
+function deleteActie(id) {
+  if (!confirm('Actie verwijderen?')) return;
+  data.acties = data.acties.filter(a => a.id !== id);
+  saveData(data);
+  updateStats();
+  renderSidebar();
+  renderTable();
+  showToast('Actie verwijderd');
+}
+
+// === POSTPONE ===
+function showPostpone(id, btn) {
+  document.querySelectorAll('.postpone-menu').forEach(m => m.remove());
+  const menu = document.createElement('div');
+  menu.className = 'postpone-menu';
+  menu.style.position = 'fixed';
+  const rect = btn.getBoundingClientRect();
+  menu.style.top = (rect.bottom + 4) + 'px';
+  menu.style.left = (rect.left - 140) + 'px';
+  menu.innerHTML = DOORLOOPTIJDEN
+    .filter(d => d.id)
+    .map(d => `<div class="postpone-opt" onclick="postpone(${id},'${d.id}')">Uitstellen met ${d.label}</div>`)
+    .join('');
+  document.body.appendChild(menu);
+  setTimeout(() => document.addEventListener('click', () => menu.remove(), { once: true }), 50);
+}
+
+function postpone(id, doorloopId) {
+  const a = data.acties.find(a => a.id === id);
+  if (!a) return;
+  const base = getDueDate(a) || new Date().toISOString().split('T')[0];
+  const d = new Date(base);
+  const dagen = DOORLOOP_DAGEN[doorloopId];
+  d.setDate(d.getDate() + dagen);
+  a.dueDateOverride = null; // uitstel werkt via postponedTot, override wordt genegeerd
+  a.postponedTot = d.toISOString().split('T')[0];
+  saveData(data);
+  renderTable();
+  const label = DOORLOOPTIJDEN.find(x => x.id === doorloopId).label;
+  showToast(`Uitgesteld met ${label}`);
+  document.querySelectorAll('.postpone-menu').forEach(m => m.remove());
+}
+
+// === FILTER ===
+function toggleStatusFilter(status, btn) {
+  if (filterStatussen.has(status)) {
+    filterStatussen.delete(status);
+  } else {
+    filterStatussen.add(status);
+  }
+  btn.classList.toggle('active');
+  document.getElementById('filterAlleBtn').classList.toggle('active', filterStatussen.size === 0);
+  renderTable();
+}
+
+function toggleAlleFilter(btn) {
+  filterStatussen.clear();
+  document.querySelectorAll('.filter-bar .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function setSearch(v) {
+  searchQuery = v;
+  renderTable();
+}
+
+// === VERSIES ===
+function sluitVergadering() {
+  const now = new Date().toISOString().split('T')[0];
+  const klant = data.klanten.find(k => k.id === activeKlantId);
+  document.getElementById('modalNaam').value = `Werkoverleg ${klant ? klant.naam : ''} – BVC`;
+  document.getElementById('modalDatum').value = now;
+  document.getElementById('modalAanwezigen').value = '';
+  document.getElementById('modalBg').style.display = '';
+}
+
+function opslaanVersie() {
+  const naam = document.getElementById('modalNaam').value.trim();
+  const datum = document.getElementById('modalDatum').value;
+  const aanwezigen = document.getElementById('modalAanwezigen').value.trim();
+  if (!naam || !datum) { showToast('Vul naam en datum in'); return; }
+
+  const snapshot = data.acties
+    .filter(a => a.klantId === activeKlantId)
+    .map(a => ({ ...a }));
+
+  data.versies.push({
+    id: Date.now(),
+    klantId: activeKlantId,
+    naam,
+    datum,
+    aanwezigen,
+    snapshot,
+    open: snapshot.filter(a => a.status === 'open').length,
+    done: snapshot.filter(a => a.status === 'done').length,
+  });
+
+  saveData(data);
+  document.getElementById('modalBg').style.display = 'none';
+  renderActielijst();
+  showToast('Versie opgeslagen: ' + naam);
+}
+
+function showVersions() {
+  const panel = document.getElementById('versionsPanel');
+  panel.classList.add('open');
+  const body = document.getElementById('versionsBody');
+  const versions = data.versies.filter(v => v.klantId === activeKlantId).reverse();
+
+  if (versions.length === 0) {
+    body.innerHTML = '<div style="padding:20px;color:var(--text-muted);font-size:13px;">Nog geen versies opgeslagen. Sluit een vergadering af om een versie te bewaren.</div>';
+    return;
+  }
+
+  body.innerHTML = versions.map(v => `
+    <div class="version-item">
+      <div class="vi-date">${v.naam}</div>
+      <div class="vi-meta">${formatDate(v.datum)}${v.aanwezigen ? ' · ' + v.aanwezigen : ''}</div>
+      <div class="vi-counts">
+        <span class="vi-c" style="background:var(--red-bg);color:var(--red)">${v.open} open</span>
+        <span class="vi-c" style="background:var(--green-bg);color:var(--green)">${v.done} done</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function hideVersions() {
+  document.getElementById('versionsPanel').classList.remove('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modalBg'))
+    document.getElementById('modalBg').style.display = 'none';
+}
+
+// === NIEUWE ACTIELIJST / KLANT ===
+function openNieuweKlantModal() {
+  const now = new Date().toISOString().split('T')[0];
+  document.getElementById('nkNaam').value = '';
+  document.getElementById('nkVergadering').value = '';
+  document.getElementById('nkDatum').value = now;
+  document.getElementById('nkAanwezigen').value = '';
+  document.getElementById('nieuweKlantModalBg').style.display = '';
+  setTimeout(() => document.getElementById('nkNaam').focus(), 50);
+}
+
+function closeNieuweKlantModal(e) {
+  if (e.target === document.getElementById('nieuweKlantModalBg'))
+    document.getElementById('nieuweKlantModalBg').style.display = 'none';
+}
+
+function maakNieuweActielijst() {
+  const naam = document.getElementById('nkNaam').value.trim();
+  if (!naam) { showToast('Vul een klantnaam in'); return; }
+  const id = naam.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') + '_' + Date.now();
+  data.klanten.push({ id, naam });
+
+  // Sla optioneel meteen een startersversie op
+  const vergNaam = document.getElementById('nkVergadering').value.trim();
+  const datum = document.getElementById('nkDatum').value;
+  const aanwezigen = document.getElementById('nkAanwezigen').value.trim();
+  if (vergNaam && datum) {
+    data.versies.push({ id: Date.now(), klantId: id, naam: vergNaam, datum, aanwezigen, snapshot: [], open: 0, done: 0 });
+  }
+
+  saveData(data);
+  document.getElementById('nieuweKlantModalBg').style.display = 'none';
+  document.getElementById('klantoverzicht').style.display = 'none';
+  document.getElementById('appScherm').style.display = '';
+  renderSidebar();
+  selectKlant(id);
+  showToast(`Actielijst aangemaakt voor ${naam}`);
+}
+
+// === MIJN ACTIES VIEW ===
+function renderMijnActies() {
+  activeKlantId = null;
+  document.getElementById('mainTitle').textContent = 'Mijn acties';
+  document.getElementById('vergaderingLabel').textContent = '';
+  document.getElementById('btnVersions').style.display = 'none';
+  document.getElementById('btnSluit').style.display = 'none';
+  document.getElementById('btnNieuw').style.display = 'none';
+  document.getElementById('statsBar').style.display = 'none';
+  document.getElementById('filterBar').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('mainTable').style.display = 'none';
+
+  const wrap = document.getElementById('tableWrap');
+  wrap.innerHTML = `
+    <div style="padding:20px">
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Selecteer een teamlid om alle openstaande acties te zien over alle klanten heen.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+        ${getTeamleden().map(naam => {
+          const open = data.acties.filter(a => verAntwNamen(a).includes(naam) && a.status === 'open' && !isDue(a)).length;
+          const due = data.acties.filter(a => verAntwNamen(a).includes(naam) && isDue(a)).length;
+          return `<button onclick="renderMijnActiesVoor('${naam}')" style="padding:10px 18px;border-radius:8px;border:1px solid var(--border);background:var(--white);cursor:pointer;font-size:13px;font-weight:500;">
+            <div class="av-chip av-${naam}" style="margin:0 auto 6px;width:28px;height:28px;font-size:11px;">${naam.substring(0,2).toUpperCase()}</div>
+            <div>${naam}</div>
+            <div style="font-size:11px;color:var(--red);margin-top:4px;">${open} open${due > 0 ? ` · ${due} due` : ''}</div>
+          </button>`;
+        }).join('')}
+      </div>
+      <div id="mijnActiesDetail"></div>
+    </div>
+  `;
+}
+
+function renderMijnActiesVoor(naam) {
+  const tl = { naam };
+  const acties = data.acties.filter(a => verAntwNamen(a).includes(naam) && a.status !== 'done');
+  const detail = document.getElementById('mijnActiesDetail');
+
+  if (acties.length === 0) {
+    detail.innerHTML = `<div style="color:var(--text-muted);font-size:13px;">Geen openstaande acties voor ${tl.naam}.</div>`;
+    return;
+  }
+
+  // Groepeer per klant
+  const perKlant = {};
+  acties.forEach(a => {
+    if (!perKlant[a.klantId]) perKlant[a.klantId] = [];
+    perKlant[a.klantId].push(a);
+  });
+
+  detail.innerHTML = `<div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:12px;">Acties voor ${tl.naam}</div>` +
+    Object.entries(perKlant).map(([kid, acties]) => {
+      const klant = data.klanten.find(k => k.id === kid);
+      return `
+        <div style="margin-bottom:16px;">
+          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">${klant ? klant.naam : kid}</div>
+          ${acties.map(a => `
+            <div style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:6px;background:var(--white);">
+              <div style="font-weight:500;font-size:13px;">${esc(a.onderwerp)}</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:3px;">${esc(a.actie)}</div>
+              <div style="margin-top:6px;display:flex;gap:8px;align-items:center;">
+                ${isDue(a) ? '<span class="tag tag-due">Due</span>' : '<span class="tag tag-open">Open</span>'}
+                ${a.vestiging ? `<span style="font-size:11px;color:var(--text-muted)">${esc(a.vestiging)}</span>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }).join('');
+}
+
+// === DASHBOARD VIEW ===
+function renderDashboard() {
+  activeKlantId = null;
+  document.getElementById('mainTitle').textContent = 'Dashboard';
+  document.getElementById('vergaderingLabel').textContent = '';
+  document.getElementById('btnVersions').style.display = 'none';
+  document.getElementById('btnSluit').style.display = 'none';
+  document.getElementById('btnNieuw').style.display = 'none';
+  document.getElementById('statsBar').style.display = 'none';
+  document.getElementById('filterBar').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('mainTable').style.display = 'none';
+
+  const wrap = document.getElementById('tableWrap');
+
+  const totalOpen = data.acties.filter(a => a.status === 'open').length;
+  const totalDue = data.acties.filter(a => isDue(a)).length;
+  const totalDone = data.acties.filter(a => a.status === 'done').length;
+
+  wrap.innerHTML = `
+    <div style="padding:20px;display:flex;flex-direction:column;gap:20px;">
+
+      <!-- Totaal stats -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+        <div class="stat"><div class="stat-label">Totaal open (alle klanten)</div><div class="stat-value red">${totalOpen}</div></div>
+        <div class="stat"><div class="stat-label">Totaal due</div><div class="stat-value amber">${totalDue}</div></div>
+        <div class="stat"><div class="stat-label">Totaal afgerond</div><div class="stat-value green">${totalDone}</div></div>
+      </div>
+
+      <!-- Per klant -->
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Open acties per klant</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${data.klanten.map(k => {
+            const kOpen = data.acties.filter(a => a.klantId === k.id && a.status === 'open' && !isDue(a)).length;
+            const kDue = data.acties.filter(a => a.klantId === k.id && isDue(a)).length;
+            const kDone = data.acties.filter(a => a.klantId === k.id && a.status === 'done').length;
+            return `
+              <div style="padding:12px 14px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="selectKlant('${k.id}')">
+                <div style="flex:1;font-size:13px;font-weight:500;">${k.naam}</div>
+                <span class="badge badge-open">${kOpen} open</span>
+                ${kDue > 0 ? `<span class="badge badge-due">${kDue} due</span>` : ''}
+                <span class="badge badge-done">${kDone} done</span>
+                <span style="font-size:12px;color:var(--text-muted)">→</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- Per teamlid -->
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Open acties per teamlid</div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
+          ${getTeamleden().map(naam => {
+            const tOpen = data.acties.filter(a => verAntwNamen(a).includes(naam) && a.status === 'open' && !isDue(a)).length;
+            const tDue = data.acties.filter(a => verAntwNamen(a).includes(naam) && isDue(a)).length;
+            return `
+              <div style="padding:14px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);text-align:center;">
+                <div class="av-chip av-${naam}" style="margin:0 auto 8px;width:32px;height:32px;font-size:12px;">${naam.substring(0,2).toUpperCase()}</div>
+                <div style="font-size:13px;font-weight:600;">${naam}</div>
+                <div style="margin-top:8px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">
+                  <span class="badge badge-open">${tOpen}</span>
+                  ${tDue > 0 ? `<span class="badge badge-due">${tDue} due</span>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+
+    </div>
+  `;
+}
+
+// === PRINT ===
+function printLijst() {
+  window.print();
+}
+
+// === EXCEL EXPORT ===
+function exportExcel() {
+  if (!activeKlantId) return;
+  const klant = data.klanten.find(k => k.id === activeKlantId);
+  const acties = data.acties.filter(a => a.klantId === activeKlantId);
+
+  const wb = XLSX.utils.book_new();
+
+  // Bouw rijen op
+  const header = ['#', 'Ref', 'Onderwerp', 'Vestiging', 'Actiepunt', 'Verantwoordelijke', 'Aangemaakt op', 'Doorlooptijd', 'Due date', 'Status', 'Opmerking'];
+  const rows = acties.map((a, i) => {
+    const namen = verAntwNamen(a).join(', ');
+    const st = getStatussen().find(s => s.id === a.status);
+    const status = isDue(a) ? 'Due' : (st ? st.label : a.status);
+    const dt = DOORLOOPTIJDEN.find(d => d.id === (a.doorlooptijd || ''));
+    return [
+      i + 1,
+      a.ref || '',
+      a.onderwerp || '',
+      a.vestiging || '',
+      a.actie || '',
+      namen,
+      a.aangemaaktOp ? formatDate(a.aangemaaktOp) : '',
+      dt ? dt.label : '',
+      getDueDate(a) ? formatDate(getDueDate(a)) : '',
+      status,
+      a.opmerking || '',
+    ];
+  });
+
+  // Sheet aanmaken
+  const ws = XLSX.utils.aoa_to_sheet([]);
+
+  // Metadata rijen
+  XLSX.utils.sheet_add_aoa(ws, [
+    ['BVC Vastgoed Consultants'],
+    [`Actielijst – ${klant ? klant.naam : ''}`],
+    [`Exportdatum: ${new Date().toLocaleDateString('nl-NL')}`],
+    [],
+    header,
+    ...rows,
+  ], { origin: 'A1' });
+
+  // Kolombreedte instellen
+  ws['!cols'] = [
+    { wch: 4 },  // #
+    { wch: 6 },  // Ref
+    { wch: 22 }, // Onderwerp
+    { wch: 24 }, // Vestiging
+    { wch: 50 }, // Actiepunt
+    { wch: 18 }, // Verantwoordelijke
+    { wch: 14 }, // Aangemaakt op
+    { wch: 12 }, // Doorlooptijd
+    { wch: 12 }, // Due date
+    { wch: 10 }, // Status
+    { wch: 30 }, // Opmerking
+  ];
+
+  // Bevroren rijen (header zichtbaar bij scrollen)
+  ws['!freeze'] = { xSplit: 0, ySplit: 5 };
+
+  XLSX.utils.book_append_sheet(wb, ws, klant ? klant.naam.substring(0, 31) : 'Actielijst');
+
+  const datum = new Date().toISOString().split('T')[0];
+  const bestandsnaam = `Actielijst_${(klant ? klant.naam : 'BVC').replace(/\s+/g,'_')}_${datum}.xlsx`;
+  XLSX.writeFile(wb, bestandsnaam);
+  showToast(`Geëxporteerd: ${bestandsnaam}`);
+}
+
+// === EXCEL IMPORT ===
+let importPendingRows = [];
+let importKolomMap = {};
+
+const IMPORT_VELD_ALIASSEN = {
+  ref: ['ref', 'referentie', 'nr', 'nummer'],
+  onderwerp: ['onderwerp', 'categorie'],
+  vestiging: ['vestiging', 'locatie', 'object', 'pand'],
+  actie: ['actiepunt', 'actie', 'omschrijving'],
+  verantw: ['verantw', 'verantwoordelijke', 'verantw.'],
+  aangemaaktOp: ['datum', 'invoerdatum', 'aangemaakt', 'aangemaakt op'],
+  gereedOp: ['gereed op', 'gereed', 'streefdatum'],
+  status: ['status'],
+  opmerking: ['opmerking', 'opmerkingen', 'notitie'],
+};
+
+function gokKolom(header) {
+  if (!header) return null;
+  const h = String(header).toLowerCase().trim();
+  for (const [veld, aliassen] of Object.entries(IMPORT_VELD_ALIASSEN)) {
+    if (aliassen.some(a => h === a || h.includes(a))) return veld;
+  }
+  return null;
+}
+
+function handleImportFile(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  document.getElementById('importModalBg').style.display = '';
+  document.getElementById('importBody').innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Bestand wordt gelezen...</div>';
+  document.getElementById('importConfirmBtn').style.display = 'none';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+      const sheetNaam = wb.SheetNames[0];
+      const sheet = wb.Sheets[sheetNaam];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
+
+      // Zoek de header-rij: de rij met de meeste herkenbare kolomnamen
+      let headerRowIdx = -1, beste = 0;
+      for (let i = 0; i < Math.min(rows.length, 30); i++) {
+        const gok = (rows[i] || []).filter(c => gokKolom(c)).length;
+        if (gok > beste) { beste = gok; headerRowIdx = i; }
+      }
+      if (headerRowIdx === -1 || beste === 0) {
+        document.getElementById('importBody').innerHTML = '<div style="color:var(--red);font-size:13px;">Geen herkenbare kolomkoppen gevonden in dit bestand.</div>';
+        return;
+      }
+
+      const headers = rows[headerRowIdx];
+      importKolomMap = {};
+      headers.forEach((h, idx) => { const veld = gokKolom(h); if (veld) importKolomMap[idx] = veld; });
+
+      importPendingRows = rows.slice(headerRowIdx + 1).filter(r => r && r.some(c => c !== '' && c != null));
+
+      toonImportPreview(headers, importKolomMap);
+    } catch (err) {
+      document.getElementById('importBody').innerHTML = `<div style="color:var(--red);font-size:13px;">Fout bij lezen: ${err.message}</div>`;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  evt.target.value = '';
+}
+
+function toonImportPreview(headers, kolomMap) {
+  const body = document.getElementById('importBody');
+  const gevondenVelden = Object.values(kolomMap);
+  const labels = { ref:'Ref', onderwerp:'Onderwerp', vestiging:'Vestiging', actie:'Actiepunt', verantw:'Verantw.', aangemaaktOp:'Invoerdatum', gereedOp:'Gereed op', status:'Status', opmerking:'Opmerking' };
+
+  let html = `<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">
+    ${importPendingRows.length} rijen gevonden. Herkende kolommen: ${gevondenVelden.map(v => labels[v]).join(', ') || 'geen'}.
+  </div>`;
+
+  html += `<div style="margin-bottom:14px;">
+    <label style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Importeren naar klant</label>
+    <select id="importKlantSelect" style="width:100%;font-size:13px;padding:7px 9px;border:1px solid var(--border-strong);border-radius:6px;margin-top:4px;">
+      ${data.klanten.map(k => `<option value="${k.id}" ${k.id===activeKlantId?'selected':''}>${k.naam}</option>`).join('')}
+      <option value="__nieuw__">+ Nieuwe klant aanmaken...</option>
+    </select>
+    <input id="importNieuweKlantNaam" placeholder="Naam nieuwe klant" style="display:none;width:100%;font-size:13px;padding:7px 9px;border:1px solid var(--border-strong);border-radius:6px;margin-top:6px;">
+  </div>`;
+
+  html += `<table style="width:100%;border-collapse:collapse;font-size:11px;">
+    <thead><tr>${headers.map((h,i) => `<th style="text-align:left;padding:4px 6px;border-bottom:1px solid var(--border);color:${kolomMap[i]?'var(--navy)':'var(--text-muted)'};">${kolomMap[i] ? labels[kolomMap[i]] : (h||'—')}</th>`).join('')}</tr></thead>
+    <tbody>${importPendingRows.slice(0,5).map(r => `<tr>${headers.map((h,i) => `<td style="padding:4px 6px;border-bottom:1px solid var(--border);color:var(--text-secondary);white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;">${esc(String(r[i]??''))}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table>`;
+  if (importPendingRows.length > 5) html += `<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">... en nog ${importPendingRows.length - 5} rijen</div>`;
+
+  body.innerHTML = html;
+  document.getElementById('importConfirmBtn').style.display = '';
+
+  document.getElementById('importKlantSelect').addEventListener('change', function() {
+    document.getElementById('importNieuweKlantNaam').style.display = this.value === '__nieuw__' ? '' : 'none';
+  });
+}
+
+function bevestigImport() {
+  let klantId = document.getElementById('importKlantSelect').value;
+  if (klantId === '__nieuw__') {
+    const naam = document.getElementById('importNieuweKlantNaam').value.trim();
+    if (!naam) { showToast('Vul een klantnaam in'); return; }
+    klantId = naam.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') + '_' + Date.now();
+    data.klanten.push({ id: klantId, naam });
+  }
+
+  let aantal = 0;
+  importPendingRows.forEach(r => {
+    const veldWaarden = {};
+    Object.entries(importKolomMap).forEach(([idx, veld]) => { veldWaarden[veld] = r[idx]; });
+    if (!veldWaarden.actie && !veldWaarden.onderwerp) return; // sla lege rijen over
+
+    const statusRaw = String(veldWaarden.status || '').toLowerCase();
+    let status = 'open';
+    if (statusRaw.includes('done') || statusRaw.includes('gereed') || statusRaw.includes('afgerond')) status = 'done';
+    else if (statusRaw.includes('hold') || statusRaw.includes('pauze')) status = 'hold';
+
+    const aangemaaktOp = parseImportDatum(veldWaarden.aangemaaktOp) || new Date().toISOString().split('T')[0];
+    const dueOverride = parseImportDatum(veldWaarden.gereedOp);
+
+    data.acties.push({
+      id: data.nextId++,
+      klantId,
+      ref: veldWaarden.ref ? String(veldWaarden.ref) : '',
+      onderwerp: veldWaarden.onderwerp || '',
+      vestiging: veldWaarden.vestiging || '',
+      actie: veldWaarden.actie || '',
+      verantw: veldWaarden.verantw ? [String(veldWaarden.verantw)] : [],
+      doorlooptijd: '',
+      dueDateOverride: dueOverride,
+      postponedTot: null,
+      status,
+      opmerking: veldWaarden.opmerking || '',
+      aangemaaktOp,
+    });
+    aantal++;
+  });
+
+  saveData(data);
+  document.getElementById('importModalBg').style.display = 'none';
+  renderSidebar();
+  selectKlant(klantId);
+  showToast(`${aantal} acties geïmporteerd`);
+}
+
+function parseImportDatum(val) {
+  if (!val) return null;
+  const s = String(val).trim();
+  const ymd = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (ymd) return `${ymd[1]}-${ymd[2]}-${ymd[3]}`;
+  const dmy = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+  if (dmy) return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`;
+  return null;
+}
+
+// === HUURDERSMUTATIES ===
+const MAANDNAMEN = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+
+function getMutatiesJaren() { return data.mutatiesJaren || [2024,2025,2026]; }
+
+function voegJaarToe() {
+  const jaren = getMutatiesJaren();
+  const nieuw = Math.max(...jaren) + 1;
+  if (jaren.includes(nieuw)) { showToast('Dit jaar staat er al in'); return; }
+  data.mutatiesJaren.push(nieuw);
+  data.mutatiesJaren.sort((a,b) => a-b);
+  saveData(data);
+  showToast(`Jaar ${nieuw} toegevoegd`);
+  renderHuurdersmutaties();
+}
+
+function getAutocompleteWaarden(veld) {
+  const set = new Set();
+  (data.mutaties || []).forEach(m => { if (m[veld]) set.add(m[veld]); });
+  return Array.from(set).sort();
+}
+
+function renderHuurdersmutaties() {
+  const jaarSelect = document.getElementById('hmJaarFilter');
+  const huidigJaar = new Date().getFullYear();
+  const jaren = getMutatiesJaren();
+  const eerderGeselecteerd = jaarSelect.value;
+  jaarSelect.innerHTML = `<option value="alle">Alle jaren</option>` + jaren.map(j => `<option value="${j}">${j}</option>`).join('');
+  jaarSelect.value = eerderGeselecteerd && [...jaarSelect.options].some(o=>o.value===eerderGeselecteerd) ? eerderGeselecteerd : String(huidigJaar);
+
+  const jaarFilter = jaarSelect.value;
+  const zoek = (document.getElementById('hmZoek').value || '').toLowerCase();
+
+  let mutaties = data.mutaties || [];
+  if (jaarFilter !== 'alle') mutaties = mutaties.filter(m => String(m.jaar) === jaarFilter);
+  if (zoek) mutaties = mutaties.filter(m =>
+    (m.naam||'').toLowerCase().includes(zoek) || (m.locatie||'').toLowerCase().includes(zoek) || (m.administratie||'').toLowerCase().includes(zoek)
+  );
+
+  // Stats
+  const inCount = mutaties.filter(m => m.richting === 'in').length;
+  const uitCount = mutaties.filter(m => m.richting === 'uit').length;
+  document.getElementById('hmStats').innerHTML = `
+    <div class="hm-stat"><div class="hm-stat-label">Ingaand</div><div class="hm-stat-val" style="color:var(--green)">${inCount}</div></div>
+    <div class="hm-stat"><div class="hm-stat-label">Vertrekkend</div><div class="hm-stat-val" style="color:var(--red)">${uitCount}</div></div>
+    <div class="hm-stat"><div class="hm-stat-label">Netto</div><div class="hm-stat-val">${inCount-uitCount>=0?'+':''}${inCount-uitCount}</div></div>
+    <div class="hm-stat"><div class="hm-stat-label">Totaal</div><div class="hm-stat-val">${mutaties.length}</div></div>
+  `;
+
+  // Groepeer per jaar-maand, nieuwste eerst
+  const groepen = {};
+  mutaties.forEach(m => {
+    const key = `${m.jaar}-${String(m.maand).padStart(2,'0')}`;
+    if (!groepen[key]) groepen[key] = { in: [], uit: [] };
+    groepen[key][m.richting].push(m);
+  });
+  const sleutels = Object.keys(groepen).sort().reverse();
+
+  const wrap = document.getElementById('hmMaanden');
+  if (sleutels.length === 0) {
+    wrap.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px;">Geen mutaties gevonden</div>`;
+    return;
+  }
+
+  wrap.innerHTML = sleutels.map(key => {
+    const [jaar, maandNr] = key.split('-');
+    const g = groepen[key];
+    const maxRijen = Math.max(g.in.length, g.uit.length);
+    let rijenHtml = '';
+    for (let i = 0; i < maxRijen; i++) {
+      const inM = g.in[i], uitM = g.uit[i];
+      rijenHtml += `<div class="hm-row">
+        ${inM ? mutatieKaart(inM, 'in') : '<div class="hm-card empty"></div>'}
+        ${uitM ? mutatieKaart(uitM, 'uit') : '<div class="hm-card empty"></div>'}
+      </div>`;
+    }
+    rijenHtml += `<div class="hm-row">
+      <div class="hm-newcard" onclick="nieuweMutatieRij('${jaar}',${parseInt(maandNr)},'in')">+ Ingaand toevoegen</div>
+      <div class="hm-newcard out" onclick="nieuweMutatieRij('${jaar}',${parseInt(maandNr)},'uit')">+ Vertrekkend toevoegen</div>
+    </div>`;
+
+    return `<div class="hm-maand">
+      <div class="hm-maand-header">
+        <div class="hm-maand-label">${MAANDNAMEN[parseInt(maandNr)-1]} ${jaar}</div>
+        <div class="hm-maand-line"></div>
+        <div class="hm-maand-count">${g.in.length} in · ${g.uit.length} uit</div>
+      </div>
+      ${rijenHtml}
+    </div>`;
+  }).join('');
+}
+
+function mutatieKaart(m, richting) {
+  return `<div class="hm-card ${richting}" ondblclick="bewerkMutatie(${m.id})" style="cursor:pointer;" title="Dubbelklik om te bewerken">
+    <div class="hm-name">${esc(m.naam)}</div>
+    ${m.locatie ? `<div class="hm-loc">${esc(m.locatie)}</div>` : ''}
+    ${m.administratie ? `<div class="hm-admin">${esc(m.administratie)}</div>` : ''}
+    ${m.opmerking ? `<div class="hm-opmerking">${esc(m.opmerking)}</div>` : ''}
+  </div>`;
+}
+
+function nieuweMutatieRij(jaar, maand, richting) {
+  const bestaandeRij = document.getElementById('hmNieuweRij');
+  if (bestaandeRij) bestaandeRij.remove();
+
+  const container = document.createElement('div');
+  container.className = 'hm-row';
+  container.id = 'hmNieuweRij';
+  const vandaag = new Date().toISOString().split('T')[0];
+
+  const veldenHtml = `
+    <input class="hm-field" id="hmNewNaam" placeholder="Naam huurder">
+    <div class="hm-autocomplete"><input class="hm-field" id="hmNewLocatie" placeholder="Locatie" oninput="toonSuggesties('hmNewLocatie','locatie')"></div>
+    <div class="hm-autocomplete"><input class="hm-field" id="hmNewAdmin" placeholder="Administratie" oninput="toonSuggesties('hmNewAdmin','administratie')"></div>
+    <input class="hm-field" id="hmNewDatum" type="date" value="${vandaag}">
+    <input class="hm-field" id="hmNewOpmerking" placeholder="Opmerking (optioneel)">
+    <div style="display:flex;gap:6px;margin-top:4px;">
+      <button class="btn btn-primary" style="flex:1;font-size:11px;padding:5px;" onclick="opslaanMutatie(${jaar},${maand},'${richting}')">Opslaan</button>
+      <button class="btn" style="font-size:11px;padding:5px 8px;" onclick="document.getElementById('hmNieuweRij').remove()">Annuleren</button>
+    </div>
+  `;
+
+  if (richting === 'in') {
+    container.innerHTML = `<div class="hm-card in">${veldenHtml}</div><div class="hm-card empty"></div>`;
+  } else {
+    container.innerHTML = `<div class="hm-card empty"></div><div class="hm-card out">${veldenHtml}</div>`;
+  }
+
+  // Zoek de + toevoegen rij van deze maand en voeg ervoor in
+  const maandBlokken = document.querySelectorAll('.hm-maand');
+  const key = `${jaar}-${String(maand).padStart(2,'0')}`;
+  maandBlokken.forEach(blok => {
+    const label = blok.querySelector('.hm-maand-label').textContent;
+    if (label === `${MAANDNAMEN[maand-1]} ${jaar}`) {
+      const laatsteRij = blok.querySelectorAll('.hm-row');
+      const toevoegRij = laatsteRij[laatsteRij.length - 1];
+      blok.insertBefore(container, toevoegRij);
+    }
+  });
+
+  document.getElementById('hmNewNaam').focus();
+}
+
+function toonSuggesties(inputId, veld) {
+  document.querySelectorAll('.hm-suggesties').forEach(s => s.remove());
+  const input = document.getElementById(inputId);
+  const val = input.value.toLowerCase();
+  if (!val) return;
+  const matches = getAutocompleteWaarden(veld).filter(w => w.toLowerCase().includes(val)).slice(0, 6);
+  if (matches.length === 0) return;
+
+  const lijst = document.createElement('div');
+  lijst.className = 'hm-suggesties';
+  lijst.innerHTML = matches.map(m => `<div class="hm-suggestie" onmousedown="event.preventDefault();document.getElementById('${inputId}').value='${esc(m).replace(/'/g,"\\'")}';this.parentElement.remove();">${esc(m)}</div>`).join('');
+  input.parentElement.appendChild(lijst);
+}
+
+function opslaanMutatie(jaar, maand, richting) {
+  const naam = document.getElementById('hmNewNaam').value.trim();
+  if (!naam) { showToast('Vul een naam in'); return; }
+  const datum = document.getElementById('hmNewDatum').value;
+  const mutatie = {
+    id: data.mutatiesNextId++,
+    richting, jaar: parseInt(jaar), maand,
+    datum: datum || null,
+    naam,
+    locatie: document.getElementById('hmNewLocatie').value.trim(),
+    administratie: document.getElementById('hmNewAdmin').value.trim(),
+    opmerking: document.getElementById('hmNewOpmerking').value.trim(),
+  };
+  if (!data.mutaties) data.mutaties = [];
+  data.mutaties.push(mutatie);
+  saveData(data);
+  showToast('Mutatie toegevoegd');
+  renderHuurdersmutaties();
+}
+
+function bewerkMutatie(id) {
+  const m = (data.mutaties||[]).find(x => x.id === id);
+  if (!m) return;
+  const nieuweNaam = prompt('Naam huurder:', m.naam);
+  if (nieuweNaam === null) return;
+  m.naam = nieuweNaam.trim();
+  const nieuweLoc = prompt('Locatie:', m.locatie || '');
+  if (nieuweLoc !== null) m.locatie = nieuweLoc.trim();
+  const nieuweAdmin = prompt('Administratie:', m.administratie || '');
+  if (nieuweAdmin !== null) m.administratie = nieuweAdmin.trim();
+  const nieuweOpm = prompt('Opmerking:', m.opmerking || '');
+  if (nieuweOpm !== null) m.opmerking = nieuweOpm.trim();
+  saveData(data);
+  renderHuurdersmutaties();
+  showToast('Mutatie bijgewerkt');
+}
+
+// === HELPERS ===
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  const [y, m, day] = d.split('-');
+  return `${day}-${m}-${y}`;
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
