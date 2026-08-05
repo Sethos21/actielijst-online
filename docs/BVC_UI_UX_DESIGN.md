@@ -91,8 +91,9 @@ Regel: hoe kleiner de tekst, hoe zwaarder het gewicht bij labels/koppen.
 ## 4. Maatvoering
 
 ```
-Rijhoogte tabel (actielijst):     78px — VAST, nooit auto-height (zie sectie 6)
-Cel binnen rij:                   62px hoog, interne scroll bij overflow
+Rijhoogte tabel (actielijst):     38px — VAST, nooit auto-height (zie sectie 6)
+Cel binnen rij:                   30px hoog, tekst afgekapt met ellipsis (…) bij overflow,
+                                   scrollbaar/volledig zichtbaar bij focus/interactie
 Border-radius standaard:          var(--radius) = 6px
 Border-radius grote kaarten:      8–14px (klantoverzicht-rijen resp. startscherm-tegels)
 Padding kaarten:                  16px (klantoverzicht) tot 36px (startscherm-tegels)
@@ -122,8 +123,8 @@ Witte achtergrond, subtiele border of border-left in statuskleur, `border-radius
 
 ### Tabelrij met inline-edit cellen → `TableRow.tsx` / `EditableCell.tsx`
 **Dit is het belangrijkste patroon in de hele app — hoogste kans op afwijking, dus expliciet:**
-- Rijhoogte: **vast 78px**, nooit `height: auto`
-- Celinhoud die niet past: interne `overflow-y: auto` binnen de cel, de rij zelf blijft 78px
+- Rijhoogte: **vast 38px**, nooit `height: auto` (bijgewerkt 5 augustus 2026 — was eerder 78px, expliciet gecorrigeerd door de gebruiker)
+- Celinhoud die niet past: **afgekapt met ellipsis (…)**, geen wrap — bij focus/interactie met het veld (input/select) is de volledige tekst alsnog bereikbaar (native scroll/caret-gedrag van het veld zelf, of de volledige lijst in een `<select>`/dropdown)
 - Focus-state: navy rand + lichte schaduw (`box-shadow` met `--navy` + `--shadow`)
 - Dit brak zichtbaar in eerdere HTML-versies (v03–v05) toen cellen auto-height kregen — de hele tabel-layout schoof dan uit elkaar. **Als dit in de React-versie ook gebeurt, is dat exact hetzelfde probleem terug.**
 
@@ -197,7 +198,7 @@ Boven de maandenlijst: 4 stat-cards naast elkaar (`grid-template-columns: repeat
 - Hint-vak voor optionele/uit te stellen stappen: gestreepte rand, lichte navy-tint achtergrond, met icoon — voor bijv. "nog geen nieuwe huurder bekend, later aan te vullen"
 - Footer: Annuleren / Vorige / Opslaan, rechts uitgelijnd, primaire knop in `--navy`
 
-**Belangrijk verschil met de actielijst-tabel:** dit scherm gebruikt geen 78px-vaste-rij-patroon — het is een leesweergave + apart invoerpaneel, geen bewerkbare tabel. Pas sectie 5's tabelregels hier niet automatisch toe.
+**Belangrijk verschil met de actielijst-tabel:** dit scherm gebruikt geen 38px-vaste-rij-patroon — het is een leesweergave + apart invoerpaneel, geen bewerkbare tabel. Pas sectie 5's tabelregels hier niet automatisch toe.
 
 ### Versiebeheer-paneel → `VersieBeheerPaneel.tsx`
 **Functionele specificatie (datamodel, flow, wanneer dit opent) staat in `BVC_WEBAPP_PROJECT_v03.md`** — dit is alleen de visuele kant.
@@ -260,7 +261,7 @@ Loop dit na in de React-implementatie, in volgorde van waarschijnlijkheid:
 1. **Bestaan `StartScreen` (met de twee keuzetegels) én de sidebar-navigatie binnen de Actielijsten-tak** (logo, menu, altijd-zichtbare klantenlijst) — zie de "Navigatie-update"-notitie in sectie 5b. Als er direct wordt ingelogd op de sidebar/actielijst-tabel zonder het startscherm ertussen, mist er een navigatielaag.
 2. **Bestaat `tokens.css` en wordt het daadwerkelijk geïmporteerd** in de root van de app (bijv. `main.tsx` of `App.tsx`)?
 3. **Gebruiken de componenten de classnamen uit `index.css`**, of zijn er per ongeluk inline styles / Tailwind-utility-classes gebruikt die de tokens negeren?
-4. **Tabelrijen (alleen de actielijst!): vaste hoogte (78px) of auto-height?** Dit geldt niet voor Huurdersmutaties, dat heeft een ander patroon (zie sectie 5b).
+4. **Tabelrijen (alleen de actielijst!): vaste hoogte (38px) of auto-height?** Dit geldt niet voor Huurdersmutaties, dat heeft een ander patroon (zie sectie 5b).
 5. **Filters: optelbaar of exclusief?** Zie sectie 6. Let op: dit geldt voor status/verantwoordelijke-filters, niet voor het reden-van-vertrek-veld in de mutatie-invoer, dat is bewust wél exclusief.
 6. **Kleurwaarden: exact de hex-codes uit sectie 1, of zijn het benaderingen/Tailwind-standaardkleuren** (bijv. `blue-600` in plaats van `--navy`)?
 7. **Klantoverzicht: is sorteren op laatste versiedatum daadwerkelijk geïmplementeerd**, niet alleen op naam? Dit was een expliciete eis, makkelijk over het hoofd te zien.

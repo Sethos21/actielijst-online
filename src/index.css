@@ -684,23 +684,32 @@ table.actielijst th {
 table.actielijst td {
   border-bottom: 1px solid var(--border);
   padding: 4px 6px;
-  vertical-align: top;
-  height: 78px;
+  vertical-align: middle;
+  height: 38px;
 }
 table.actielijst .cel-scroll {
-  height: 62px;
-  overflow-y: auto;
-  display: block;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+}
+table.actielijst .cel-scroll input,
+table.actielijst .cel-scroll select {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 /* ---- Verantwoordelijke-select (multi-select dropdown in de tabelcel) ---- */
 .verantw-select-trigger {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  align-content: flex-start;
   gap: 4px;
   width: 100%;
-  min-height: 26px;
+  overflow: hidden;
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--radius);
@@ -738,6 +747,7 @@ table.actielijst .cel-scroll {
 }
 .verantw-select-optie {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 8px;
   padding: 5px 6px;
