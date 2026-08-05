@@ -6,6 +6,7 @@ import { TEAMLEDEN, type Teamlid } from '../team/teamleden'
 import { VergaderingAfsluitenModal } from '../versies/VergaderingAfsluitenModal'
 import { VersieBeheerPaneel } from '../versies/VersieBeheerPaneel'
 import { berekenDueDate, isDue } from './dueDate'
+import { exporteerNaarExcel } from './excelExport'
 import {
   DOORLOOPTIJD_OPTIES,
   type ActieItem,
@@ -150,6 +151,15 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
     toon('Actie toegevoegd')
   }
 
+  function handlePrinten() {
+    window.print()
+  }
+
+  function handleExporteren() {
+    exporteerNaarExcel(gesorteerdeActies, klantNaam)
+    toon('Excel-bestand gedownload')
+  }
+
   function toggleVerantw(actie: ActieItem, naam: string) {
     const nieuweVerantw = actie.verantw.includes(naam)
       ? actie.verantw.filter((v) => v !== naam)
@@ -179,14 +189,26 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
 
   return (
     <div>
-      <button type="button" onClick={onTerug}>
+      <div className="print-header">
+        <span className="print-header-merk">BVC</span>
+        <span>Actielijst — {klantNaam}</span>
+        <span>{new Date().toLocaleDateString('nl-NL')}</span>
+      </div>
+
+      <button type="button" className="no-print" onClick={onTerug}>
         ← Terug naar klantoverzicht
       </button>
       <div className="actielijst-titelbalk">
         <h1>Actielijst — {klantNaam}</h1>
-        <div className="actielijst-titelbalk-acties">
+        <div className="actielijst-titelbalk-acties no-print">
           <button type="button" onClick={() => setVersiesPaneelOpen(true)}>
             Versies
+          </button>
+          <button type="button" onClick={handlePrinten}>
+            Print
+          </button>
+          <button type="button" onClick={handleExporteren}>
+            Excel
           </button>
           <button
             type="button"
@@ -217,7 +239,7 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
         </div>
       </div>
 
-      <div className="filter-balk">
+      <div className="filter-balk no-print">
         <div className="filter-pillen">
           <button
             type="button"
@@ -257,7 +279,7 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
         />
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form className="no-print" onSubmit={handleSubmit}>
         <label>
           Onderwerp
           <input
@@ -299,6 +321,7 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
         <table className="actielijst">
           <thead>
             <tr>
+              <th>#</th>
               {kolomkop('Onderwerp', 'onderwerp')}
               <th>Bedrijf</th>
               {kolomkop('Vestiging', 'vestiging')}
@@ -308,16 +331,17 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
               {kolomkop('Due', 'due')}
               {kolomkop('Status', 'status')}
               <th>Opmerking</th>
-              <th>Uitstellen</th>
-              <th></th>
+              <th className="no-print">Uitstellen</th>
+              <th className="no-print"></th>
             </tr>
           </thead>
           <tbody>
-            {gesorteerdeActies.map((actie) => {
+            {gesorteerdeActies.map((actie, index) => {
               const due = berekenDueDate(actie)
               const due_ = isDue(actie)
               return (
                 <tr key={actie.id}>
+                  <td>{index + 1}</td>
                   <td>
                     <span className="cel-scroll">
                       <input
@@ -433,7 +457,7 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                       />
                     </span>
                   </td>
-                  <td>
+                  <td className="no-print">
                     <span className="cel-scroll">
                       <select
                         aria-label={`Uitstellen voor ${actie.actie}`}
@@ -463,7 +487,7 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                       </select>
                     </span>
                   </td>
-                  <td>
+                  <td className="no-print">
                     <button type="button" onClick={() => deleteActie(actie.id)}>
                       Verwijderen
                     </button>

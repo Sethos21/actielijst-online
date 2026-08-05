@@ -1,10 +1,15 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ActielijstPage } from './ActielijstPage'
 
 vi.mock('../../components/useToast', () => ({
   useToast: () => vi.fn(),
+}))
+
+const exporteerNaarExcel = vi.fn()
+vi.mock('./excelExport', () => ({
+  exporteerNaarExcel: (...args: unknown[]) => exporteerNaarExcel(...args),
 }))
 
 vi.mock('../versies/useVersies', () => ({
@@ -70,6 +75,10 @@ vi.mock('./useActies', () => ({
 }))
 
 describe('ActielijstPage', () => {
+  afterEach(() => {
+    exporteerNaarExcel.mockClear()
+  })
+
   it('toont acties en markeert een verlopen open actie als Due', () => {
     render(
       <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
@@ -169,5 +178,45 @@ describe('ActielijstPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Alle' }))
     expect(screen.getByDisplayValue('Op hold gezette actie')).toBeInTheDocument()
+  })
+
+  it('nummert de rijen oplopend, ongeacht sortering', () => {
+    render(
+      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+    )
+
+    const rijnummers = Array.from(
+      document.querySelectorAll('table.actielijst tbody tr'),
+    ).map((rij) => rij.querySelector('td')?.textContent)
+    expect(rijnummers).toEqual(['1', '2', '3'])
+  })
+
+  it('roept window.print() aan via de Print-knop', async () => {
+    const user = userEvent.setup()
+    const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {})
+    render(
+      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Print' }))
+
+    expect(printSpy).toHaveBeenCalledOnce()
+    printSpy.mockRestore()
+  })
+
+  it('exporteert de actuele (gefilterde) lijst via de Excel-knop', async () => {
+    const user = userEvent.setup()
+    render(
+      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+    )
+
+    await user.click(screen.getByLabelText('Filter op Ton'))
+    await user.click(screen.getByRole('button', { name: 'Excel' }))
+
+    expect(exporteerNaarExcel).toHaveBeenCalledOnce()
+    const [geexporteerdeActies, klantNaam] = exporteerNaarExcel.mock.calls[0]
+    expect(geexporteerdeActies).toHaveLength(1)
+    expect(geexporteerdeActies[0].actie).toBe('Lift laten keuren')
+    expect(klantNaam).toBe('Malcon')
   })
 })
