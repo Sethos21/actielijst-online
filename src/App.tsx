@@ -2,6 +2,7 @@ import { signOut } from 'firebase/auth'
 import { useState } from 'react'
 import { ActielijstPage } from './features/acties/ActielijstPage'
 import { ImportActiesModal } from './features/acties/ImportActiesModal'
+import { MijnActiesPage } from './features/acties/MijnActiesPage'
 import { LoginForm } from './features/auth/LoginForm'
 import { useAuthUser } from './features/auth/useAuthUser'
 import { DashboardPage } from './features/dashboard/DashboardPage'
@@ -13,7 +14,7 @@ import { StartScreen } from './components/StartScreen'
 import { auth } from './lib/firebase'
 
 type Scherm = 'start' | 'actielijsten' | 'huurdersmutaties'
-type Weergave = 'klantoverzicht' | 'dashboard'
+type Weergave = 'klantoverzicht' | 'mijn-acties' | 'dashboard'
 
 function App() {
   const { user, loading } = useAuthUser()
@@ -42,6 +43,11 @@ function App() {
     setGeselecteerdeKlant(null)
   }
 
+  function handleMijnActies() {
+    setWeergave('mijn-acties')
+    setGeselecteerdeKlant(null)
+  }
+
   function handleDashboard() {
     setWeergave('dashboard')
     setGeselecteerdeKlant(null)
@@ -67,6 +73,7 @@ function App() {
         weergave={weergave}
         onSelectKlant={setGeselecteerdeKlant}
         onKlantoverzicht={handleKlantoverzicht}
+        onMijnActies={handleMijnActies}
         onDashboard={handleDashboard}
         gebruikerEmail={user.email ?? ''}
         onUitloggen={handleUitloggen}
@@ -79,6 +86,8 @@ function App() {
             klantNaam={geselecteerdeKlant.naam}
             onTerug={() => setGeselecteerdeKlant(null)}
           />
+        ) : weergave === 'mijn-acties' ? (
+          <MijnActiesPage />
         ) : weergave === 'dashboard' ? (
           <DashboardPage onSelectKlant={setGeselecteerdeKlant} />
         ) : (
