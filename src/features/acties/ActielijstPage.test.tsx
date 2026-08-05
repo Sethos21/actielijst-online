@@ -20,6 +20,23 @@ vi.mock('../versies/useVersies', () => ({
   }),
 }))
 
+vi.mock('../klanten/useKlanten', () => ({
+  useKlanten: () => ({
+    klanten: [{ id: 'klant-1', naam: 'Malcon', aangemaaktOp: 1 }],
+    loading: false,
+    addKlant: vi.fn(),
+  }),
+}))
+
+// ImportActiesModal (nu ook bereikbaar vanuit ActielijstPage) importeert via
+// bulkImporteren.ts de echte Firebase-app — die initialiseert zonder geldige
+// env-vars niet in deze testomgeving, dus stubben net als in App.test.tsx.
+vi.mock('../../lib/firebase', () => ({
+  app: {},
+  auth: {},
+  db: {},
+}))
+
 vi.mock('./useActies', () => ({
   useActies: () => ({
     acties: [

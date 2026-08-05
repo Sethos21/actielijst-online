@@ -281,6 +281,21 @@ body,
   flex-shrink: 0;
 }
 
+/* ---- "+ Nieuwe actie toevoegen" onder de tabel — snel een lege rij erbij ---- */
+.actielijst-nieuwe-rij {
+  margin-top: 8px;
+  background: transparent;
+  border: none;
+  color: var(--navy);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 6px 0;
+  cursor: pointer;
+}
+.actielijst-nieuwe-rij:hover {
+  text-decoration: underline;
+}
+
 /* ---- Slide-in paneel (Versiebeheer, later ook Huurdersmutaties-invoer) ---- */
 .paneel-overlay {
   position: fixed;
@@ -803,23 +818,30 @@ table.actielijst .cel-scroll select {
 table.actielijst input[type='date']::-webkit-calendar-picker-indicator {
   display: none;
 }
-/* Invoerdatum: de native datum-input blijft functioneel (klikken opent de
-   datumkiezer) maar toont onzichtbare tekst — een overlay erbovenop toont
-   het compacte dd-mm-jj-formaat, want de browser dwingt zijn eigen
-   (lange) datumnotatie af op een echte <input type="date">. */
-table.actielijst .invoerdatum-cel {
-  position: relative;
-}
-table.actielijst .invoerdatum-input {
-  color: transparent;
-}
-table.actielijst .invoerdatum-weergave {
-  position: absolute;
-  left: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
+/* Invoerdatum: standaard een knop met het compacte dd-mm-jj-formaat —
+   pas bij klikken verschijnt de echte <input type="date">. CSS-trucs om
+   de native datumnotatie te verkorten (transparante tekst + overlay)
+   bleken onbetrouwbaar, de browser blijft zijn eigen notatie tonen. */
+table.actielijst .invoerdatum-weergave-knop {
+  flex: 1;
+  align-self: stretch;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 0 8px;
+  cursor: pointer;
   color: var(--text);
+  font: inherit;
+}
+table.actielijst .invoerdatum-weergave-knop:hover {
+  border-color: var(--border-strong);
+}
+table.actielijst .invoerdatum-weergave-knop:focus-visible {
+  outline: none;
+  border-color: var(--navy);
+  box-shadow: var(--shadow);
 }
 /* Doorlooptijd: subtiele pil zonder kader, zelfde vorm als de status-select
    maar zonder statuskleur — kost minder breedte dan een omkaderd veld. */
@@ -904,6 +926,8 @@ table.actielijst .cel-scroll-tekst textarea:focus {
   flex-direction: column;
   gap: 2px;
   min-width: 160px;
+  max-height: 70vh;
+  overflow-y: auto;
   z-index: 20;
 }
 .dropdown-optie {

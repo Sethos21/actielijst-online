@@ -52,7 +52,7 @@ export function VerantwoordelijkeSelect({
             ref={menuRef}
             className="dropdown-menu"
             role="menu"
-            style={{ top: positie.top, left: positie.left }}
+            style={{ top: positie.top, bottom: positie.bottom, left: positie.left }}
           >
             {alleNamen.map((naam) => (
               <label key={naam} className="dropdown-optie">

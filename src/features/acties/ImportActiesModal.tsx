@@ -14,15 +14,16 @@ import {
 
 interface Props {
   onSluiten: () => void
+  standaardKlantId?: string
 }
 
 const VOORVERTONING_LIMIET = 20
 const IMPORT_TIMEOUT_MS = 30_000
 
-export function ImportActiesModal({ onSluiten }: Props) {
+export function ImportActiesModal({ onSluiten, standaardKlantId }: Props) {
   const { klanten, addKlant } = useKlanten()
   const toon = useToast()
-  const [gekozenKlantId, setGekozenKlantId] = useState('')
+  const [gekozenKlantId, setGekozenKlantId] = useState(standaardKlantId ?? '')
   const [nieuweKlantNaam, setNieuweKlantNaam] = useState('')
   const [geparsed, setGeparsed] = useState<GeimporteerdeActie[] | null>(null)
   const [overgeslagen, setOvergeslagen] = useState(0)

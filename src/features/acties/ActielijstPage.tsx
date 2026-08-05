@@ -1,13 +1,14 @@
 import { useMemo, useState, type FormEvent } from 'react'
+import { InvoerdatumVeld } from '../../components/InvoerdatumVeld'
 import { UitstelKnop } from '../../components/UitstelKnop'
 import { VerantwoordelijkeSelect } from '../../components/VerantwoordelijkeSelect'
 import { useToast } from '../../components/useToast'
 import { TEAMLEDEN, type Teamlid } from '../team/teamleden'
 import { VergaderingAfsluitenModal } from '../versies/VergaderingAfsluitenModal'
 import { VersieBeheerPaneel } from '../versies/VersieBeheerPaneel'
-import { formatteerDatumKort } from '../../lib/datum'
 import { berekenDueDate, isDue } from './dueDate'
 import { exporteerNaarExcel } from './excelExport'
+import { ImportActiesModal } from './ImportActiesModal'
 import {
   DOORLOOPTIJD_OPTIES,
   type ActieItem,
@@ -71,6 +72,7 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
   const [nieuw, setNieuw] = useState({ onderwerp: '', bedrijf: '', vestiging: '', actie: '' })
   const [vergaderingModalOpen, setVergaderingModalOpen] = useState(false)
   const [versiesPaneelOpen, setVersiesPaneelOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
 
   function toggleFilter(pil: FilterPil) {
     const nieuweSet = new Set(actieveFilters)
@@ -177,6 +179,23 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
     toon('Actie toegevoegd')
   }
 
+  /** Snel een lege actie onderaan toevoegen — daarna verder invullen in de rij zelf. */
+  async function handleSnelToevoegen() {
+    await addActie({
+      ref: volgendeRef(),
+      onderwerp: '',
+      bedrijf: '',
+      vestiging: '',
+      actie: '',
+      verantw: [],
+      aangemaaktOp: new Date().toISOString().slice(0, 10),
+      doorlooptijd: '2w',
+      status: 'open',
+      opmerking: '',
+    })
+    toon('Actie toegevoegd')
+  }
+
   function handlePrinten() {
     window.print()
   }
@@ -239,6 +258,9 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
           </button>
           <button type="button" onClick={handleExporteren}>
             Excel
+          </button>
+          <button type="button" onClick={() => setImportOpen(true)}>
+            Excel importeren
           </button>
           <button
             type="button"
@@ -377,19 +399,12 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                 >
                   <td>{actie.ref}</td>
                   <td>
-                    <span className="cel-scroll invoerdatum-cel">
-                      <input
-                        aria-label={`Invoerdatum voor ${actie.actie}`}
-                        type="date"
-                        className="invoerdatum-input"
-                        value={actie.aangemaaktOp}
-                        onChange={(e) =>
-                          updateActie(actie.id, { aangemaaktOp: e.target.value })
-                        }
+                    <span className="cel-scroll">
+                      <InvoerdatumVeld
+                        actieOmschrijving={actie.actie}
+                        waarde={actie.aangemaaktOp}
+                        onWijzig={(iso) => updateActie(actie.id, { aangemaaktOp: iso })}
                       />
-                      <span className="invoerdatum-weergave" aria-hidden="true">
-                        {formatteerDatumKort(actie.aangemaaktOp)}
-                      </span>
                     </span>
                   </td>
                   <td>
@@ -524,6 +539,21 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
             })}
           </tbody>
         </table>
+      )}
+
+      <button
+        type="button"
+        className="no-print actielijst-nieuwe-rij"
+        onClick={handleSnelToevoegen}
+      >
+        + Nieuwe actie toevoegen
+      </button>
+
+      {importOpen && (
+        <ImportActiesModal
+          standaardKlantId={klantId}
+          onSluiten={() => setImportOpen(false)}
+        />
       )}
 
       {vergaderingModalOpen && (

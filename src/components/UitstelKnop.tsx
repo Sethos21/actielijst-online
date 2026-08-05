@@ -35,7 +35,7 @@ export function UitstelKnop({ actieOmschrijving, opties, onKies }: Props) {
             ref={menuRef}
             className="dropdown-menu"
             role="menu"
-            style={{ top: positie.top, left: positie.left }}
+            style={{ top: positie.top, bottom: positie.bottom, left: positie.left }}
           >
             {opties.map((optie) => (
               <button
