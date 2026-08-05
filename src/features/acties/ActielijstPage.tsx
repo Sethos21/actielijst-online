@@ -94,16 +94,23 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
   const gefilterdeActies = useMemo(() => {
     let resultaat = acties
     if (actieveFilters.size > 0) {
+      // Twee groepen pillen (status, teamlid): binnen een groep is het OR
+      // (Open + Due beide aan toont de vereniging), maar tussen de groepen is
+      // het AND — "Open" + "Ton" moet open acties ván Ton tonen, niet de
+      // vereniging van alle open acties en alle acties van Ton.
       resultaat = resultaat.filter((actie) => {
-        const matches: boolean[] = []
-        if (actieveFilters.has('open')) matches.push(actie.status === 'open')
-        if (actieveFilters.has('done')) matches.push(actie.status === 'done')
-        if (actieveFilters.has('hold')) matches.push(actie.status === 'hold')
-        if (actieveFilters.has('due')) matches.push(isDue(actie))
+        const statusMatches: boolean[] = []
+        const teamlidMatches: boolean[] = []
+        if (actieveFilters.has('open')) statusMatches.push(actie.status === 'open')
+        if (actieveFilters.has('done')) statusMatches.push(actie.status === 'done')
+        if (actieveFilters.has('hold')) statusMatches.push(actie.status === 'hold')
+        if (actieveFilters.has('due')) statusMatches.push(isDue(actie))
         for (const naam of TEAMLEDEN) {
-          if (actieveFilters.has(naam)) matches.push(actie.verantw.includes(naam))
+          if (actieveFilters.has(naam)) teamlidMatches.push(actie.verantw.includes(naam))
         }
-        return matches.some(Boolean)
+        const statusOk = statusMatches.length === 0 || statusMatches.some(Boolean)
+        const teamlidOk = teamlidMatches.length === 0 || teamlidMatches.some(Boolean)
+        return statusOk && teamlidOk
       })
     }
     if (zoekterm.trim()) {

@@ -46,6 +46,20 @@ vi.mock('./useActies', () => ({
         status: 'hold',
         opmerking: '',
       },
+      {
+        id: '3',
+        klantId: 'klant-1',
+        ref: 'A3',
+        onderwerp: 'Onderhoud',
+        bedrijf: 'Bowog Beheer B.V.',
+        vestiging: 'Nevenvestiging',
+        actie: 'Andere open actie van Seth',
+        verantw: ['Seth'],
+        aangemaaktOp: '2999-01-01',
+        doorlooptijd: '1w',
+        status: 'open',
+        opmerking: '',
+      },
     ],
     loading: false,
     addActie: vi.fn(),
@@ -91,7 +105,7 @@ describe('ActielijstPage', () => {
     const waarden = Array.from(document.querySelectorAll('.stat-waarde')).map(
       (el) => el.textContent,
     )
-    expect(waarden).toEqual(['1', '1', '0', '1'])
+    expect(waarden).toEqual(['2', '1', '0', '1'])
   })
 
   it('filtert op zoekterm', async () => {
@@ -117,6 +131,26 @@ describe('ActielijstPage', () => {
     await user.click(screen.getByLabelText('Filter op Ton'))
 
     expect(screen.getByDisplayValue('Lift laten keuren')).toBeInTheDocument()
+    expect(
+      screen.queryByDisplayValue('Op hold gezette actie'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('combineert een status-pill en een teamlid-pill met AND, niet OR', async () => {
+    const user = userEvent.setup()
+    render(
+      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Open' }))
+    await user.click(screen.getByLabelText('Filter op Ton'))
+
+    // Beide acties zijn open, maar alleen "Lift laten keuren" is van Ton —
+    // bij OR-gedrag (de oude bug) zou de open actie van Seth ook meekomen.
+    expect(screen.getByDisplayValue('Lift laten keuren')).toBeInTheDocument()
+    expect(
+      screen.queryByDisplayValue('Andere open actie van Seth'),
+    ).not.toBeInTheDocument()
     expect(
       screen.queryByDisplayValue('Op hold gezette actie'),
     ).not.toBeInTheDocument()
