@@ -4,6 +4,7 @@ import {
   filterMutaties,
   getAutocompleteWaarden,
   groepeerPerMaand,
+  vulJaarAan,
 } from './mutatieLogica'
 import type { Mutatie } from './types'
 
@@ -45,6 +46,22 @@ describe('groepeerPerMaand', () => {
     const [groep] = groepeerPerMaand(mutaties)
     expect(groep.in).toHaveLength(1)
     expect(groep.uit).toHaveLength(1)
+  })
+})
+
+describe('vulJaarAan', () => {
+  it('vult alle 12 maanden aan, nieuwste boven, ook zonder bestaande mutaties', () => {
+    const resultaat = vulJaarAan([], 2026)
+    expect(resultaat).toHaveLength(12)
+    expect(resultaat[0]).toEqual({ jaar: 2026, maand: 12, in: [], uit: [] })
+    expect(resultaat[11]).toEqual({ jaar: 2026, maand: 1, in: [], uit: [] })
+  })
+
+  it('behoudt bestaande maand-groepen i.p.v. ze te overschrijven', () => {
+    const bestaande = groepeerPerMaand([maakMutatie({ maand: 3 })])
+    const resultaat = vulJaarAan(bestaande, 2026)
+    const maartGroep = resultaat.find((g) => g.maand === 3)
+    expect(maartGroep?.in).toHaveLength(1)
   })
 })
 

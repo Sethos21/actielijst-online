@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -102,12 +102,27 @@ describe('Huurdersmutaties', () => {
     const user = userEvent.setup()
     render(<Huurdersmutaties onTerug={vi.fn()} />)
 
-    await user.click(screen.getByRole('button', { name: '+ Ingaand toevoegen' }))
+    // Elke maand van het geselecteerde jaar heeft nu een eigen "+ toevoegen"
+    // (ook lege maanden, zie vulJaarAan) — scope daarom op januari 2026.
+    const januari = screen.getByText('januari 2026').closest('.hm-maand') as HTMLElement
+    await user.click(within(januari).getByRole('button', { name: '+ Ingaand toevoegen' }))
     await user.type(screen.getByLabelText('Naam huurder'), 'De Vries')
     await user.type(screen.getByLabelText('Locatie'), 'Haarlem')
     await user.click(screen.getByRole('button', { name: 'Opslaan' }))
 
     expect(await screen.findByText('De Vries')).toBeInTheDocument()
+  })
+
+  it('kan een mutatie aanmaken in een maand die nog helemaal leeg is', async () => {
+    const user = userEvent.setup()
+    render(<Huurdersmutaties onTerug={vi.fn()} />)
+
+    const maart = screen.getByText('maart 2026').closest('.hm-maand') as HTMLElement
+    await user.click(within(maart).getByRole('button', { name: '+ Vertrekkend toevoegen' }))
+    await user.type(screen.getByLabelText('Naam huurder'), 'Eerste in maart')
+    await user.click(screen.getByRole('button', { name: 'Opslaan' }))
+
+    expect(await screen.findByText('Eerste in maart')).toBeInTheDocument()
   })
 
   it('bewerkt een bestaande mutatie na klikken op de kaart', async () => {
