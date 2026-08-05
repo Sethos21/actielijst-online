@@ -2,7 +2,7 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { AvatarChip } from '../../components/AvatarChip'
 import { Badge } from '../../components/Badge'
 import { useToast } from '../../components/useToast'
-import { TEAMLEDEN } from '../team/teamleden'
+import { TEAMLEDEN, type Teamlid } from '../team/teamleden'
 import { VergaderingAfsluitenModal } from '../versies/VergaderingAfsluitenModal'
 import { VersieBeheerPaneel } from '../versies/VersieBeheerPaneel'
 import { berekenDueDate, isDue } from './dueDate'
@@ -21,7 +21,20 @@ interface Props {
 }
 
 type SortVeld = 'onderwerp' | 'vestiging' | 'aangemaaktOp' | 'due' | 'status'
-type FilterPil = 'open' | 'done' | 'hold' | 'due'
+type StatusFilterPil = 'open' | 'done' | 'hold' | 'due'
+type FilterPil = StatusFilterPil | Teamlid
+
+const STATUS_FILTER_PILLEN: { pil: StatusFilterPil; label: string }[] = [
+  { pil: 'open', label: 'Open' },
+  { pil: 'done', label: 'Gereed' },
+  { pil: 'hold', label: 'On hold' },
+  { pil: 'due', label: 'Due' },
+]
+
+/** Velden waarop de zoekbalk tekstueel matcht, case-insensitief. */
+function zoekTekst(actie: ActieItem): string {
+  return `${actie.onderwerp} ${actie.actie} ${actie.vestiging} ${actie.bedrijf} ${actie.opmerking}`.toLowerCase()
+}
 
 const UITSTEL_OPTIES: { label: string; eenheid: 'w' | 'm'; aantal: number }[] = [
   { label: '1 week', eenheid: 'w', aantal: 1 },
@@ -43,6 +56,7 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
   const [sortVeld, setSortVeld] = useState<SortVeld>('due')
   const [sortRichting, setSortRichting] = useState<'asc' | 'desc'>('asc')
   const [actieveFilters, setActieveFilters] = useState<Set<FilterPil>>(new Set())
+  const [zoekterm, setZoekterm] = useState('')
   const [nieuw, setNieuw] = useState({ onderwerp: '', bedrijf: '', vestiging: '', actie: '' })
   const [vergaderingModalOpen, setVergaderingModalOpen] = useState(false)
   const [versiesPaneelOpen, setVersiesPaneelOpen] = useState(false)
@@ -63,17 +77,48 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
     }
   }
 
+  const stats = useMemo(() => {
+    let open = 0
+    let due = 0
+    let done = 0
+    let hold = 0
+    for (const actie of acties) {
+      if (actie.status === 'open') open += 1
+      if (actie.status === 'done') done += 1
+      if (actie.status === 'hold') hold += 1
+      if (isDue(actie)) due += 1
+    }
+    return { open, due, done, hold }
+  }, [acties])
+
   const gefilterdeActies = useMemo(() => {
-    if (actieveFilters.size === 0) return acties
-    return acties.filter((actie) => {
-      const matches: boolean[] = []
-      if (actieveFilters.has('open')) matches.push(actie.status === 'open')
-      if (actieveFilters.has('done')) matches.push(actie.status === 'done')
-      if (actieveFilters.has('hold')) matches.push(actie.status === 'hold')
-      if (actieveFilters.has('due')) matches.push(isDue(actie))
-      return matches.some(Boolean)
-    })
-  }, [acties, actieveFilters])
+    let resultaat = acties
+    if (actieveFilters.size > 0) {
+      // Twee groepen pillen (status, teamlid): binnen een groep is het OR
+      // (Open + Due beide aan toont de vereniging), maar tussen de groepen is
+      // het AND — "Open" + "Ton" moet open acties ván Ton tonen, niet de
+      // vereniging van alle open acties en alle acties van Ton.
+      resultaat = resultaat.filter((actie) => {
+        const statusMatches: boolean[] = []
+        const teamlidMatches: boolean[] = []
+        if (actieveFilters.has('open')) statusMatches.push(actie.status === 'open')
+        if (actieveFilters.has('done')) statusMatches.push(actie.status === 'done')
+        if (actieveFilters.has('hold')) statusMatches.push(actie.status === 'hold')
+        if (actieveFilters.has('due')) statusMatches.push(isDue(actie))
+        for (const naam of TEAMLEDEN) {
+          if (actieveFilters.has(naam)) teamlidMatches.push(actie.verantw.includes(naam))
+        }
+        const statusOk = statusMatches.length === 0 || statusMatches.some(Boolean)
+        const teamlidOk = teamlidMatches.length === 0 || teamlidMatches.some(Boolean)
+        return statusOk && teamlidOk
+      })
+    }
+    if (zoekterm.trim()) {
+      const term = zoekterm.trim().toLowerCase()
+      resultaat = resultaat.filter((actie) => zoekTekst(actie).includes(term))
+    }
+    return resultaat
+  }, [acties, actieveFilters, zoekterm])
 
   const gesorteerdeActies = useMemo(() => {
     const waarde = (actie: ActieItem) => {
@@ -153,20 +198,63 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
         </div>
       </div>
 
-      <div>
-        {(['open', 'done', 'hold', 'due'] as FilterPil[]).map((pil) => (
+      <div className="stat-cards">
+        <div className="stat-card">
+          <span className="stat-label">Open</span>
+          <span className="stat-waarde stat-waarde-open">{stats.open}</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Due (verlopen)</span>
+          <span className="stat-waarde stat-waarde-due">{stats.due}</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Afgerond</span>
+          <span className="stat-waarde stat-waarde-done">{stats.done}</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">On hold</span>
+          <span className="stat-waarde stat-waarde-hold">{stats.hold}</span>
+        </div>
+      </div>
+
+      <div className="filter-balk">
+        <div className="filter-pillen">
           <button
-            key={pil}
             type="button"
-            className={`filter-pill ${actieveFilters.has(pil) ? 'actief' : ''}`}
-            onClick={() => toggleFilter(pil)}
+            className={`filter-pill ${actieveFilters.size === 0 ? 'actief' : ''}`}
+            onClick={() => setActieveFilters(new Set())}
           >
-            {pil === 'open' && 'Open'}
-            {pil === 'done' && 'Gereed'}
-            {pil === 'hold' && 'On hold'}
-            {pil === 'due' && 'Due'}
+            Alle
           </button>
-        ))}
+          {STATUS_FILTER_PILLEN.map(({ pil, label }) => (
+            <button
+              key={pil}
+              type="button"
+              className={`filter-pill ${actieveFilters.has(pil) ? 'actief' : ''}`}
+              onClick={() => toggleFilter(pil)}
+            >
+              {label}
+            </button>
+          ))}
+          {TEAMLEDEN.map((naam) => (
+            <button
+              key={naam}
+              type="button"
+              aria-label={`Filter op ${naam}`}
+              className={`filter-pill ${actieveFilters.has(naam) ? 'actief' : ''}`}
+              onClick={() => toggleFilter(naam)}
+            >
+              {naam}
+            </button>
+          ))}
+        </div>
+        <input
+          type="search"
+          aria-label="Zoeken in actielijst"
+          placeholder="Zoeken..."
+          value={zoekterm}
+          onChange={(e) => setZoekterm(e.target.value)}
+        />
       </div>
 
       <form onSubmit={handleSubmit}>
