@@ -24,6 +24,20 @@ export function groepeerPerMaand(mutaties: Mutatie[]): MaandGroep[] {
     .map(([, groep]) => groep)
 }
 
+/**
+ * Vult alle 12 maanden van een jaar aan (nieuwste boven), ook de maanden
+ * zonder mutaties — anders is er nergens een "+ toevoegen"-knop om de
+ * eérste mutatie van een (nog lege) maand of jaar aan te maken.
+ */
+export function vulJaarAan(groepen: MaandGroep[], jaar: number): MaandGroep[] {
+  const bestaand = new Map(groepen.map((g) => [g.maand, g]))
+  const resultaat: MaandGroep[] = []
+  for (let maand = 12; maand >= 1; maand--) {
+    resultaat.push(bestaand.get(maand) ?? { jaar, maand, in: [], uit: [] })
+  }
+  return resultaat
+}
+
 /** Zoekbalk matcht op naam, locatie en administratie — case-insensitief. */
 export function filterMutaties(
   mutaties: Mutatie[],

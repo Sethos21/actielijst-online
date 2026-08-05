@@ -4,6 +4,7 @@ import {
   berekenStats,
   filterMutaties,
   groepeerPerMaand,
+  vulJaarAan,
   type MaandGroep,
 } from './mutatieLogica'
 import { MutatieForm, type MutatieVelden } from './MutatieForm'
@@ -36,7 +37,15 @@ export function Huurdersmutaties({ onTerug }: Props) {
     [mutaties, jaarFilter, zoekterm],
   )
   const stats = useMemo(() => berekenStats(gefilterd), [gefilterd])
-  const groepen = useMemo(() => groepeerPerMaand(gefilterd), [gefilterd])
+  const groepen = useMemo(() => {
+    const basis = groepeerPerMaand(gefilterd)
+    // Alleen aanvullen met lege maanden buiten het zoeken om — anders lijkt
+    // het alsof een zoekterm ook in lege maanden matcht. Met een specifiek
+    // jaar geselecteerd zijn zo altijd alle 12 maanden bereikbaar om de
+    // eerste mutatie van die maand aan te maken.
+    if (jaarFilter !== 'alle' && !zoekterm.trim()) return vulJaarAan(basis, jaarFilter)
+    return basis
+  }, [gefilterd, jaarFilter, zoekterm])
 
   async function handleJaarToevoegen() {
     const nieuw = await voegJaarToe()
@@ -44,14 +53,17 @@ export function Huurdersmutaties({ onTerug }: Props) {
   }
 
   async function handleOpslaanNieuw(context: NieuweRijContext, velden: MutatieVelden) {
-    await addMutatie({ ...velden, jaar: context.jaar, maand: context.maand, richting: context.richting })
+    // Formulier meteen sluiten i.p.v. te wachten op de schrijfbevestiging —
+    // anders staat het even naast de net verschenen kaart (race tussen de
+    // Firestore-write en het sluiten van het formulier).
     setNieuweRij(null)
+    await addMutatie({ ...velden, jaar: context.jaar, maand: context.maand, richting: context.richting })
     toon('Mutatie toegevoegd')
   }
 
   async function handleOpslaanBewerken(mutatie: Mutatie, velden: MutatieVelden) {
-    await updateMutatie(mutatie.id, velden)
     setBewerkId(null)
+    await updateMutatie(mutatie.id, velden)
     toon('Mutatie bijgewerkt')
   }
 
