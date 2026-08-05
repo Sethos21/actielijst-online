@@ -22,6 +22,7 @@
   --amber: #b06800;
   --amber-bg: #fef5e4;
   --blue-bg: #edf2fb;
+  --blue-bg-actief: #d9e6f8; /* iets donkerder dan --blue-bg, voor de rij waar de gebruiker in werkt */
 
   --radius: 6px;
   --shadow: 0 2px 8px rgba(26, 58, 92, 0.08);

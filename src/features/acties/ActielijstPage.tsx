@@ -345,7 +345,10 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
               const due = berekenDueDate(actie)
               const due_ = isDue(actie)
               return (
-                <tr key={actie.id}>
+                <tr
+                  key={actie.id}
+                  className={actie.status === 'done' ? 'actielijst-rij-afgerond' : undefined}
+                >
                   <td>{index + 1}</td>
                   <td>
                     <span className="cel-scroll">

@@ -43,6 +43,7 @@ Dit bestand bevat exact de volgende custom properties — 1-op-1 overgenomen uit
   --amber: #b06800;
   --amber-bg: #fef5e4;
   --blue-bg: #edf2fb;      /* hover-achtergrond op rijen */
+  --blue-bg-actief: #d9e6f8; /* iets donkerder — de rij waar de gebruiker in werkt (actielijst) */
 
   /* Vorm */
   --radius: 6px;

@@ -675,7 +675,72 @@ table.klantoverzicht td {
 table.actielijst {
   border-collapse: collapse;
   width: 100%;
+  table-layout: fixed;
   background: var(--white);
+}
+/* Kolombreedtes: Actiepunt/Opmerking krijgen de meeste ruimte, korte
+   waarden (datum, status, doorlooptijd e.d.) blijven compact. */
+table.actielijst th:nth-child(1),
+table.actielijst td:nth-child(1) {
+  width: 2%;
+}
+table.actielijst th:nth-child(2),
+table.actielijst td:nth-child(2) {
+  width: 6%;
+}
+table.actielijst th:nth-child(3),
+table.actielijst td:nth-child(3) {
+  width: 8%;
+}
+table.actielijst th:nth-child(4),
+table.actielijst td:nth-child(4) {
+  width: 7%;
+}
+table.actielijst th:nth-child(5),
+table.actielijst td:nth-child(5) {
+  width: 8%;
+}
+table.actielijst th:nth-child(6),
+table.actielijst td:nth-child(6) {
+  width: 20%;
+}
+table.actielijst th:nth-child(7),
+table.actielijst td:nth-child(7) {
+  width: 6%;
+}
+table.actielijst th:nth-child(8),
+table.actielijst td:nth-child(8) {
+  width: 7%;
+}
+table.actielijst th:nth-child(9),
+table.actielijst td:nth-child(9) {
+  width: 6%;
+}
+table.actielijst th:nth-child(10),
+table.actielijst td:nth-child(10) {
+  width: 7%;
+}
+table.actielijst th:nth-child(11),
+table.actielijst td:nth-child(11) {
+  width: 12%;
+}
+table.actielijst th:nth-child(12),
+table.actielijst td:nth-child(12) {
+  width: 6%;
+}
+table.actielijst th:nth-child(13),
+table.actielijst td:nth-child(13) {
+  width: 5%;
+}
+/* De rij waar de gebruiker in werkt (hover of een veld erin met focus)
+   valt duidelijker op dan de standaard --blue-bg. */
+table.actielijst tbody tr:hover,
+table.actielijst tbody tr:focus-within {
+  background: var(--blue-bg-actief);
+}
+/* Afgeronde acties vallen visueel terug — dezelfde rij, minder nadruk. */
+table.actielijst tbody tr.actielijst-rij-afgerond {
+  opacity: 0.55;
 }
 table.actielijst th {
   text-align: left;
