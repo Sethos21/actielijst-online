@@ -67,6 +67,7 @@ function App() {
           <KlantoverzichtPage
             onSelectKlant={setGeselecteerdeKlant}
             onImporteren={() => setImportOpen(true)}
+            onTerugNaarStart={() => setScherm('start')}
           />
         )}
 

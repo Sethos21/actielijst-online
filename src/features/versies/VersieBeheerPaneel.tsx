@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Badge } from '../../components/Badge'
+import { formatteerDatum } from '../../lib/datum'
 import { berekenDueDate } from '../acties/dueDate'
 import type { ActieStatus } from '../acties/types'
 import type { Versie } from './types'
@@ -14,11 +15,6 @@ const STATUS_LABEL: Record<ActieStatus, string> = {
   open: 'Open',
   done: 'Gereed',
   hold: 'On hold',
-}
-
-function formatteerDatum(iso: string): string {
-  const [jaar, maand, dag] = iso.split('-')
-  return `${dag}-${maand}-${jaar}`
 }
 
 export function VersieBeheerPaneel({ klantId, onSluiten }: Props) {

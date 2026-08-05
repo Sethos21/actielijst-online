@@ -1,30 +1,52 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { Badge } from '../../components/Badge'
+import { formatteerDatum } from '../../lib/datum'
 import { useActieStats } from '../acties/useActieStats'
+import { useLaatsteVersieDatums } from '../versies/useLaatsteVersieDatums'
 import type { Klant } from './types'
 import { useKlanten } from './useKlanten'
 
 interface Props {
   onSelectKlant: (klant: Klant) => void
   onImporteren: () => void
+  onTerugNaarStart: () => void
 }
 
-export function KlantoverzichtPage({ onSelectKlant, onImporteren }: Props) {
+type SortVeld = 'naam' | 'laatsteVersie'
+
+export function KlantoverzichtPage({
+  onSelectKlant,
+  onImporteren,
+  onTerugNaarStart,
+}: Props) {
   const { klanten, loading, addKlant } = useKlanten()
   const stats = useActieStats()
+  const laatsteVersieDatums = useLaatsteVersieDatums()
   const [zoekterm, setZoekterm] = useState('')
   const [nieuweKlant, setNieuweKlant] = useState('')
+  const [sortVeld, setSortVeld] = useState<SortVeld>('naam')
   const [sortRichting, setSortRichting] = useState<'asc' | 'desc'>('asc')
+
+  function sorteerOp(veld: SortVeld) {
+    if (veld === sortVeld) {
+      setSortRichting(sortRichting === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortVeld(veld)
+      setSortRichting('asc')
+    }
+  }
 
   const zichtbareKlanten = useMemo(() => {
     const gefilterd = klanten.filter((k) =>
       k.naam.toLowerCase().includes(zoekterm.toLowerCase()),
     )
+    const waarde = (klant: Klant) =>
+      sortVeld === 'naam' ? klant.naam : (laatsteVersieDatums[klant.id] ?? '')
     const gesorteerd = [...gefilterd].sort((a, b) =>
-      a.naam.localeCompare(b.naam),
+      waarde(a).localeCompare(waarde(b)),
     )
     return sortRichting === 'asc' ? gesorteerd : gesorteerd.reverse()
-  }, [klanten, zoekterm, sortRichting])
+  }, [klanten, zoekterm, sortVeld, sortRichting, laatsteVersieDatums])
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -32,8 +54,21 @@ export function KlantoverzichtPage({ onSelectKlant, onImporteren }: Props) {
     setNieuweKlant('')
   }
 
+  function kolomkop(label: string, veld: SortVeld) {
+    return (
+      <th>
+        <button type="button" onClick={() => sorteerOp(veld)}>
+          {label} {sortVeld === veld ? (sortRichting === 'asc' ? '▲' : '▼') : ''}
+        </button>
+      </th>
+    )
+  }
+
   return (
     <div>
+      <button type="button" onClick={onTerugNaarStart}>
+        ← Terug naar start
+      </button>
       <h1>Klantoverzicht</h1>
 
       <input
@@ -42,14 +77,6 @@ export function KlantoverzichtPage({ onSelectKlant, onImporteren }: Props) {
         value={zoekterm}
         onChange={(e) => setZoekterm(e.target.value)}
       />
-      <button
-        type="button"
-        onClick={() =>
-          setSortRichting(sortRichting === 'asc' ? 'desc' : 'asc')
-        }
-      >
-        Naam {sortRichting === 'asc' ? '▲' : '▼'}
-      </button>
       <button type="button" onClick={onImporteren}>
         Excel importeren
       </button>
@@ -73,26 +100,41 @@ export function KlantoverzichtPage({ onSelectKlant, onImporteren }: Props) {
       ) : zichtbareKlanten.length === 0 ? (
         <p>Geen klanten gevonden. Voeg er hierboven eentje toe.</p>
       ) : (
-        <div>
-          {zichtbareKlanten.map((klant) => {
-            const klantStats = stats[klant.id]
-            return (
-              <div key={klant.id} className="kaart">
-                <button type="button" onClick={() => onSelectKlant(klant)}>
-                  {klant.naam}
-                </button>
-                {klantStats && (
-                  <>
-                    <Badge variant="open">{klantStats.open} open</Badge>
-                    {klantStats.due > 0 && (
-                      <Badge variant="due">{klantStats.due} due</Badge>
+        <table className="klantoverzicht">
+          <thead>
+            <tr>
+              {kolomkop('Klant', 'naam')}
+              <th>Status</th>
+              {kolomkop('Laatste versie', 'laatsteVersie')}
+            </tr>
+          </thead>
+          <tbody>
+            {zichtbareKlanten.map((klant) => {
+              const klantStats = stats[klant.id]
+              const laatsteVersie = laatsteVersieDatums[klant.id]
+              return (
+                <tr
+                  key={klant.id}
+                  className="klantoverzicht-rij"
+                  onClick={() => onSelectKlant(klant)}
+                >
+                  <td>{klant.naam}</td>
+                  <td>
+                    {klantStats && (
+                      <>
+                        <Badge variant="open">{klantStats.open} open</Badge>
+                        {klantStats.due > 0 && (
+                          <Badge variant="due">{klantStats.due} due</Badge>
+                        )}
+                      </>
                     )}
-                  </>
-                )}
-              </div>
-            )
-          })}
-        </div>
+                  </td>
+                  <td>{laatsteVersie ? formatteerDatum(laatsteVersie) : '—'}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       )}
     </div>
   )

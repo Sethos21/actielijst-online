@@ -6,6 +6,7 @@ import { KlantoverzichtPage } from './KlantoverzichtPage'
 const addKlant = vi.fn()
 const onSelectKlant = vi.fn()
 const onImporteren = vi.fn()
+const onTerugNaarStart = vi.fn()
 
 vi.mock('./useKlanten', () => ({
   useKlanten: () => ({
@@ -24,20 +25,34 @@ vi.mock('../acties/useActieStats', () => ({
   }),
 }))
 
+vi.mock('../versies/useLaatsteVersieDatums', () => ({
+  useLaatsteVersieDatums: () => ({
+    '1': '2026-01-15',
+    '2': '2026-06-01',
+  }),
+}))
+
+function renderScherm() {
+  return render(
+    <KlantoverzichtPage
+      onSelectKlant={onSelectKlant}
+      onImporteren={onImporteren}
+      onTerugNaarStart={onTerugNaarStart}
+    />,
+  )
+}
+
 describe('KlantoverzichtPage', () => {
-  it('toont klanten met hun open/due-badges en filtert op zoekterm', async () => {
+  it('toont klanten met hun open/due-badges, laatste versiedatum en filtert op zoekterm', async () => {
     const user = userEvent.setup()
-    render(
-      <KlantoverzichtPage
-        onSelectKlant={onSelectKlant}
-        onImporteren={onImporteren}
-      />,
-    )
+    renderScherm()
 
     expect(screen.getByText('Malcon')).toBeInTheDocument()
     expect(screen.getByText('Basisweg BV')).toBeInTheDocument()
     expect(screen.getByText('3 open')).toBeInTheDocument()
     expect(screen.getByText('1 due')).toBeInTheDocument()
+    expect(screen.getByText('15-01-2026')).toBeInTheDocument()
+    expect(screen.getByText('01-06-2026')).toBeInTheDocument()
 
     await user.type(screen.getByLabelText('Zoek klant'), 'malcon')
 
@@ -45,14 +60,9 @@ describe('KlantoverzichtPage', () => {
     expect(screen.queryByText('Basisweg BV')).not.toBeInTheDocument()
   })
 
-  it('selecteert een klant bij klikken', async () => {
+  it('selecteert een klant bij klikken op de rij', async () => {
     const user = userEvent.setup()
-    render(
-      <KlantoverzichtPage
-        onSelectKlant={onSelectKlant}
-        onImporteren={onImporteren}
-      />,
-    )
+    renderScherm()
 
     await user.click(screen.getByText('Malcon'))
 
@@ -61,5 +71,26 @@ describe('KlantoverzichtPage', () => {
       naam: 'Malcon',
       aangemaaktOp: 1,
     })
+  })
+
+  it('sorteert op laatste versie bij klikken op die kolomkop', async () => {
+    const user = userEvent.setup()
+    renderScherm()
+
+    await user.click(screen.getByRole('button', { name: /Laatste versie/ }))
+
+    const rijen = Array.from(
+      document.querySelectorAll('table.klantoverzicht tbody tr'),
+    ).map((rij) => rij.querySelector('td')?.textContent)
+    // Ascending op datum: Malcon (15-01) vóór Basisweg BV (01-06).
+    expect(rijen).toEqual(['Malcon', 'Basisweg BV'])
+  })
+
+  it('roept onTerugNaarStart aan bij klikken op de terug-knop', async () => {
+    const user = userEvent.setup()
+    renderScherm()
+
+    await user.click(screen.getByRole('button', { name: '← Terug naar start' }))
+    expect(onTerugNaarStart).toHaveBeenCalledOnce()
   })
 })

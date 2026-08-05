@@ -500,6 +500,34 @@ form {
   background: var(--blue-bg);
 }
 
+/* ---- Klantoverzicht (compacte, sorteerbare lijst) ---- */
+table.klantoverzicht {
+  border-collapse: collapse;
+  width: 100%;
+  background: var(--white);
+}
+table.klantoverzicht th {
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 12px;
+}
+table.klantoverzicht td {
+  border-bottom: 1px solid var(--border);
+  padding: 10px 12px;
+}
+.klantoverzicht-rij {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.klantoverzicht-rij:hover {
+  background: var(--blue-bg);
+}
+
 /* ---- Badge (statuspil) ---- */
 .badge {
   display: inline-flex;
