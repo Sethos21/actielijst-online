@@ -446,6 +446,10 @@ body,
     overflow: visible;
     white-space: pre-wrap;
   }
+  /* Lege plaatsvullers hebben geen inhoud en horen niet thuis op papier. */
+  .hm-card.empty {
+    display: none;
+  }
 }
 
 h1 {

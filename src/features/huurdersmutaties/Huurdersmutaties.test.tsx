@@ -10,6 +10,11 @@ vi.mock('../../components/useToast', () => ({
   useToast: () => toon,
 }))
 
+const exporteerNaarExcel = vi.fn()
+vi.mock('./mutatieExcelExport', () => ({
+  exporteerNaarExcel: (...args: unknown[]) => exporteerNaarExcel(...args),
+}))
+
 const BASIS_MUTATIES: Mutatie[] = [
   {
     id: '1',
@@ -66,6 +71,7 @@ describe('Huurdersmutaties', () => {
     deleteMutatie.mockClear()
     updateMutatie.mockClear()
     toon.mockClear()
+    exporteerNaarExcel.mockClear()
   })
 
   it('groepeert mutaties per maand en toont ingaand/vertrekkend naast elkaar', () => {
@@ -170,5 +176,41 @@ describe('Huurdersmutaties', () => {
 
     await user.click(screen.getByRole('button', { name: '← Terug naar start' }))
     expect(onTerug).toHaveBeenCalledOnce()
+  })
+
+  it('roept window.print() aan via de Print-knop', async () => {
+    const user = userEvent.setup()
+    const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {})
+    render(<Huurdersmutaties onTerug={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: 'Print' }))
+
+    expect(printSpy).toHaveBeenCalledOnce()
+    printSpy.mockRestore()
+  })
+
+  it('exporteert de actuele (gefilterde) lijst via de Excel-knop', async () => {
+    const user = userEvent.setup()
+    render(<Huurdersmutaties onTerug={vi.fn()} />)
+
+    await user.type(screen.getByLabelText('Zoek huurder of locatie'), 'Uden')
+    await user.click(screen.getByRole('button', { name: 'Excel' }))
+
+    expect(exporteerNaarExcel).toHaveBeenCalledOnce()
+    const [geexporteerdeMutaties, jaarLabel] = exporteerNaarExcel.mock.calls[0]
+    expect(geexporteerdeMutaties).toHaveLength(1)
+    expect(geexporteerdeMutaties[0].naam).toBe('Pietersen')
+    expect(jaarLabel).toBe('2026')
+  })
+
+  it('gebruikt "Alle jaren" als bestandslabel wanneer geen specifiek jaar geselecteerd is', async () => {
+    const user = userEvent.setup()
+    render(<Huurdersmutaties onTerug={vi.fn()} />)
+
+    await user.selectOptions(screen.getByLabelText('Filter op jaar'), 'alle')
+    await user.click(screen.getByRole('button', { name: 'Excel' }))
+
+    const [, jaarLabel] = exporteerNaarExcel.mock.calls[0]
+    expect(jaarLabel).toBe('Alle jaren')
   })
 })
