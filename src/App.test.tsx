@@ -16,11 +16,21 @@ vi.mock('./features/auth/useAuthUser', () => ({
 }))
 
 vi.mock('./components/Sidebar', () => ({
-  Sidebar: (props: { onUitloggen: () => void }) => (
+  Sidebar: (props: {
+    onUitloggen: () => void
+    onMijnActies: () => void
+    onDashboard: () => void
+  }) => (
     <div>
       Sidebar-stub
       <button type="button" onClick={props.onUitloggen}>
         Stub-uitloggen
+      </button>
+      <button type="button" onClick={props.onMijnActies}>
+        Stub-mijn-acties
+      </button>
+      <button type="button" onClick={props.onDashboard}>
+        Stub-dashboard
       </button>
     </div>
   ),
@@ -32,6 +42,14 @@ vi.mock('./features/klanten/KlantoverzichtPage', () => ({
 
 vi.mock('./features/acties/ActielijstPage', () => ({
   ActielijstPage: () => <div>Actielijst-stub</div>,
+}))
+
+vi.mock('./features/acties/MijnActiesPage', () => ({
+  MijnActiesPage: () => <div>Mijn-acties-stub</div>,
+}))
+
+vi.mock('./features/dashboard/DashboardPage', () => ({
+  DashboardPage: () => <div>Dashboard-stub</div>,
 }))
 
 vi.mock('./features/huurdersmutaties/Huurdersmutaties', () => ({
@@ -86,6 +104,26 @@ describe('App', () => {
     expect(
       screen.getByRole('button', { name: /Actielijsten/ }),
     ).toBeInTheDocument()
+  })
+
+  it('navigeert naar Mijn acties via de sidebar', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: /Actielijsten/ }))
+    await user.click(screen.getByRole('button', { name: 'Stub-mijn-acties' }))
+
+    expect(screen.getByText('Mijn-acties-stub')).toBeInTheDocument()
+  })
+
+  it('navigeert naar Dashboard via de sidebar', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: /Actielijsten/ }))
+    await user.click(screen.getByRole('button', { name: 'Stub-dashboard' }))
+
+    expect(screen.getByText('Dashboard-stub')).toBeInTheDocument()
   })
 
   it('reset naar het Startscherm bij uitloggen', async () => {

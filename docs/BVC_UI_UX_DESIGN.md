@@ -204,7 +204,7 @@ Boven de maandenlijst: 4 stat-cards naast elkaar (`grid-template-columns: repeat
 **Belangrijk verschil met de actielijst-tabel:** dit scherm gebruikt geen 38px-vaste-rij-patroon — het is een leesweergave + apart invoerpaneel, geen bewerkbare tabel. Pas sectie 5's tabelregels hier niet automatisch toe.
 
 ### Versiebeheer-paneel → `VersieBeheerPaneel.tsx`
-**Functionele specificatie (datamodel, flow, wanneer dit opent) staat in `BVC_WEBAPP_PROJECT_v03.md`** — dit is alleen de visuele kant.
+**Functionele specificatie (datamodel, flow, wanneer dit opent) staat in `BVC_WEBAPP_PROJECT_v04.md`** — dit is alleen de visuele kant.
 - Zelfde slide-in patroon als `MutatieInvoer.tsx`: paneel vanaf rechts, vaste breedte, achtergrond gedimd
 - Lijst van versies: elk item als compacte kaart (naam, datum, aanwezigen), klikbaar
 - Bij het openen van een specifieke versie: **duidelijke read-only banner bovenaan** (bijv. lichte amber-achtergrond met tekst "Je bekijkt een eerdere versie — read-only" + knop "Terug naar actuele lijst") — dit voorkomt dat iemand per ongeluk denkt dat hij de live lijst bewerkt
@@ -213,7 +213,7 @@ Boven de maandenlijst: 4 stat-cards naast elkaar (`grid-template-columns: repeat
 ### Navigatie-update (augustus 2026): sidebar ván binnen de Actielijsten-tak
 **Dit vervangt de "Navigatie is hiërarchisch"-regel in sectie 6 en checklist-item 1 in sectie 9 hieronder.** Op basis van de v17-referentie (`bvc_actielijst_v17.html`) is besloten: zodra je vanuit `StartScreen` voor "Actielijsten" kiest, kom je in een **persistente linker-sidebar** (altijd zichtbaar zolang je in de Actielijsten-tak zit) met:
 - BVC-logo/branding bovenaan
-- Menu: Actielijst / Mijn acties / Dashboard (de laatste twee: nog te bouwen, zie projectdocument)
+- Menu: Actielijst / Mijn acties / Dashboard (alle drie gebouwd, zie projectdocument)
 - Een altijd-zichtbare klantenlijst met open-acties-teller per klant, zodat je zonder tussenscherm kunt wisselen
 - "+ Nieuwe actielijst" onderaan
 

@@ -5,6 +5,7 @@ import { ImportActiesModal } from './features/acties/ImportActiesModal'
 import { MijnActiesPage } from './features/acties/MijnActiesPage'
 import { LoginForm } from './features/auth/LoginForm'
 import { useAuthUser } from './features/auth/useAuthUser'
+import { DashboardPage } from './features/dashboard/DashboardPage'
 import { Huurdersmutaties } from './features/huurdersmutaties/Huurdersmutaties'
 import { KlantoverzichtPage } from './features/klanten/KlantoverzichtPage'
 import type { Klant } from './features/klanten/types'
@@ -13,7 +14,7 @@ import { StartScreen } from './components/StartScreen'
 import { auth } from './lib/firebase'
 
 type Scherm = 'start' | 'actielijsten' | 'huurdersmutaties'
-type Weergave = 'klantoverzicht' | 'mijn-acties'
+type Weergave = 'klantoverzicht' | 'mijn-acties' | 'dashboard'
 
 function App() {
   const { user, loading } = useAuthUser()
@@ -33,18 +34,23 @@ function App() {
   function handleUitloggen() {
     signOut(auth)
     setScherm('start')
-    setGeselecteerdeKlant(null)
     setWeergave('klantoverzicht')
+    setGeselecteerdeKlant(null)
   }
 
   function handleKlantoverzicht() {
-    setGeselecteerdeKlant(null)
     setWeergave('klantoverzicht')
+    setGeselecteerdeKlant(null)
   }
 
   function handleMijnActies() {
-    setGeselecteerdeKlant(null)
     setWeergave('mijn-acties')
+    setGeselecteerdeKlant(null)
+  }
+
+  function handleDashboard() {
+    setWeergave('dashboard')
+    setGeselecteerdeKlant(null)
   }
 
   if (scherm === 'start') {
@@ -68,6 +74,7 @@ function App() {
         onSelectKlant={setGeselecteerdeKlant}
         onKlantoverzicht={handleKlantoverzicht}
         onMijnActies={handleMijnActies}
+        onDashboard={handleDashboard}
         gebruikerEmail={user.email ?? ''}
         onUitloggen={handleUitloggen}
       />
@@ -81,6 +88,8 @@ function App() {
           />
         ) : weergave === 'mijn-acties' ? (
           <MijnActiesPage />
+        ) : weergave === 'dashboard' ? (
+          <DashboardPage onSelectKlant={setGeselecteerdeKlant} />
         ) : (
           <KlantoverzichtPage
             onSelectKlant={setGeselecteerdeKlant}
