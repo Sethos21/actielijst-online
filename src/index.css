@@ -1285,3 +1285,88 @@ table.actielijst .cel-scroll select.status-select {
   font-size: 11px;
   padding: 5px;
 }
+
+/* ---- Mijn acties ---- */
+.mijn-acties-uitleg {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+.mijn-acties-teamleden {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.mijn-acties-teamlid-knop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  cursor: pointer;
+  font: inherit;
+}
+.mijn-acties-teamlid-knop:hover {
+  background: var(--blue-bg);
+}
+.mijn-acties-teamlid-knop.actief {
+  border-color: var(--navy);
+  box-shadow: var(--shadow);
+}
+.mijn-acties-teamlid-naam {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+.mijn-acties-teamlid-telling {
+  font-size: 11px;
+  color: var(--red);
+}
+.mijn-acties-detail h2 {
+  font-size: 14px;
+  color: var(--navy);
+}
+.mijn-acties-klantgroep {
+  margin-bottom: 16px;
+}
+.mijn-acties-klantgroep-titel {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.mijn-acties-kaart {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--white);
+  margin-bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.mijn-acties-kaart-onderwerp {
+  font-weight: 500;
+  font-size: 13px;
+}
+.mijn-acties-kaart-actie {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.mijn-acties-kaart-meta {
+  margin-top: 3px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.mijn-acties-kaart-vestiging {
+  font-size: 11px;
+  color: var(--text-muted);
+}

@@ -4,16 +4,20 @@ import { useKlanten } from '../features/klanten/useKlanten'
 
 interface Props {
   geselecteerdeKlantId: string | null
+  weergave: 'klantoverzicht' | 'mijn-acties'
   onSelectKlant: (klant: Klant) => void
   onKlantoverzicht: () => void
+  onMijnActies: () => void
   gebruikerEmail: string
   onUitloggen: () => void
 }
 
 export function Sidebar({
   geselecteerdeKlantId,
+  weergave,
   onSelectKlant,
   onKlantoverzicht,
+  onMijnActies,
   gebruikerEmail,
   onUitloggen,
 }: Props) {
@@ -30,16 +34,19 @@ export function Sidebar({
       <nav className="sidebar-menu">
         <button
           type="button"
-          className="sidebar-menu-item actief"
+          className={`sidebar-menu-item ${
+            geselecteerdeKlantId || weergave === 'klantoverzicht' ? 'actief' : ''
+          }`}
           onClick={onKlantoverzicht}
         >
           Actielijst
         </button>
         <button
           type="button"
-          className="sidebar-menu-item"
-          disabled
-          title="Volgt in een volgende sprint"
+          className={`sidebar-menu-item ${
+            !geselecteerdeKlantId && weergave === 'mijn-acties' ? 'actief' : ''
+          }`}
+          onClick={onMijnActies}
         >
           Mijn acties
         </button>

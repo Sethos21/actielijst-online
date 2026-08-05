@@ -2,6 +2,7 @@ import { signOut } from 'firebase/auth'
 import { useState } from 'react'
 import { ActielijstPage } from './features/acties/ActielijstPage'
 import { ImportActiesModal } from './features/acties/ImportActiesModal'
+import { MijnActiesPage } from './features/acties/MijnActiesPage'
 import { LoginForm } from './features/auth/LoginForm'
 import { useAuthUser } from './features/auth/useAuthUser'
 import { Huurdersmutaties } from './features/huurdersmutaties/Huurdersmutaties'
@@ -12,10 +13,12 @@ import { StartScreen } from './components/StartScreen'
 import { auth } from './lib/firebase'
 
 type Scherm = 'start' | 'actielijsten' | 'huurdersmutaties'
+type Weergave = 'klantoverzicht' | 'mijn-acties'
 
 function App() {
   const { user, loading } = useAuthUser()
   const [scherm, setScherm] = useState<Scherm>('start')
+  const [weergave, setWeergave] = useState<Weergave>('klantoverzicht')
   const [geselecteerdeKlant, setGeselecteerdeKlant] = useState<Klant | null>(null)
   const [importOpen, setImportOpen] = useState(false)
 
@@ -31,6 +34,17 @@ function App() {
     signOut(auth)
     setScherm('start')
     setGeselecteerdeKlant(null)
+    setWeergave('klantoverzicht')
+  }
+
+  function handleKlantoverzicht() {
+    setGeselecteerdeKlant(null)
+    setWeergave('klantoverzicht')
+  }
+
+  function handleMijnActies() {
+    setGeselecteerdeKlant(null)
+    setWeergave('mijn-acties')
   }
 
   if (scherm === 'start') {
@@ -50,8 +64,10 @@ function App() {
     <div className="app-shell">
       <Sidebar
         geselecteerdeKlantId={geselecteerdeKlant?.id ?? null}
+        weergave={weergave}
         onSelectKlant={setGeselecteerdeKlant}
-        onKlantoverzicht={() => setGeselecteerdeKlant(null)}
+        onKlantoverzicht={handleKlantoverzicht}
+        onMijnActies={handleMijnActies}
         gebruikerEmail={user.email ?? ''}
         onUitloggen={handleUitloggen}
       />
@@ -63,6 +79,8 @@ function App() {
             klantNaam={geselecteerdeKlant.naam}
             onTerug={() => setGeselecteerdeKlant(null)}
           />
+        ) : weergave === 'mijn-acties' ? (
+          <MijnActiesPage />
         ) : (
           <KlantoverzichtPage
             onSelectKlant={setGeselecteerdeKlant}
