@@ -21,7 +21,16 @@ interface Props {
   onTerug: () => void
 }
 
-type SortVeld = 'onderwerp' | 'vestiging' | 'aangemaaktOp' | 'due' | 'status'
+type SortVeld =
+  | 'ref'
+  | 'onderwerp'
+  | 'bedrijf'
+  | 'vestiging'
+  | 'aangemaaktOp'
+  | 'verantw'
+  | 'doorlooptijd'
+  | 'due'
+  | 'status'
 type StatusFilterPil = 'open' | 'done' | 'hold' | 'due'
 type FilterPil = StatusFilterPil | Teamlid
 
@@ -122,8 +131,16 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
   }, [acties, actieveFilters, zoekterm])
 
   const gesorteerdeActies = useMemo(() => {
-    const waarde = (actie: ActieItem) => {
+    const waarde = (actie: ActieItem): string => {
       if (sortVeld === 'due') return berekenDueDate(actie)
+      if (sortVeld === 'verantw') return actie.verantw.join(', ')
+      if (sortVeld === 'doorlooptijd') {
+        return String(DOORLOOPTIJD_OPTIES.indexOf(actie.doorlooptijd)).padStart(2, '0')
+      }
+      if (sortVeld === 'ref') {
+        const nummer = Number(actie.ref)
+        return Number.isNaN(nummer) ? actie.ref : String(nummer).padStart(10, '0')
+      }
       return actie[sortVeld]
     }
     const gesorteerd = [...gefilterdeActies].sort((a, b) =>
@@ -325,14 +342,14 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
         <table className="actielijst">
           <thead>
             <tr>
-              <th>#</th>
+              {kolomkop('#', 'ref')}
               {kolomkop('Invoerdatum', 'aangemaaktOp')}
               {kolomkop('Onderwerp', 'onderwerp')}
-              <th>Bedrijf</th>
+              {kolomkop('Bedrijf', 'bedrijf')}
               {kolomkop('Vestiging', 'vestiging')}
               <th>Actiepunt</th>
-              <th>Verantw.</th>
-              <th>Doorlooptijd</th>
+              {kolomkop('Verantw.', 'verantw')}
+              {kolomkop('Doorlooptijd', 'doorlooptijd')}
               {kolomkop('Due', 'due')}
               {kolomkop('Status', 'status')}
               <th>Opmerking</th>
