@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { ActielijstPage } from './ActielijstPage'
 
@@ -80,5 +81,59 @@ describe('ActielijstPage', () => {
 
     const tonChips = screen.getAllByLabelText('Ton')
     expect(tonChips[0]).toHaveClass('actief')
+  })
+
+  it('toont stat-cards met de juiste tellingen (open/due/afgerond/on hold)', () => {
+    render(
+      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+    )
+
+    const waarden = Array.from(document.querySelectorAll('.stat-waarde')).map(
+      (el) => el.textContent,
+    )
+    expect(waarden).toEqual(['1', '1', '0', '1'])
+  })
+
+  it('filtert op zoekterm', async () => {
+    const user = userEvent.setup()
+    render(
+      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+    )
+
+    await user.type(screen.getByLabelText('Zoeken in actielijst'), 'Hoofdkantoor')
+
+    expect(screen.getByDisplayValue('Lift laten keuren')).toBeInTheDocument()
+    expect(
+      screen.queryByDisplayValue('Op hold gezette actie'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('filtert op een teamlid-pill', async () => {
+    const user = userEvent.setup()
+    render(
+      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+    )
+
+    await user.click(screen.getByLabelText('Filter op Ton'))
+
+    expect(screen.getByDisplayValue('Lift laten keuren')).toBeInTheDocument()
+    expect(
+      screen.queryByDisplayValue('Op hold gezette actie'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('de "Alle"-pil toont weer alle acties na filteren', async () => {
+    const user = userEvent.setup()
+    render(
+      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+    )
+
+    await user.click(screen.getByLabelText('Filter op Ton'))
+    expect(
+      screen.queryByDisplayValue('Op hold gezette actie'),
+    ).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Alle' }))
+    expect(screen.getByDisplayValue('Op hold gezette actie')).toBeInTheDocument()
   })
 })
