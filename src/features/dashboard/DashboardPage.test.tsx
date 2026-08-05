@@ -80,7 +80,7 @@ describe('DashboardPage', () => {
 
     const bowogRij = screen.getByText('Bowog').closest('.dashboard-klant-rij') as HTMLElement
     expect(within(bowogRij).getByText('0 open')).toBeInTheDocument()
-    expect(within(bowogRij).queryByText(/due/)).not.toBeInTheDocument()
+    expect(within(bowogRij).getByText('0 due')).toBeInTheDocument()
     expect(within(bowogRij).getByText('1 done')).toBeInTheDocument()
   })
 

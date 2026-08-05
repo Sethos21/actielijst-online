@@ -68,7 +68,7 @@ export function DashboardPage({ onSelectKlant }: Props) {
                       >
                         <span className="dashboard-klant-naam">{klant.naam}</span>
                         <Badge variant="open">{stats.open} open</Badge>
-                        {stats.due > 0 && <Badge variant="due">{stats.due} due</Badge>}
+                        <Badge variant="due">{stats.due} due</Badge>
                         <Badge variant="done">{stats.done} done</Badge>
                         <span className="dashboard-klant-pijl">→</span>
                       </button>
