@@ -1,4 +1,4 @@
-import { teamlidKleur, initialen } from '../features/team/teamlidKleur'
+import { teamlidKleurKlasse, initialen } from '../features/team/teamlidKleur'
 
 interface Props {
   naam: string
@@ -11,8 +11,7 @@ export function AvatarChip({ naam, alleNamen, actief, onToggle }: Props) {
   return (
     <button
       type="button"
-      className={`avatar-chip ${actief ? 'actief' : 'inactief'}`}
-      style={{ backgroundColor: teamlidKleur(naam, alleNamen) }}
+      className={`avatar-chip ${teamlidKleurKlasse(naam, alleNamen)} ${actief ? 'actief' : 'inactief'}`}
       onClick={onToggle}
       title={naam}
       aria-pressed={actief}

@@ -22,7 +22,7 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.fout) {
       return (
-        <div style={{ padding: 24 }}>
+        <div className="foutscherm">
           <h1>Er ging iets mis</h1>
           <p>
             De app is onverwacht gestopt. Ververs de pagina om opnieuw te

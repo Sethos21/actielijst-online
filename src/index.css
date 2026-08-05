@@ -1,5 +1,11 @@
 @import './styles/tokens.css';
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 :root {
   font: 13px/145% -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: var(--text);
@@ -8,6 +14,27 @@
 
 body {
   margin: 0;
+}
+
+/* ---- Topbar ---- */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--navy);
+  color: var(--white);
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+}
+.app-header button {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.4);
+  color: var(--white);
+}
+.app-header button:hover {
+  background: var(--navy-light);
 }
 
 #root {
@@ -137,6 +164,25 @@ form {
 .avatar-chip.actief {
   border-color: var(--navy);
 }
+/* Vaste kleur per positie in de teamledenlijst, zie teamlidKleur.ts. */
+.avatar-kleur-0 {
+  background: #7c5cbf;
+}
+.avatar-kleur-1 {
+  background: #1d7a45;
+}
+.avatar-kleur-2 {
+  background: #1a5c8a;
+}
+.avatar-kleur-3 {
+  background: #b06800;
+}
+.avatar-kleur-4 {
+  background: #c0392b;
+}
+.avatar-kleur-5 {
+  background: #5a6070;
+}
 
 /* ---- Filterknop (toggle-pill) ---- */
 .filter-pill {
@@ -179,6 +225,13 @@ table.actielijst .cel-scroll {
   overflow-y: auto;
   display: block;
 }
+table.actielijst .verantw-cel {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 4px;
+  padding-top: 2px;
+}
 
 /* ---- Modal ---- */
 .modal-overlay {
@@ -203,6 +256,11 @@ table.actielijst .cel-scroll {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 16px;
+}
+
+/* ---- Foutscherm (ErrorBoundary) ---- */
+.foutscherm {
+  padding: 24px;
 }
 
 /* ---- Toast ---- */
