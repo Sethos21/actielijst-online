@@ -343,7 +343,7 @@ describe('ActielijstPage', () => {
       <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
     )
 
-    const formulier = document.querySelector('form.no-print')
+    const formulier = document.querySelector('form.no-print') as HTMLElement | null
     if (!formulier) throw new Error('formulier niet gevonden')
 
     await user.type(within(formulier).getByLabelText('Actiepunt'), 'Test actie')
