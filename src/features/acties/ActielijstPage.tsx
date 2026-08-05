@@ -65,7 +65,7 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
   const { acties, loading, addActie, updateActie, deleteActie, uitstellen } =
     useActies(klantId)
   const toon = useToast()
-  const [sortVeld, setSortVeld] = useState<SortVeld>('due')
+  const [sortVeld, setSortVeld] = useState<SortVeld>('ref')
   const [sortRichting, setSortRichting] = useState<'asc' | 'desc'>('asc')
   const [actieveFilters, setActieveFilters] = useState<Set<FilterPil>>(new Set())
   const [zoekterm, setZoekterm] = useState('')
@@ -177,7 +177,7 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     if (!nieuw.actie.trim()) return
-    await addActie({
+    const id = await addActie({
       ref: volgendeRef(),
       onderwerp: nieuw.onderwerp,
       bedrijf: nieuw.bedrijf,
@@ -189,6 +189,7 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
       status: 'open',
       opmerking: nieuw.opmerking,
     })
+    if (id) setNieuweRijIds((huidig) => new Set(huidig).add(id))
     setNieuw({
       onderwerp: '',
       bedrijf: '',

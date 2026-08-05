@@ -251,7 +251,7 @@ describe('ActielijstPage', () => {
     expect(rijnummers.sort()).toEqual(['A1', 'A2', 'A3'])
   })
 
-  it('sorteert daadwerkelijk op #, niet alleen visueel', async () => {
+  it('sorteert standaard al oplopend op # en sorteert daadwerkelijk, niet alleen visueel', async () => {
     const user = userEvent.setup()
     render(
       <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
@@ -261,12 +261,16 @@ describe('ActielijstPage', () => {
         (rij) => rij.querySelector('td')?.textContent,
       )
 
-    const sorteerKnop = screen.getByRole('button', { name: /^#/ })
-    await user.click(sorteerKnop)
+    // # is de standaard sortering (oplopend) — juist zodat nieuwe acties
+    // altijd onderin verschijnen i.p.v. ergens middenin op due-datum.
     expect(rijnummers()).toEqual(['A1', 'A2', 'A3'])
 
+    const sorteerKnop = screen.getByRole('button', { name: /^#/ })
     await user.click(sorteerKnop)
     expect(rijnummers()).toEqual(['A3', 'A2', 'A1'])
+
+    await user.click(sorteerKnop)
+    expect(rijnummers()).toEqual(['A1', 'A2', 'A3'])
   })
 
   it('roept window.print() aan via de Print-knop', async () => {
