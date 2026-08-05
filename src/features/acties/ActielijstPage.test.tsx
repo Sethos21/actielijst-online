@@ -79,13 +79,16 @@ describe('ActielijstPage', () => {
     exporteerNaarExcel.mockClear()
   })
 
-  it('toont acties en markeert een verlopen open actie als Due', () => {
+  it('toont acties en markeert een verlopen open actie als Due in de statuskolom', () => {
     render(
       <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
     )
 
     expect(screen.getByDisplayValue('Lift laten keuren')).toBeInTheDocument()
-    expect(document.querySelectorAll('.badge-due')).toHaveLength(1)
+    expect(document.querySelectorAll('.status-select-due')).toHaveLength(1)
+    expect(screen.getByLabelText('Status voor Lift laten keuren')).toHaveDisplayValue(
+      'Due',
+    )
   })
 
   it('markeert een on-hold actie nooit als Due, ondanks verlopen datum', () => {
@@ -93,8 +96,11 @@ describe('ActielijstPage', () => {
       <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
     )
 
-    // Er is precies 1 "Due"-badge: de on-hold actie (zelfde verlopen datum) telt niet mee.
-    expect(document.querySelectorAll('.badge-due')).toHaveLength(1)
+    // Er is precies 1 due statusveld: de on-hold actie (zelfde verlopen datum) telt niet mee.
+    expect(document.querySelectorAll('.status-select-due')).toHaveLength(1)
+    expect(
+      screen.getByLabelText('Status voor Op hold gezette actie'),
+    ).toHaveDisplayValue('On hold')
   })
 
   it('toont de geselecteerde verantwoordelijke als compacte chip, "—" als niemand is toegewezen', () => {

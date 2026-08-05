@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { initialen, teamlidKleurKlasse } from '../features/team/teamlidKleur'
+import { useDropdownPositie } from './useDropdownPositie'
 
 interface Props {
   actieOmschrijving: string
@@ -21,39 +21,7 @@ export function VerantwoordelijkeSelect({
   alleNamen,
   onToggle,
 }: Props) {
-  const [open, setOpen] = useState(false)
-  const [positie, setPositie] = useState({ top: 0, left: 0 })
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function onMouseDown(e: MouseEvent) {
-      const target = e.target as Node
-      if (triggerRef.current?.contains(target)) return
-      if (menuRef.current?.contains(target)) return
-      setOpen(false)
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('mousedown', onMouseDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('mousedown', onMouseDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
-
-  function toggleOpen() {
-    if (open) {
-      setOpen(false)
-      return
-    }
-    const rect = triggerRef.current?.getBoundingClientRect()
-    if (rect) setPositie({ top: rect.bottom + 4, left: rect.left })
-    setOpen(true)
-  }
+  const { open, positie, triggerRef, menuRef, toggleOpen } = useDropdownPositie()
 
   return (
     <>
@@ -82,12 +50,12 @@ export function VerantwoordelijkeSelect({
         createPortal(
           <div
             ref={menuRef}
-            className="verantw-select-menu"
+            className="dropdown-menu"
             role="menu"
             style={{ top: positie.top, left: positie.left }}
           >
             {alleNamen.map((naam) => (
-              <label key={naam} className="verantw-select-optie">
+              <label key={naam} className="dropdown-optie">
                 <input
                   type="checkbox"
                   checked={geselecteerd.includes(naam)}

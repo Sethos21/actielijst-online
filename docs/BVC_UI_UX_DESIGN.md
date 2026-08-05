@@ -42,6 +42,8 @@ Dit bestand bevat exact de volgende custom properties — 1-op-1 overgenomen uit
   --green-bg: #edf7f1;
   --amber: #b06800;
   --amber-bg: #fef5e4;
+  --yellow: #8a6d00;
+  --yellow-bg: #fdf3c7;    /* status "Open" in de actielijst-tabel */
   --blue-bg: #edf2fb;      /* hover-achtergrond op rijen */
   --blue-bg-actief: #d9e6f8; /* iets donkerder — de rij waar de gebruiker in werkt (actielijst) */
 

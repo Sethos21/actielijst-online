@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { Badge } from '../../components/Badge'
+import { UitstelKnop } from '../../components/UitstelKnop'
 import { VerantwoordelijkeSelect } from '../../components/VerantwoordelijkeSelect'
 import { useToast } from '../../components/useToast'
 import { TEAMLEDEN, type Teamlid } from '../team/teamleden'
@@ -436,14 +436,15 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                     </span>
                   </td>
                   <td>
-                    <span className="cel-scroll">
-                      {due} {due_ && <Badge variant="due">Due</Badge>}
-                    </span>
+                    <span className="cel-scroll">{due}</span>
                   </td>
                   <td>
                     <span className="cel-scroll">
                       <select
                         aria-label={`Status voor ${actie.actie}`}
+                        className={`status-select status-select-${
+                          due_ ? 'due' : actie.status
+                        }`}
                         value={actie.status}
                         onChange={(e) =>
                           updateActie(actie.id, {
@@ -451,7 +452,7 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                           })
                         }
                       >
-                        <option value="open">Open</option>
+                        <option value="open">{due_ ? 'Due' : 'Open'}</option>
                         <option value="done">Gereed</option>
                         <option value="hold">On hold</option>
                       </select>
@@ -469,38 +470,22 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                     </span>
                   </td>
                   <td className="no-print">
-                    <span className="cel-scroll">
-                      <select
-                        aria-label={`Uitstellen voor ${actie.actie}`}
-                        value=""
-                        onChange={(e) => {
-                          const keuze = UITSTEL_OPTIES.find(
-                            (o) => o.label === e.target.value,
-                          )
-                          if (keuze) {
-                            handleUitstellen(
-                              actie.id,
-                              keuze.eenheid,
-                              keuze.aantal,
-                              keuze.label,
-                            )
-                          }
-                        }}
-                      >
-                        <option value="" disabled>
-                          Uitstellen...
-                        </option>
-                        {UITSTEL_OPTIES.map((optie) => (
-                          <option key={optie.label} value={optie.label}>
-                            {optie.label}
-                          </option>
-                        ))}
-                      </select>
-                    </span>
+                    <UitstelKnop
+                      actieOmschrijving={actie.actie}
+                      opties={UITSTEL_OPTIES}
+                      onKies={(keuze) =>
+                        handleUitstellen(actie.id, keuze.eenheid, keuze.aantal, keuze.label)
+                      }
+                    />
                   </td>
                   <td className="no-print">
-                    <button type="button" onClick={() => deleteActie(actie.id)}>
-                      Verwijderen
+                    <button
+                      type="button"
+                      className="icoon-knop"
+                      aria-label={`Verwijderen: ${actie.actie}`}
+                      onClick={() => deleteActie(actie.id)}
+                    >
+                      🗑️
                     </button>
                   </td>
                 </tr>
