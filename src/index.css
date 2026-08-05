@@ -1158,6 +1158,20 @@ table.actielijst .cel-scroll select.status-select {
   font-size: 11px;
   color: var(--text-muted);
 }
+.hm-maand-badge-toekomstig {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 20px;
+  padding: 1px 8px;
+}
+.hm-maand-toekomstig .hm-maand-label {
+  color: var(--text-muted);
+}
 
 .hm-row {
   display: grid;

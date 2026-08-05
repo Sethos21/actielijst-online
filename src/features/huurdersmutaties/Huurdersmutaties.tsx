@@ -5,6 +5,7 @@ import {
   berekenStats,
   filterMutaties,
   groepeerPerMaand,
+  isToekomstigJaar,
   vulJaarAan,
   type MaandGroep,
 } from './mutatieLogica'
@@ -115,13 +116,18 @@ export function Huurdersmutaties({ onTerug }: Props) {
     const maxRijen = Math.max(groep.in.length, groep.uit.length)
     const toontNieuweRijHier =
       nieuweRij && nieuweRij.jaar === groep.jaar && nieuweRij.maand === groep.maand
+    const toekomstig = isToekomstigJaar(groep.jaar)
 
     return (
-      <div className="hm-maand" key={`${groep.jaar}-${groep.maand}`}>
+      <div
+        className={`hm-maand ${toekomstig ? 'hm-maand-toekomstig' : ''}`}
+        key={`${groep.jaar}-${groep.maand}`}
+      >
         <div className="hm-maand-header">
           <span className="hm-maand-label">
             {MAANDNAMEN[groep.maand - 1]} {groep.jaar}
           </span>
+          {toekomstig && <span className="hm-maand-badge-toekomstig">Toekomstig</span>}
           <span className="hm-maand-line" />
           <span className="hm-maand-count">
             {groep.in.length} in · {groep.uit.length} uit

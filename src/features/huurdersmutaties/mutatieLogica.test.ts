@@ -4,6 +4,7 @@ import {
   filterMutaties,
   getAutocompleteWaarden,
   groepeerPerMaand,
+  isToekomstigJaar,
   vulJaarAan,
 } from './mutatieLogica'
 import type { Mutatie } from './types'
@@ -107,5 +108,16 @@ describe('berekenStats', () => {
       maakMutatie({ richting: 'uit' }),
     ]
     expect(berekenStats(mutaties)).toEqual({ in: 2, uit: 1, netto: 1, totaal: 3 })
+  })
+})
+
+describe('isToekomstigJaar', () => {
+  it('is waar voor een jaar na het huidige jaar', () => {
+    expect(isToekomstigJaar(2027, 2026)).toBe(true)
+  })
+
+  it('is onwaar voor het huidige jaar of eerder', () => {
+    expect(isToekomstigJaar(2026, 2026)).toBe(false)
+    expect(isToekomstigJaar(2025, 2026)).toBe(false)
   })
 })
