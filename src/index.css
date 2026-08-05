@@ -710,7 +710,7 @@ table.actielijst td:nth-child(7) {
 }
 table.actielijst th:nth-child(8),
 table.actielijst td:nth-child(8) {
-  width: 6%;
+  width: 5%;
 }
 table.actielijst th:nth-child(9),
 table.actielijst td:nth-child(9) {
@@ -722,7 +722,7 @@ table.actielijst td:nth-child(10) {
 }
 table.actielijst th:nth-child(11),
 table.actielijst td:nth-child(11) {
-  width: 22%;
+  width: 23%;
 }
 table.actielijst th:nth-child(12),
 table.actielijst td:nth-child(12) {
@@ -802,6 +802,40 @@ table.actielijst .cel-scroll select {
 /* Kalender-icoon van de invoerdatum kost ruimte die het jaartal nodig heeft. */
 table.actielijst input[type='date']::-webkit-calendar-picker-indicator {
   display: none;
+}
+/* Invoerdatum: de native datum-input blijft functioneel (klikken opent de
+   datumkiezer) maar toont onzichtbare tekst — een overlay erbovenop toont
+   het compacte dd-mm-jj-formaat, want de browser dwingt zijn eigen
+   (lange) datumnotatie af op een echte <input type="date">. */
+table.actielijst .invoerdatum-cel {
+  position: relative;
+}
+table.actielijst .invoerdatum-input {
+  color: transparent;
+}
+table.actielijst .invoerdatum-weergave {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--text);
+}
+/* Doorlooptijd: subtiele pil zonder kader, zelfde vorm als de status-select
+   maar zonder statuskleur — kost minder breedte dan een omkaderd veld. */
+table.actielijst select.doorlooptijd-select {
+  align-self: center;
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  border-radius: 20px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+table.actielijst select.doorlooptijd-select:hover {
+  background: var(--blue-bg);
 }
 /* Actiepunt/opmerking: vrije tekst kan lang zijn — hier blijft de oude
    scrollbox (wrap + verticale scroll binnen de vaste rijhoogte) i.p.v.

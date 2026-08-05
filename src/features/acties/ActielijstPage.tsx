@@ -5,6 +5,7 @@ import { useToast } from '../../components/useToast'
 import { TEAMLEDEN, type Teamlid } from '../team/teamleden'
 import { VergaderingAfsluitenModal } from '../versies/VergaderingAfsluitenModal'
 import { VersieBeheerPaneel } from '../versies/VersieBeheerPaneel'
+import { formatteerDatumKort } from '../../lib/datum'
 import { berekenDueDate, isDue } from './dueDate'
 import { exporteerNaarExcel } from './excelExport'
 import {
@@ -149,11 +150,19 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
     return sortRichting === 'asc' ? gesorteerd : gesorteerd.reverse()
   }, [gefilterdeActies, sortVeld, sortRichting])
 
+  function volgendeRef(): string {
+    const hoogsteRef = acties.reduce((max, actie) => {
+      const nummer = Number(actie.ref)
+      return Number.isNaN(nummer) ? max : Math.max(max, nummer)
+    }, 0)
+    return String(hoogsteRef + 1)
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     if (!nieuw.actie.trim()) return
     await addActie({
-      ref: '',
+      ref: volgendeRef(),
       onderwerp: nieuw.onderwerp,
       bedrijf: nieuw.bedrijf,
       vestiging: nieuw.vestiging,
@@ -358,7 +367,7 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
             </tr>
           </thead>
           <tbody>
-            {gesorteerdeActies.map((actie, index) => {
+            {gesorteerdeActies.map((actie) => {
               const due = berekenDueDate(actie)
               const due_ = isDue(actie)
               return (
@@ -366,17 +375,21 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                   key={actie.id}
                   className={actie.status === 'done' ? 'actielijst-rij-afgerond' : undefined}
                 >
-                  <td>{index + 1}</td>
+                  <td>{actie.ref}</td>
                   <td>
-                    <span className="cel-scroll">
+                    <span className="cel-scroll invoerdatum-cel">
                       <input
                         aria-label={`Invoerdatum voor ${actie.actie}`}
                         type="date"
+                        className="invoerdatum-input"
                         value={actie.aangemaaktOp}
                         onChange={(e) =>
                           updateActie(actie.id, { aangemaaktOp: e.target.value })
                         }
                       />
+                      <span className="invoerdatum-weergave" aria-hidden="true">
+                        {formatteerDatumKort(actie.aangemaaktOp)}
+                      </span>
                     </span>
                   </td>
                   <td>
@@ -437,6 +450,7 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                     <span className="cel-scroll">
                       <select
                         aria-label={`Doorlooptijd voor ${actie.actie}`}
+                        className="doorlooptijd-select"
                         value={actie.doorlooptijd}
                         onChange={(e) =>
                           updateActie(actie.id, {

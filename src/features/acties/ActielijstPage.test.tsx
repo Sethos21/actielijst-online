@@ -204,7 +204,7 @@ describe('ActielijstPage', () => {
     expect(screen.getByDisplayValue('Op hold gezette actie')).toBeInTheDocument()
   })
 
-  it('nummert de rijen oplopend, ongeacht sortering', () => {
+  it('toont het ref-nummer gekoppeld aan de rij i.p.v. een herberekende positie', () => {
     render(
       <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
     )
@@ -212,7 +212,25 @@ describe('ActielijstPage', () => {
     const rijnummers = Array.from(
       document.querySelectorAll('table.actielijst tbody tr'),
     ).map((rij) => rij.querySelector('td')?.textContent)
-    expect(rijnummers).toEqual(['1', '2', '3'])
+    expect(rijnummers.sort()).toEqual(['A1', 'A2', 'A3'])
+  })
+
+  it('sorteert daadwerkelijk op #, niet alleen visueel', async () => {
+    const user = userEvent.setup()
+    render(
+      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+    )
+    const rijnummers = () =>
+      Array.from(document.querySelectorAll('table.actielijst tbody tr')).map(
+        (rij) => rij.querySelector('td')?.textContent,
+      )
+
+    const sorteerKnop = screen.getByRole('button', { name: /^#/ })
+    await user.click(sorteerKnop)
+    expect(rijnummers()).toEqual(['A1', 'A2', 'A3'])
+
+    await user.click(sorteerKnop)
+    expect(rijnummers()).toEqual(['A3', 'A2', 'A1'])
   })
 
   it('roept window.print() aan via de Print-knop', async () => {
