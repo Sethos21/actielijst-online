@@ -1,6 +1,8 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { ActieItem } from './types'
 import { ActielijstPage } from './ActielijstPage'
 
 vi.mock('../../components/useToast', () => ({
@@ -37,63 +39,80 @@ vi.mock('../../lib/firebase', () => ({
   db: {},
 }))
 
+const BASIS_ACTIES: ActieItem[] = [
+  {
+    id: '1',
+    klantId: 'klant-1',
+    ref: 'A1',
+    onderwerp: 'Onderhoud',
+    bedrijf: 'Bowog Beheer B.V.',
+    vestiging: 'Hoofdkantoor',
+    actie: 'Lift laten keuren',
+    verantw: ['Ton'],
+    aangemaaktOp: '2020-01-01',
+    doorlooptijd: '1w',
+    status: 'open',
+    opmerking: '',
+  },
+  {
+    id: '2',
+    klantId: 'klant-1',
+    ref: 'A2',
+    onderwerp: 'Onderhoud',
+    bedrijf: 'Bowog Beheer B.V.',
+    vestiging: 'Bijkantoor',
+    actie: 'Op hold gezette actie',
+    verantw: [],
+    aangemaaktOp: '2020-01-01',
+    doorlooptijd: '1w',
+    status: 'hold',
+    opmerking: '',
+  },
+  {
+    id: '3',
+    klantId: 'klant-1',
+    ref: 'A3',
+    onderwerp: 'Onderhoud',
+    bedrijf: 'Bowog Beheer B.V.',
+    vestiging: 'Nevenvestiging',
+    actie: 'Andere open actie van Seth',
+    verantw: ['Seth'],
+    aangemaaktOp: '2999-01-01',
+    doorlooptijd: '1w',
+    status: 'open',
+    opmerking: '',
+  },
+]
+
+const deleteActie = vi.fn()
+const updateActie = vi.fn()
+
+// Stateful mock (i.p.v. een vaste array): addActie voegt écht toe aan de
+// lijst, nodig om te testen dat een snel-toegevoegde actie na sorteren
+// onderin blijft staan.
 vi.mock('./useActies', () => ({
-  useActies: () => ({
-    acties: [
-      {
-        id: '1',
-        klantId: 'klant-1',
-        ref: 'A1',
-        onderwerp: 'Onderhoud',
-        bedrijf: 'Bowog Beheer B.V.',
-        vestiging: 'Hoofdkantoor',
-        actie: 'Lift laten keuren',
-        verantw: ['Ton'],
-        aangemaaktOp: '2020-01-01',
-        doorlooptijd: '1w',
-        status: 'open',
-        opmerking: '',
-      },
-      {
-        id: '2',
-        klantId: 'klant-1',
-        ref: 'A2',
-        onderwerp: 'Onderhoud',
-        bedrijf: 'Bowog Beheer B.V.',
-        vestiging: 'Bijkantoor',
-        actie: 'Op hold gezette actie',
-        verantw: [],
-        aangemaaktOp: '2020-01-01',
-        doorlooptijd: '1w',
-        status: 'hold',
-        opmerking: '',
-      },
-      {
-        id: '3',
-        klantId: 'klant-1',
-        ref: 'A3',
-        onderwerp: 'Onderhoud',
-        bedrijf: 'Bowog Beheer B.V.',
-        vestiging: 'Nevenvestiging',
-        actie: 'Andere open actie van Seth',
-        verantw: ['Seth'],
-        aangemaaktOp: '2999-01-01',
-        doorlooptijd: '1w',
-        status: 'open',
-        opmerking: '',
-      },
-    ],
-    loading: false,
-    addActie: vi.fn(),
-    updateActie: vi.fn(),
-    deleteActie: vi.fn(),
-    uitstellen: vi.fn(),
-  }),
+  useActies: () => {
+    const [acties, setActies] = useState(BASIS_ACTIES)
+    return {
+      acties,
+      loading: false,
+      addActie: vi.fn(async (nieuw: Omit<ActieItem, 'id' | 'klantId'>) => {
+        const id = `nieuw-${acties.length + 1}`
+        setActies((huidig) => [...huidig, { ...nieuw, id, klantId: 'klant-1' }])
+        return id
+      }),
+      updateActie,
+      deleteActie,
+      uitstellen: vi.fn(),
+    }
+  },
 }))
 
 describe('ActielijstPage', () => {
   afterEach(() => {
     exporteerNaarExcel.mockClear()
+    deleteActie.mockClear()
+    updateActie.mockClear()
   })
 
   it('toont acties en markeert een verlopen open actie als Due in de statuskolom', () => {
@@ -277,5 +296,74 @@ describe('ActielijstPage', () => {
     expect(geexporteerdeActies).toHaveLength(1)
     expect(geexporteerdeActies[0].actie).toBe('Lift laten keuren')
     expect(klantNaam).toBe('Malcon')
+  })
+
+  it('een snel-toegevoegde actie blijft onderin staan, ook als er op een kolom gesorteerd is', async () => {
+    const user = userEvent.setup()
+    render(
+      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+    )
+
+    // Sorteer op Vestiging (heeft voor elke rij een andere waarde) zodat de
+    // standaardvolgorde daadwerkelijk omgooit.
+    await user.click(screen.getByRole('button', { name: /^Vestiging/ }))
+
+    await user.click(
+      screen.getByRole('button', { name: '+ Nieuwe actie toevoegen' }),
+    )
+
+    const rijen = await screen.findAllByRole('row')
+    const laatsteRij = rijen[rijen.length - 1]
+    // De net toegevoegde rij heeft nog geen actiepunt ingevuld — dat bewijst
+    // dat dít de nieuwe rij is, en die staat als laatste in de tabel.
+    expect(within(laatsteRij).getByLabelText('Actiepunt')).toHaveValue('')
+  })
+
+  it('vraagt om bevestiging voordat een actie verwijderd wordt', async () => {
+    const user = userEvent.setup()
+    const confirmSpy = vi.spyOn(window, 'confirm')
+    render(
+      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+    )
+
+    confirmSpy.mockReturnValueOnce(false)
+    await user.click(screen.getByLabelText('Verwijderen: Lift laten keuren'))
+    expect(deleteActie).not.toHaveBeenCalled()
+
+    confirmSpy.mockReturnValueOnce(true)
+    await user.click(screen.getByLabelText('Verwijderen: Lift laten keuren'))
+    expect(deleteActie).toHaveBeenCalledWith('1')
+
+    confirmSpy.mockRestore()
+  })
+
+  it('het formulier bovenin slaat ook verantwoordelijke, doorlooptijd en opmerking op', async () => {
+    const user = userEvent.setup()
+    render(
+      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+    )
+
+    const formulier = document.querySelector('form.no-print')
+    if (!formulier) throw new Error('formulier niet gevonden')
+
+    await user.type(within(formulier).getByLabelText('Actiepunt'), 'Test actie')
+    await user.click(screen.getByLabelText('Verantwoordelijke voor nieuwe actie'))
+    await user.click(screen.getByRole('checkbox', { name: 'Gertjan' }))
+    await user.selectOptions(screen.getByLabelText('Doorlooptijd'), '4w')
+    await user.type(screen.getByLabelText('Opmerking'), 'Even nakijken')
+    await user.click(screen.getByRole('button', { name: 'Actie toevoegen' }))
+
+    const nieuwActiepunt = await screen.findByDisplayValue('Test actie')
+    const nieuweRij = nieuwActiepunt.closest('tr')
+    expect(nieuweRij).not.toBeNull()
+    expect(
+      within(nieuweRij as HTMLElement).getByDisplayValue('Even nakijken'),
+    ).toBeInTheDocument()
+    expect(
+      within(nieuweRij as HTMLElement).getByLabelText(/Verantwoordelijke voor/),
+    ).toHaveTextContent('GE')
+    expect(
+      within(nieuweRij as HTMLElement).getByLabelText(/Doorlooptijd voor/),
+    ).toHaveDisplayValue('4w')
   })
 })

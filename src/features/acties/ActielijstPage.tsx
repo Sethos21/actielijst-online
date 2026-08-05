@@ -69,10 +69,22 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
   const [sortRichting, setSortRichting] = useState<'asc' | 'desc'>('asc')
   const [actieveFilters, setActieveFilters] = useState<Set<FilterPil>>(new Set())
   const [zoekterm, setZoekterm] = useState('')
-  const [nieuw, setNieuw] = useState({ onderwerp: '', bedrijf: '', vestiging: '', actie: '' })
+  const [nieuw, setNieuw] = useState({
+    onderwerp: '',
+    bedrijf: '',
+    vestiging: '',
+    actie: '',
+    verantw: [] as string[],
+    doorlooptijd: '2w' as Doorlooptijd,
+    opmerking: '',
+  })
   const [vergaderingModalOpen, setVergaderingModalOpen] = useState(false)
   const [versiesPaneelOpen, setVersiesPaneelOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
+  // Snel-toegevoegde acties (via de knop onderaan) horen altijd onderin te
+  // blijven staan, ook als er op een kolom gesorteerd is — anders verdwijnt
+  // een net toegevoegde lege rij ergens middenin de lijst.
+  const [nieuweRijIds, setNieuweRijIds] = useState<Set<string>>(new Set())
 
   function toggleFilter(pil: FilterPil) {
     const nieuweSet = new Set(actieveFilters)
@@ -146,11 +158,13 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
       }
       return actie[sortVeld]
     }
-    const gesorteerd = [...gefilterdeActies].sort((a, b) =>
-      waarde(a).localeCompare(waarde(b)),
-    )
-    return sortRichting === 'asc' ? gesorteerd : gesorteerd.reverse()
-  }, [gefilterdeActies, sortVeld, sortRichting])
+    const nietVastgepind = gefilterdeActies.filter((a) => !nieuweRijIds.has(a.id))
+    const vastgepind = gefilterdeActies.filter((a) => nieuweRijIds.has(a.id))
+    const gesorteerd = nietVastgepind.sort((a, b) => waarde(a).localeCompare(waarde(b)))
+    const metRichting = sortRichting === 'asc' ? gesorteerd : gesorteerd.reverse()
+    // Vastgepinde rijen blijven onderin, ongeacht sorteerveld/-richting.
+    return [...metRichting, ...vastgepind]
+  }, [gefilterdeActies, sortVeld, sortRichting, nieuweRijIds])
 
   function volgendeRef(): string {
     const hoogsteRef = acties.reduce((max, actie) => {
@@ -169,19 +183,36 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
       bedrijf: nieuw.bedrijf,
       vestiging: nieuw.vestiging,
       actie: nieuw.actie,
-      verantw: [],
+      verantw: nieuw.verantw,
       aangemaaktOp: new Date().toISOString().slice(0, 10),
-      doorlooptijd: '2w',
+      doorlooptijd: nieuw.doorlooptijd,
       status: 'open',
+      opmerking: nieuw.opmerking,
+    })
+    setNieuw({
+      onderwerp: '',
+      bedrijf: '',
+      vestiging: '',
+      actie: '',
+      verantw: [],
+      doorlooptijd: '2w',
       opmerking: '',
     })
-    setNieuw({ onderwerp: '', bedrijf: '', vestiging: '', actie: '' })
     toon('Actie toegevoegd')
+  }
+
+  function toggleNieuwVerantw(naam: string) {
+    setNieuw((huidig) => ({
+      ...huidig,
+      verantw: huidig.verantw.includes(naam)
+        ? huidig.verantw.filter((v) => v !== naam)
+        : [...huidig.verantw, naam],
+    }))
   }
 
   /** Snel een lege actie onderaan toevoegen — daarna verder invullen in de rij zelf. */
   async function handleSnelToevoegen() {
-    await addActie({
+    const id = await addActie({
       ref: volgendeRef(),
       onderwerp: '',
       bedrijf: '',
@@ -193,7 +224,16 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
       status: 'open',
       opmerking: '',
     })
+    if (id) setNieuweRijIds((huidig) => new Set(huidig).add(id))
     toon('Actie toegevoegd')
+  }
+
+  function handleVerwijderen(actie: ActieItem) {
+    const omschrijving = actie.actie.trim() || actie.onderwerp.trim() || 'deze actie'
+    if (!window.confirm(`"${omschrijving}" verwijderen? Dit kan niet ongedaan worden gemaakt.`)) {
+      return
+    }
+    deleteActie(actie.id)
   }
 
   function handlePrinten() {
@@ -358,6 +398,37 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
           <input
             value={nieuw.actie}
             onChange={(e) => setNieuw({ ...nieuw, actie: e.target.value })}
+          />
+        </label>
+        <label>
+          Verantwoordelijke
+          <VerantwoordelijkeSelect
+            actieOmschrijving="nieuwe actie"
+            geselecteerd={nieuw.verantw}
+            alleNamen={TEAMLEDEN}
+            onToggle={toggleNieuwVerantw}
+          />
+        </label>
+        <label>
+          Doorlooptijd
+          <select
+            value={nieuw.doorlooptijd}
+            onChange={(e) =>
+              setNieuw({ ...nieuw, doorlooptijd: e.target.value as Doorlooptijd })
+            }
+          >
+            {DOORLOOPTIJD_OPTIES.map((optie) => (
+              <option key={optie} value={optie}>
+                {optie}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Opmerking
+          <input
+            value={nieuw.opmerking}
+            onChange={(e) => setNieuw({ ...nieuw, opmerking: e.target.value })}
           />
         </label>
         <button type="submit" className="primary">
@@ -529,7 +600,7 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                       type="button"
                       className="icoon-knop"
                       aria-label={`Verwijderen: ${actie.actie}`}
-                      onClick={() => deleteActie(actie.id)}
+                      onClick={() => handleVerwijderen(actie)}
                     >
                       🗑️
                     </button>
