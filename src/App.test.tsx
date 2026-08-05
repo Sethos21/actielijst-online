@@ -16,11 +16,14 @@ vi.mock('./features/auth/useAuthUser', () => ({
 }))
 
 vi.mock('./components/Sidebar', () => ({
-  Sidebar: (props: { onUitloggen: () => void }) => (
+  Sidebar: (props: { onUitloggen: () => void; onDashboard: () => void }) => (
     <div>
       Sidebar-stub
       <button type="button" onClick={props.onUitloggen}>
         Stub-uitloggen
+      </button>
+      <button type="button" onClick={props.onDashboard}>
+        Stub-dashboard
       </button>
     </div>
   ),
@@ -32,6 +35,10 @@ vi.mock('./features/klanten/KlantoverzichtPage', () => ({
 
 vi.mock('./features/acties/ActielijstPage', () => ({
   ActielijstPage: () => <div>Actielijst-stub</div>,
+}))
+
+vi.mock('./features/dashboard/DashboardPage', () => ({
+  DashboardPage: () => <div>Dashboard-stub</div>,
 }))
 
 vi.mock('./features/huurdersmutaties/Huurdersmutaties', () => ({

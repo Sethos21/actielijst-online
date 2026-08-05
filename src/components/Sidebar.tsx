@@ -2,18 +2,24 @@ import type { Klant } from '../features/klanten/types'
 import { useActieStats } from '../features/acties/useActieStats'
 import { useKlanten } from '../features/klanten/useKlanten'
 
+type Weergave = 'klantoverzicht' | 'dashboard'
+
 interface Props {
   geselecteerdeKlantId: string | null
+  weergave: Weergave
   onSelectKlant: (klant: Klant) => void
   onKlantoverzicht: () => void
+  onDashboard: () => void
   gebruikerEmail: string
   onUitloggen: () => void
 }
 
 export function Sidebar({
   geselecteerdeKlantId,
+  weergave,
   onSelectKlant,
   onKlantoverzicht,
+  onDashboard,
   gebruikerEmail,
   onUitloggen,
 }: Props) {
@@ -30,7 +36,9 @@ export function Sidebar({
       <nav className="sidebar-menu">
         <button
           type="button"
-          className="sidebar-menu-item actief"
+          className={`sidebar-menu-item ${
+            geselecteerdeKlantId || weergave === 'klantoverzicht' ? 'actief' : ''
+          }`}
           onClick={onKlantoverzicht}
         >
           Actielijst
@@ -45,9 +53,10 @@ export function Sidebar({
         </button>
         <button
           type="button"
-          className="sidebar-menu-item"
-          disabled
-          title="Volgt in een volgende sprint"
+          className={`sidebar-menu-item ${
+            !geselecteerdeKlantId && weergave === 'dashboard' ? 'actief' : ''
+          }`}
+          onClick={onDashboard}
         >
           Dashboard
         </button>

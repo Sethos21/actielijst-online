@@ -4,6 +4,7 @@ import { ActielijstPage } from './features/acties/ActielijstPage'
 import { ImportActiesModal } from './features/acties/ImportActiesModal'
 import { LoginForm } from './features/auth/LoginForm'
 import { useAuthUser } from './features/auth/useAuthUser'
+import { DashboardPage } from './features/dashboard/DashboardPage'
 import { Huurdersmutaties } from './features/huurdersmutaties/Huurdersmutaties'
 import { KlantoverzichtPage } from './features/klanten/KlantoverzichtPage'
 import type { Klant } from './features/klanten/types'
@@ -12,10 +13,12 @@ import { StartScreen } from './components/StartScreen'
 import { auth } from './lib/firebase'
 
 type Scherm = 'start' | 'actielijsten' | 'huurdersmutaties'
+type Weergave = 'klantoverzicht' | 'dashboard'
 
 function App() {
   const { user, loading } = useAuthUser()
   const [scherm, setScherm] = useState<Scherm>('start')
+  const [weergave, setWeergave] = useState<Weergave>('klantoverzicht')
   const [geselecteerdeKlant, setGeselecteerdeKlant] = useState<Klant | null>(null)
   const [importOpen, setImportOpen] = useState(false)
 
@@ -30,6 +33,17 @@ function App() {
   function handleUitloggen() {
     signOut(auth)
     setScherm('start')
+    setWeergave('klantoverzicht')
+    setGeselecteerdeKlant(null)
+  }
+
+  function handleKlantoverzicht() {
+    setWeergave('klantoverzicht')
+    setGeselecteerdeKlant(null)
+  }
+
+  function handleDashboard() {
+    setWeergave('dashboard')
     setGeselecteerdeKlant(null)
   }
 
@@ -50,8 +64,10 @@ function App() {
     <div className="app-shell">
       <Sidebar
         geselecteerdeKlantId={geselecteerdeKlant?.id ?? null}
+        weergave={weergave}
         onSelectKlant={setGeselecteerdeKlant}
-        onKlantoverzicht={() => setGeselecteerdeKlant(null)}
+        onKlantoverzicht={handleKlantoverzicht}
+        onDashboard={handleDashboard}
         gebruikerEmail={user.email ?? ''}
         onUitloggen={handleUitloggen}
       />
@@ -63,6 +79,8 @@ function App() {
             klantNaam={geselecteerdeKlant.naam}
             onTerug={() => setGeselecteerdeKlant(null)}
           />
+        ) : weergave === 'dashboard' ? (
+          <DashboardPage onSelectKlant={setGeselecteerdeKlant} />
         ) : (
           <KlantoverzichtPage
             onSelectKlant={setGeselecteerdeKlant}
