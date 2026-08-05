@@ -18,5 +18,15 @@ service cloud.firestore {
     match /klanten/{klantId}/versies/{versieId} {
       allow read, write: if request.auth != null;
     }
+
+    // Huurdersmutaties: losstaande tak van de app, niet gekoppeld aan een klant.
+    match /mutaties/{mutatieId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Instellingen (o.a. de lijst met jaren voor Huurdersmutaties).
+    match /instellingen/{instellingId} {
+      allow read, write: if request.auth != null;
+    }
   }
 }
