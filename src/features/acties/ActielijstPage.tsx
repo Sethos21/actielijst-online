@@ -178,10 +178,14 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
   }
 
   function kolomkop(label: string, veld: SortVeld) {
+    const actief = sortVeld === veld
     return (
       <th>
-        <button type="button" onClick={() => sorteerOp(veld)}>
-          {label} {sortVeld === veld ? (sortRichting === 'asc' ? '▲' : '▼') : ''}
+        <button type="button" className="th-sort" onClick={() => sorteerOp(veld)}>
+          {label}
+          <span className="th-sort-pijl">
+            {actief ? (sortRichting === 'asc' ? '▲' : '▼') : '▾'}
+          </span>
         </button>
       </th>
     )
@@ -322,12 +326,13 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
           <thead>
             <tr>
               <th>#</th>
+              {kolomkop('Invoerdatum', 'aangemaaktOp')}
               {kolomkop('Onderwerp', 'onderwerp')}
               <th>Bedrijf</th>
               {kolomkop('Vestiging', 'vestiging')}
               <th>Actiepunt</th>
               <th>Verantw.</th>
-              {kolomkop('Aangemaakt', 'aangemaaktOp')}
+              <th>Doorlooptijd</th>
               {kolomkop('Due', 'due')}
               {kolomkop('Status', 'status')}
               <th>Opmerking</th>
@@ -342,6 +347,18 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
               return (
                 <tr key={actie.id}>
                   <td>{index + 1}</td>
+                  <td>
+                    <span className="cel-scroll">
+                      <input
+                        aria-label={`Invoerdatum voor ${actie.actie}`}
+                        type="date"
+                        value={actie.aangemaaktOp}
+                        onChange={(e) =>
+                          updateActie(actie.id, { aangemaaktOp: e.target.value })
+                        }
+                      />
+                    </span>
+                  </td>
                   <td>
                     <span className="cel-scroll">
                       <input
@@ -376,8 +393,8 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                     </span>
                   </td>
                   <td>
-                    <span className="cel-scroll">
-                      <input
+                    <span className="cel-scroll cel-scroll-tekst">
+                      <textarea
                         aria-label="Actiepunt"
                         value={actie.actie}
                         onChange={(e) =>
@@ -398,14 +415,6 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                   </td>
                   <td>
                     <span className="cel-scroll">
-                      <input
-                        aria-label={`Aangemaakt op voor ${actie.actie}`}
-                        type="date"
-                        value={actie.aangemaaktOp}
-                        onChange={(e) =>
-                          updateActie(actie.id, { aangemaaktOp: e.target.value })
-                        }
-                      />
                       <select
                         aria-label={`Doorlooptijd voor ${actie.actie}`}
                         value={actie.doorlooptijd}
@@ -424,7 +433,9 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                     </span>
                   </td>
                   <td>
-                    {due} {due_ && <Badge variant="due">Due</Badge>}
+                    <span className="cel-scroll">
+                      {due} {due_ && <Badge variant="due">Due</Badge>}
+                    </span>
                   </td>
                   <td>
                     <span className="cel-scroll">
@@ -444,8 +455,8 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                     </span>
                   </td>
                   <td>
-                    <span className="cel-scroll">
-                      <input
+                    <span className="cel-scroll cel-scroll-tekst">
+                      <textarea
                         aria-label={`Opmerking voor ${actie.actie}`}
                         value={actie.opmerking}
                         onChange={(e) =>

@@ -419,11 +419,17 @@ body,
   /* Invoervelden lezen als platte tekst i.p.v. bewerkbare vakjes. */
   table.actielijst input,
   table.actielijst select,
+  table.actielijst textarea,
   table.actielijst .verantw-select-trigger {
     border: none;
     background: transparent;
     padding: 0;
     appearance: none;
+  }
+  table.actielijst .cel-scroll-tekst textarea {
+    height: auto;
+    overflow: visible;
+    white-space: pre-wrap;
   }
 }
 
@@ -681,6 +687,30 @@ table.actielijst th {
   border-bottom: 1px solid var(--border);
   padding: 8px 6px;
 }
+/* Alle kolomkoppen zien er hetzelfde uit, ook de sorteerbare (button-in-th) —
+   de knop erft de th-typografie i.p.v. de standaard button-stijl (rand/wit/padding). */
+table.actielijst th .th-sort {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+}
+table.actielijst th .th-sort:hover {
+  color: var(--text);
+}
+table.actielijst th .th-sort:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 2px;
+}
+table.actielijst th .th-sort-pijl {
+  font-size: 8px;
+  opacity: 0.6;
+}
 table.actielijst td {
   border-bottom: 1px solid var(--border);
   padding: 4px 6px;
@@ -693,6 +723,7 @@ table.actielijst .cel-scroll {
   align-items: center;
   gap: 4px;
   overflow: hidden;
+  white-space: nowrap;
 }
 table.actielijst .cel-scroll input,
 table.actielijst .cel-scroll select {
@@ -701,6 +732,31 @@ table.actielijst .cel-scroll select {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* Actiepunt/opmerking: vrije tekst kan lang zijn — hier blijft de oude
+   scrollbox (wrap + verticale scroll binnen de vaste rijhoogte) i.p.v.
+   ellipsis-afkapping, zodat de volledige tekst altijd bereikbaar blijft. */
+table.actielijst .cel-scroll-tekst {
+  display: block;
+  white-space: normal;
+}
+table.actielijst .cel-scroll-tekst textarea {
+  display: block;
+  width: 100%;
+  height: 100%;
+  resize: none;
+  overflow-y: auto;
+  white-space: normal;
+  font: inherit;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 2px 4px;
+  color: var(--text);
+}
+table.actielijst .cel-scroll-tekst textarea:focus {
+  outline: none;
+  border-color: var(--navy);
+  box-shadow: var(--shadow);
 }
 /* ---- Verantwoordelijke-select (multi-select dropdown in de tabelcel) ---- */
 .verantw-select-trigger {
