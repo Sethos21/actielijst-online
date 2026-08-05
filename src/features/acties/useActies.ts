@@ -31,7 +31,8 @@ export function useActies(klantId: string) {
   }, [klantId])
 
   async function addActie(nieuw: Omit<ActieItem, 'id' | 'klantId'>) {
-    await addDoc(collection(db, COLLECTION), { ...nieuw, klantId })
+    const ref = await addDoc(collection(db, COLLECTION), { ...nieuw, klantId })
+    return ref.id
   }
 
   async function updateActie(actieId: string, patch: Partial<ActieItem>) {

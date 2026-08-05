@@ -281,6 +281,21 @@ body,
   flex-shrink: 0;
 }
 
+/* ---- "+ Nieuwe actie toevoegen" onder de tabel — snel een lege rij erbij ---- */
+.actielijst-nieuwe-rij {
+  margin-top: 8px;
+  background: transparent;
+  border: none;
+  color: var(--navy);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 6px 0;
+  cursor: pointer;
+}
+.actielijst-nieuwe-rij:hover {
+  text-decoration: underline;
+}
+
 /* ---- Slide-in paneel (Versiebeheer, later ook Huurdersmutaties-invoer) ---- */
 .paneel-overlay {
   position: fixed;
@@ -418,11 +433,18 @@ body,
   }
   /* Invoervelden lezen als platte tekst i.p.v. bewerkbare vakjes. */
   table.actielijst input,
-  table.actielijst select {
+  table.actielijst select,
+  table.actielijst textarea,
+  table.actielijst .verantw-select-trigger {
     border: none;
     background: transparent;
     padding: 0;
     appearance: none;
+  }
+  table.actielijst .cel-scroll-tekst textarea {
+    height: auto;
+    overflow: visible;
+    white-space: pre-wrap;
   }
 }
 
@@ -497,6 +519,34 @@ form {
   transition: background-color 0.15s ease;
 }
 .kaart:hover {
+  background: var(--blue-bg);
+}
+
+/* ---- Klantoverzicht (compacte, sorteerbare lijst) ---- */
+table.klantoverzicht {
+  border-collapse: collapse;
+  width: 100%;
+  background: var(--white);
+}
+table.klantoverzicht th {
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 12px;
+}
+table.klantoverzicht td {
+  border-bottom: 1px solid var(--border);
+  padding: 10px 12px;
+}
+.klantoverzicht-rij {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.klantoverzicht-rij:hover {
   background: var(--blue-bg);
 }
 
@@ -640,7 +690,72 @@ form {
 table.actielijst {
   border-collapse: collapse;
   width: 100%;
+  table-layout: fixed;
   background: var(--white);
+}
+/* Kolombreedtes: Actiepunt/Opmerking krijgen de meeste ruimte, korte
+   waarden (datum, status, doorlooptijd e.d.) blijven compact. */
+table.actielijst th:nth-child(1),
+table.actielijst td:nth-child(1) {
+  width: 2%;
+}
+table.actielijst th:nth-child(2),
+table.actielijst td:nth-child(2) {
+  width: 6%;
+}
+table.actielijst th:nth-child(3),
+table.actielijst td:nth-child(3) {
+  width: 8%;
+}
+table.actielijst th:nth-child(4),
+table.actielijst td:nth-child(4) {
+  width: 6%;
+}
+table.actielijst th:nth-child(5),
+table.actielijst td:nth-child(5) {
+  width: 8%;
+}
+table.actielijst th:nth-child(6),
+table.actielijst td:nth-child(6) {
+  width: 20%;
+}
+table.actielijst th:nth-child(7),
+table.actielijst td:nth-child(7) {
+  width: 5%;
+}
+table.actielijst th:nth-child(8),
+table.actielijst td:nth-child(8) {
+  width: 5%;
+}
+table.actielijst th:nth-child(9),
+table.actielijst td:nth-child(9) {
+  width: 6%;
+}
+table.actielijst th:nth-child(10),
+table.actielijst td:nth-child(10) {
+  width: 6%;
+}
+table.actielijst th:nth-child(11),
+table.actielijst td:nth-child(11) {
+  width: 23%;
+}
+table.actielijst th:nth-child(12),
+table.actielijst td:nth-child(12) {
+  width: 3%;
+}
+table.actielijst th:nth-child(13),
+table.actielijst td:nth-child(13) {
+  width: 2%;
+}
+/* De rij waar de gebruiker in werkt (hover of een veld erin met focus)
+   valt duidelijker op dan de standaard --blue-bg. */
+table.actielijst tbody tr:hover,
+table.actielijst tbody tr:focus-within {
+  background: var(--blue-bg-actief);
+}
+/* Afgeronde acties vallen visueel terug — dezelfde rij, minder nadruk. */
+table.actielijst tbody tr.actielijst-rij-afgerond {
+  opacity: 0.55;
 }
 table.actielijst th {
   text-align: left;
@@ -652,23 +767,239 @@ table.actielijst th {
   border-bottom: 1px solid var(--border);
   padding: 8px 6px;
 }
+/* Alle kolomkoppen zien er hetzelfde uit, ook de sorteerbare (button-in-th) —
+   de knop erft de th-typografie i.p.v. de standaard button-stijl (rand/wit/padding). */
+table.actielijst th .th-sort {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+}
+table.actielijst th .th-sort:hover {
+  color: var(--text);
+}
+table.actielijst th .th-sort:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 2px;
+}
+table.actielijst th .th-sort-pijl {
+  font-size: 8px;
+  opacity: 0.6;
+}
 table.actielijst td {
   border-bottom: 1px solid var(--border);
   padding: 4px 6px;
-  vertical-align: top;
-  height: 78px;
+  vertical-align: middle;
+  height: 76px;
 }
 table.actielijst .cel-scroll {
-  height: 62px;
-  overflow-y: auto;
-  display: block;
-}
-table.actielijst .verantw-cel {
+  height: 68px;
   display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
+  align-items: center;
   gap: 4px;
-  padding-top: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+table.actielijst .cel-scroll input,
+table.actielijst .cel-scroll select {
+  min-width: 0;
+  flex: 1;
+  align-self: stretch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Kalender-icoon van de invoerdatum kost ruimte die het jaartal nodig heeft. */
+table.actielijst input[type='date']::-webkit-calendar-picker-indicator {
+  display: none;
+}
+/* Invoerdatum: standaard een knop met het compacte dd-mm-jj-formaat —
+   pas bij klikken verschijnt de echte <input type="date">. CSS-trucs om
+   de native datumnotatie te verkorten (transparante tekst + overlay)
+   bleken onbetrouwbaar, de browser blijft zijn eigen notatie tonen. */
+table.actielijst .invoerdatum-weergave-knop {
+  flex: 1;
+  align-self: stretch;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 0 8px;
+  cursor: pointer;
+  color: var(--text);
+  font: inherit;
+}
+table.actielijst .invoerdatum-weergave-knop:hover {
+  border-color: var(--border-strong);
+}
+table.actielijst .invoerdatum-weergave-knop:focus-visible {
+  outline: none;
+  border-color: var(--navy);
+  box-shadow: var(--shadow);
+}
+/* Doorlooptijd: subtiele pil zonder kader, zelfde vorm als de status-select
+   maar zonder statuskleur — kost minder breedte dan een omkaderd veld. */
+table.actielijst select.doorlooptijd-select {
+  align-self: center;
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  border-radius: 20px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+table.actielijst select.doorlooptijd-select:hover {
+  background: var(--blue-bg);
+}
+/* Actiepunt/opmerking: vrije tekst kan lang zijn — hier blijft de oude
+   scrollbox (wrap + verticale scroll binnen de vaste rijhoogte) i.p.v.
+   ellipsis-afkapping, zodat de volledige tekst altijd bereikbaar blijft. */
+table.actielijst .cel-scroll-tekst {
+  display: block;
+  white-space: normal;
+}
+table.actielijst .cel-scroll-tekst textarea {
+  display: block;
+  width: 100%;
+  height: 100%;
+  resize: none;
+  overflow-y: auto;
+  white-space: normal;
+  font: inherit;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 2px 4px;
+  color: var(--text);
+}
+table.actielijst .cel-scroll-tekst textarea:focus {
+  outline: none;
+  border-color: var(--navy);
+  box-shadow: var(--shadow);
+}
+/* ---- Verantwoordelijke-select (multi-select dropdown in de tabelcel) ---- */
+.verantw-select-trigger {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  overflow: hidden;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 2px;
+}
+.verantw-select-trigger:hover {
+  border-color: var(--border-strong);
+}
+.verantw-select-trigger:focus-visible {
+  outline: none;
+  border-color: var(--navy);
+  box-shadow: var(--shadow);
+}
+.verantw-select-leeg {
+  color: var(--text-muted);
+}
+.avatar-chip-klein {
+  width: 20px;
+  height: 20px;
+  font-size: 9px;
+  cursor: inherit;
+}
+/* ---- Generiek dropdown-menu (portal) — VerantwoordelijkeSelect, UitstelKnop ---- */
+.dropdown-menu {
+  position: fixed;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 160px;
+  max-height: 70vh;
+  overflow-y: auto;
+  z-index: 20;
+}
+.dropdown-optie {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 12px;
+}
+.dropdown-optie:hover {
+  background: var(--blue-bg);
+}
+/* UitstelKnop gebruikt <button> i.p.v. <label> voor de opties — reset naar
+   dezelfde look als .dropdown-optie. */
+.dropdown-optie-knop {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* ---- Icoon-knop (Uitstellen/Verwijderen in de actielijst-tabel) ---- */
+.icoon-knop {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  line-height: 1;
+  padding: 4px;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.icoon-knop:hover {
+  background: var(--blue-bg);
+}
+.icoon-knop:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 2px;
+}
+
+/* ---- Status-select (gekleurde pil, kleur volgt status/due) ---- */
+table.actielijst select.status-select {
+  border: none;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  text-align-last: center;
+  cursor: pointer;
+}
+table.actielijst select.status-select-open {
+  background: var(--yellow-bg);
+  color: var(--yellow);
+}
+table.actielijst select.status-select-done {
+  background: var(--green-bg);
+  color: var(--green);
+}
+table.actielijst select.status-select-hold {
+  background: var(--red-bg);
+  color: var(--red);
+}
+table.actielijst select.status-select-due {
+  background: var(--amber-bg);
+  color: var(--amber);
+}
+/* Blijft een compacte pil i.p.v. uit te rekken naar de volle rijhoogte. */
+table.actielijst .cel-scroll select.status-select {
+  align-self: center;
+  flex: 0 0 auto;
 }
 
 /* ---- Modal ---- */

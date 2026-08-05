@@ -1,12 +1,14 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { AvatarChip } from '../../components/AvatarChip'
-import { Badge } from '../../components/Badge'
+import { InvoerdatumVeld } from '../../components/InvoerdatumVeld'
+import { UitstelKnop } from '../../components/UitstelKnop'
+import { VerantwoordelijkeSelect } from '../../components/VerantwoordelijkeSelect'
 import { useToast } from '../../components/useToast'
 import { TEAMLEDEN, type Teamlid } from '../team/teamleden'
 import { VergaderingAfsluitenModal } from '../versies/VergaderingAfsluitenModal'
 import { VersieBeheerPaneel } from '../versies/VersieBeheerPaneel'
 import { berekenDueDate, isDue } from './dueDate'
 import { exporteerNaarExcel } from './excelExport'
+import { ImportActiesModal } from './ImportActiesModal'
 import {
   DOORLOOPTIJD_OPTIES,
   type ActieItem,
@@ -21,7 +23,16 @@ interface Props {
   onTerug: () => void
 }
 
-type SortVeld = 'onderwerp' | 'vestiging' | 'aangemaaktOp' | 'due' | 'status'
+type SortVeld =
+  | 'ref'
+  | 'onderwerp'
+  | 'bedrijf'
+  | 'vestiging'
+  | 'aangemaaktOp'
+  | 'verantw'
+  | 'doorlooptijd'
+  | 'due'
+  | 'status'
 type StatusFilterPil = 'open' | 'done' | 'hold' | 'due'
 type FilterPil = StatusFilterPil | Teamlid
 
@@ -54,13 +65,26 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
   const { acties, loading, addActie, updateActie, deleteActie, uitstellen } =
     useActies(klantId)
   const toon = useToast()
-  const [sortVeld, setSortVeld] = useState<SortVeld>('due')
+  const [sortVeld, setSortVeld] = useState<SortVeld>('ref')
   const [sortRichting, setSortRichting] = useState<'asc' | 'desc'>('asc')
   const [actieveFilters, setActieveFilters] = useState<Set<FilterPil>>(new Set())
   const [zoekterm, setZoekterm] = useState('')
-  const [nieuw, setNieuw] = useState({ onderwerp: '', bedrijf: '', vestiging: '', actie: '' })
+  const [nieuw, setNieuw] = useState({
+    onderwerp: '',
+    bedrijf: '',
+    vestiging: '',
+    actie: '',
+    verantw: [] as string[],
+    doorlooptijd: '2w' as Doorlooptijd,
+    opmerking: '',
+  })
   const [vergaderingModalOpen, setVergaderingModalOpen] = useState(false)
   const [versiesPaneelOpen, setVersiesPaneelOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
+  // Snel-toegevoegde acties (via de knop onderaan) horen altijd onderin te
+  // blijven staan, ook als er op een kolom gesorteerd is — anders verdwijnt
+  // een net toegevoegde lege rij ergens middenin de lijst.
+  const [nieuweRijIds, setNieuweRijIds] = useState<Set<string>>(new Set())
 
   function toggleFilter(pil: FilterPil) {
     const nieuweSet = new Set(actieveFilters)
@@ -122,33 +146,95 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
   }, [acties, actieveFilters, zoekterm])
 
   const gesorteerdeActies = useMemo(() => {
-    const waarde = (actie: ActieItem) => {
+    const waarde = (actie: ActieItem): string => {
       if (sortVeld === 'due') return berekenDueDate(actie)
+      if (sortVeld === 'verantw') return actie.verantw.join(', ')
+      if (sortVeld === 'doorlooptijd') {
+        return String(DOORLOOPTIJD_OPTIES.indexOf(actie.doorlooptijd)).padStart(2, '0')
+      }
+      if (sortVeld === 'ref') {
+        const nummer = Number(actie.ref)
+        return Number.isNaN(nummer) ? actie.ref : String(nummer).padStart(10, '0')
+      }
       return actie[sortVeld]
     }
-    const gesorteerd = [...gefilterdeActies].sort((a, b) =>
-      waarde(a).localeCompare(waarde(b)),
-    )
-    return sortRichting === 'asc' ? gesorteerd : gesorteerd.reverse()
-  }, [gefilterdeActies, sortVeld, sortRichting])
+    const nietVastgepind = gefilterdeActies.filter((a) => !nieuweRijIds.has(a.id))
+    const vastgepind = gefilterdeActies.filter((a) => nieuweRijIds.has(a.id))
+    const gesorteerd = nietVastgepind.sort((a, b) => waarde(a).localeCompare(waarde(b)))
+    const metRichting = sortRichting === 'asc' ? gesorteerd : gesorteerd.reverse()
+    // Vastgepinde rijen blijven onderin, ongeacht sorteerveld/-richting.
+    return [...metRichting, ...vastgepind]
+  }, [gefilterdeActies, sortVeld, sortRichting, nieuweRijIds])
+
+  function volgendeRef(): string {
+    const hoogsteRef = acties.reduce((max, actie) => {
+      const nummer = Number(actie.ref)
+      return Number.isNaN(nummer) ? max : Math.max(max, nummer)
+    }, 0)
+    return String(hoogsteRef + 1)
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     if (!nieuw.actie.trim()) return
-    await addActie({
-      ref: '',
+    const id = await addActie({
+      ref: volgendeRef(),
       onderwerp: nieuw.onderwerp,
       bedrijf: nieuw.bedrijf,
       vestiging: nieuw.vestiging,
       actie: nieuw.actie,
+      verantw: nieuw.verantw,
+      aangemaaktOp: new Date().toISOString().slice(0, 10),
+      doorlooptijd: nieuw.doorlooptijd,
+      status: 'open',
+      opmerking: nieuw.opmerking,
+    })
+    if (id) setNieuweRijIds((huidig) => new Set(huidig).add(id))
+    setNieuw({
+      onderwerp: '',
+      bedrijf: '',
+      vestiging: '',
+      actie: '',
+      verantw: [],
+      doorlooptijd: '2w',
+      opmerking: '',
+    })
+    toon('Actie toegevoegd')
+  }
+
+  function toggleNieuwVerantw(naam: string) {
+    setNieuw((huidig) => ({
+      ...huidig,
+      verantw: huidig.verantw.includes(naam)
+        ? huidig.verantw.filter((v) => v !== naam)
+        : [...huidig.verantw, naam],
+    }))
+  }
+
+  /** Snel een lege actie onderaan toevoegen — daarna verder invullen in de rij zelf. */
+  async function handleSnelToevoegen() {
+    const id = await addActie({
+      ref: volgendeRef(),
+      onderwerp: '',
+      bedrijf: '',
+      vestiging: '',
+      actie: '',
       verantw: [],
       aangemaaktOp: new Date().toISOString().slice(0, 10),
       doorlooptijd: '2w',
       status: 'open',
       opmerking: '',
     })
-    setNieuw({ onderwerp: '', bedrijf: '', vestiging: '', actie: '' })
+    if (id) setNieuweRijIds((huidig) => new Set(huidig).add(id))
     toon('Actie toegevoegd')
+  }
+
+  function handleVerwijderen(actie: ActieItem) {
+    const omschrijving = actie.actie.trim() || actie.onderwerp.trim() || 'deze actie'
+    if (!window.confirm(`"${omschrijving}" verwijderen? Dit kan niet ongedaan worden gemaakt.`)) {
+      return
+    }
+    deleteActie(actie.id)
   }
 
   function handlePrinten() {
@@ -178,10 +264,14 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
   }
 
   function kolomkop(label: string, veld: SortVeld) {
+    const actief = sortVeld === veld
     return (
       <th>
-        <button type="button" onClick={() => sorteerOp(veld)}>
-          {label} {sortVeld === veld ? (sortRichting === 'asc' ? '▲' : '▼') : ''}
+        <button type="button" className="th-sort" onClick={() => sorteerOp(veld)}>
+          {label}
+          <span className="th-sort-pijl">
+            {actief ? (sortRichting === 'asc' ? '▲' : '▼') : '▾'}
+          </span>
         </button>
       </th>
     )
@@ -209,6 +299,9 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
           </button>
           <button type="button" onClick={handleExporteren}>
             Excel
+          </button>
+          <button type="button" onClick={() => setImportOpen(true)}>
+            Excel importeren
           </button>
           <button
             type="button"
@@ -308,6 +401,37 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
             onChange={(e) => setNieuw({ ...nieuw, actie: e.target.value })}
           />
         </label>
+        <label>
+          Verantwoordelijke
+          <VerantwoordelijkeSelect
+            actieOmschrijving="nieuwe actie"
+            geselecteerd={nieuw.verantw}
+            alleNamen={TEAMLEDEN}
+            onToggle={toggleNieuwVerantw}
+          />
+        </label>
+        <label>
+          Doorlooptijd
+          <select
+            value={nieuw.doorlooptijd}
+            onChange={(e) =>
+              setNieuw({ ...nieuw, doorlooptijd: e.target.value as Doorlooptijd })
+            }
+          >
+            {DOORLOOPTIJD_OPTIES.map((optie) => (
+              <option key={optie} value={optie}>
+                {optie}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Opmerking
+          <input
+            value={nieuw.opmerking}
+            onChange={(e) => setNieuw({ ...nieuw, opmerking: e.target.value })}
+          />
+        </label>
         <button type="submit" className="primary">
           Actie toevoegen
         </button>
@@ -321,13 +445,14 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
         <table className="actielijst">
           <thead>
             <tr>
-              <th>#</th>
+              {kolomkop('#', 'ref')}
+              {kolomkop('Invoerdatum', 'aangemaaktOp')}
               {kolomkop('Onderwerp', 'onderwerp')}
-              <th>Bedrijf</th>
+              {kolomkop('Bedrijf', 'bedrijf')}
               {kolomkop('Vestiging', 'vestiging')}
               <th>Actiepunt</th>
-              <th>Verantw.</th>
-              {kolomkop('Aangemaakt', 'aangemaaktOp')}
+              {kolomkop('Verantw.', 'verantw')}
+              {kolomkop('Doorlooptijd', 'doorlooptijd')}
               {kolomkop('Due', 'due')}
               {kolomkop('Status', 'status')}
               <th>Opmerking</th>
@@ -336,12 +461,24 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
             </tr>
           </thead>
           <tbody>
-            {gesorteerdeActies.map((actie, index) => {
+            {gesorteerdeActies.map((actie) => {
               const due = berekenDueDate(actie)
               const due_ = isDue(actie)
               return (
-                <tr key={actie.id}>
-                  <td>{index + 1}</td>
+                <tr
+                  key={actie.id}
+                  className={actie.status === 'done' ? 'actielijst-rij-afgerond' : undefined}
+                >
+                  <td>{actie.ref}</td>
+                  <td>
+                    <span className="cel-scroll">
+                      <InvoerdatumVeld
+                        actieOmschrijving={actie.actie}
+                        waarde={actie.aangemaaktOp}
+                        onWijzig={(iso) => updateActie(actie.id, { aangemaaktOp: iso })}
+                      />
+                    </span>
+                  </td>
                   <td>
                     <span className="cel-scroll">
                       <input
@@ -376,8 +513,8 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                     </span>
                   </td>
                   <td>
-                    <span className="cel-scroll">
-                      <input
+                    <span className="cel-scroll cel-scroll-tekst">
+                      <textarea
                         aria-label="Actiepunt"
                         value={actie.actie}
                         onChange={(e) =>
@@ -387,30 +524,20 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                     </span>
                   </td>
                   <td>
-                    <span className="cel-scroll verantw-cel">
-                      {TEAMLEDEN.map((naam) => (
-                        <AvatarChip
-                          key={naam}
-                          naam={naam}
-                          alleNamen={TEAMLEDEN}
-                          actief={actie.verantw.includes(naam)}
-                          onToggle={() => toggleVerantw(actie, naam)}
-                        />
-                      ))}
+                    <span className="cel-scroll">
+                      <VerantwoordelijkeSelect
+                        actieOmschrijving={actie.actie}
+                        geselecteerd={actie.verantw}
+                        alleNamen={TEAMLEDEN}
+                        onToggle={(naam) => toggleVerantw(actie, naam)}
+                      />
                     </span>
                   </td>
                   <td>
                     <span className="cel-scroll">
-                      <input
-                        aria-label={`Aangemaakt op voor ${actie.actie}`}
-                        type="date"
-                        value={actie.aangemaaktOp}
-                        onChange={(e) =>
-                          updateActie(actie.id, { aangemaaktOp: e.target.value })
-                        }
-                      />
                       <select
                         aria-label={`Doorlooptijd voor ${actie.actie}`}
+                        className="doorlooptijd-select"
                         value={actie.doorlooptijd}
                         onChange={(e) =>
                           updateActie(actie.id, {
@@ -427,12 +554,15 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                     </span>
                   </td>
                   <td>
-                    {due} {due_ && <Badge variant="due">Due</Badge>}
+                    <span className="cel-scroll">{due}</span>
                   </td>
                   <td>
                     <span className="cel-scroll">
                       <select
                         aria-label={`Status voor ${actie.actie}`}
+                        className={`status-select status-select-${
+                          due_ ? 'due' : actie.status
+                        }`}
                         value={actie.status}
                         onChange={(e) =>
                           updateActie(actie.id, {
@@ -440,15 +570,15 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                           })
                         }
                       >
-                        <option value="open">Open</option>
+                        <option value="open">{due_ ? 'Due' : 'Open'}</option>
                         <option value="done">Gereed</option>
                         <option value="hold">On hold</option>
                       </select>
                     </span>
                   </td>
                   <td>
-                    <span className="cel-scroll">
-                      <input
+                    <span className="cel-scroll cel-scroll-tekst">
+                      <textarea
                         aria-label={`Opmerking voor ${actie.actie}`}
                         value={actie.opmerking}
                         onChange={(e) =>
@@ -458,38 +588,22 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                     </span>
                   </td>
                   <td className="no-print">
-                    <span className="cel-scroll">
-                      <select
-                        aria-label={`Uitstellen voor ${actie.actie}`}
-                        value=""
-                        onChange={(e) => {
-                          const keuze = UITSTEL_OPTIES.find(
-                            (o) => o.label === e.target.value,
-                          )
-                          if (keuze) {
-                            handleUitstellen(
-                              actie.id,
-                              keuze.eenheid,
-                              keuze.aantal,
-                              keuze.label,
-                            )
-                          }
-                        }}
-                      >
-                        <option value="" disabled>
-                          Uitstellen...
-                        </option>
-                        {UITSTEL_OPTIES.map((optie) => (
-                          <option key={optie.label} value={optie.label}>
-                            {optie.label}
-                          </option>
-                        ))}
-                      </select>
-                    </span>
+                    <UitstelKnop
+                      actieOmschrijving={actie.actie}
+                      opties={UITSTEL_OPTIES}
+                      onKies={(keuze) =>
+                        handleUitstellen(actie.id, keuze.eenheid, keuze.aantal, keuze.label)
+                      }
+                    />
                   </td>
                   <td className="no-print">
-                    <button type="button" onClick={() => deleteActie(actie.id)}>
-                      Verwijderen
+                    <button
+                      type="button"
+                      className="icoon-knop"
+                      aria-label={`Verwijderen: ${actie.actie}`}
+                      onClick={() => handleVerwijderen(actie)}
+                    >
+                      🗑️
                     </button>
                   </td>
                 </tr>
@@ -497,6 +611,21 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
             })}
           </tbody>
         </table>
+      )}
+
+      <button
+        type="button"
+        className="no-print actielijst-nieuwe-rij"
+        onClick={handleSnelToevoegen}
+      >
+        + Nieuwe actie toevoegen
+      </button>
+
+      {importOpen && (
+        <ImportActiesModal
+          standaardKlantId={klantId}
+          onSluiten={() => setImportOpen(false)}
+        />
       )}
 
       {vergaderingModalOpen && (
