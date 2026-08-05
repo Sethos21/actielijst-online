@@ -34,6 +34,17 @@ vi.mock('./features/acties/ActielijstPage', () => ({
   ActielijstPage: () => <div>Actielijst-stub</div>,
 }))
 
+vi.mock('./features/huurdersmutaties/Huurdersmutaties', () => ({
+  Huurdersmutaties: (props: { onTerug: () => void }) => (
+    <div>
+      Huurdersmutaties-stub
+      <button type="button" onClick={props.onTerug}>
+        ← Terug naar start
+      </button>
+    </div>
+  ),
+}))
+
 describe('App', () => {
   it('toont het Startscherm als eerste scherm na inloggen', () => {
     render(<App />)
@@ -56,18 +67,16 @@ describe('App', () => {
     expect(screen.getByText('Klantoverzicht-stub')).toBeInTheDocument()
   })
 
-  it('navigeert naar de Huurdersmutaties-placeholder na kiezen van "Huurdersmutaties"', async () => {
+  it('navigeert naar Huurdersmutaties na kiezen van "Huurdersmutaties"', async () => {
     const user = userEvent.setup()
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: /Huurdersmutaties/ }))
 
-    expect(
-      screen.getByText('Deze module wordt binnenkort gebouwd.'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('Huurdersmutaties-stub')).toBeInTheDocument()
   })
 
-  it('gaat terug naar het Startscherm vanuit de Huurdersmutaties-placeholder', async () => {
+  it('gaat terug naar het Startscherm vanuit Huurdersmutaties', async () => {
     const user = userEvent.setup()
     render(<App />)
 

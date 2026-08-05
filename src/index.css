@@ -1044,3 +1044,244 @@ table.actielijst .cel-scroll select.status-select {
   border-radius: var(--radius);
   font-size: 12px;
 }
+
+/* ---- Huurdersmutaties ---- */
+.huurdersscherm {
+  min-height: 100vh;
+  padding: 24px;
+  box-sizing: border-box;
+}
+.hm-topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.hm-terug {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 0 0 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.hm-terug:hover {
+  color: var(--navy);
+}
+.hm-topbar-acties {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.hm-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.hm-stat {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hm-stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.hm-stat-val {
+  font-size: 20px;
+  font-weight: 700;
+}
+.hm-stat-groen {
+  color: var(--green);
+}
+.hm-stat-rood {
+  color: var(--red);
+}
+
+.hm-kolhead {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 0 0 6px;
+}
+.hm-kolhead-in {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--green);
+}
+.hm-kolhead-out {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--red);
+}
+
+.hm-maand {
+  margin-bottom: 22px;
+}
+.hm-maand-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.hm-maand-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy);
+  min-width: 100px;
+}
+.hm-maand-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.hm-maand-count {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.hm-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.hm-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-left: 3px solid transparent;
+  border-radius: var(--radius);
+  padding: 8px 10px;
+}
+.hm-card.in {
+  border-left-color: var(--green);
+}
+.hm-card.out {
+  border-left-color: var(--red);
+}
+.hm-card.empty {
+  background: transparent;
+  border: 1px dashed var(--border);
+}
+.hm-card-klik {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.hm-card-klik:hover {
+  background: var(--blue-bg);
+}
+.hm-name {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+.hm-loc {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.hm-admin {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.hm-opmerking {
+  display: block;
+  font-size: 11px;
+  color: var(--navy);
+  font-style: italic;
+  margin-top: 2px;
+}
+
+.hm-newcard {
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  background: transparent;
+  padding: 7px 10px;
+  font-size: 12px;
+  color: var(--navy);
+  cursor: pointer;
+  text-align: left;
+}
+.hm-newcard.out {
+  color: var(--red);
+}
+.hm-newcard:hover {
+  background: var(--blue-bg);
+}
+
+.hm-field {
+  width: 100%;
+  font: inherit;
+  font-size: 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 4px 6px;
+  margin-bottom: 4px;
+  background: var(--white);
+  color: var(--text);
+}
+.hm-field:focus {
+  outline: none;
+  border-color: var(--navy);
+  box-shadow: var(--shadow);
+}
+.hm-autocomplete {
+  position: relative;
+}
+.hm-suggesties {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--white);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  z-index: 20;
+  max-height: 130px;
+  overflow-y: auto;
+}
+.hm-suggestie {
+  padding: 6px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.hm-suggestie:hover {
+  background: var(--blue-bg);
+}
+.hm-form-acties {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.hm-form-acties button.primary,
+.hm-form-acties button:not(.primary):not(.icoon-knop) {
+  flex: 1;
+  font-size: 11px;
+  padding: 5px;
+}

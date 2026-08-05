@@ -4,7 +4,7 @@ import { ActielijstPage } from './features/acties/ActielijstPage'
 import { ImportActiesModal } from './features/acties/ImportActiesModal'
 import { LoginForm } from './features/auth/LoginForm'
 import { useAuthUser } from './features/auth/useAuthUser'
-import { HuurdersmutatiesPlaceholder } from './features/huurdersmutaties/HuurdersmutatiesPlaceholder'
+import { Huurdersmutaties } from './features/huurdersmutaties/Huurdersmutaties'
 import { KlantoverzichtPage } from './features/klanten/KlantoverzichtPage'
 import type { Klant } from './features/klanten/types'
 import { Sidebar } from './components/Sidebar'
@@ -43,7 +43,7 @@ function App() {
   }
 
   if (scherm === 'huurdersmutaties') {
-    return <HuurdersmutatiesPlaceholder onTerug={() => setScherm('start')} />
+    return <Huurdersmutaties onTerug={() => setScherm('start')} />
   }
 
   return (

@@ -1,0 +1,229 @@
+import { useMemo, useState } from 'react'
+import { useToast } from '../../components/useToast'
+import {
+  berekenStats,
+  filterMutaties,
+  groepeerPerMaand,
+  type MaandGroep,
+} from './mutatieLogica'
+import { MutatieForm, type MutatieVelden } from './MutatieForm'
+import { MutatieKaart } from './MutatieKaart'
+import { MAANDNAMEN, type Mutatie, type Richting } from './types'
+import { useMutaties } from './useMutaties'
+import { useMutatiesJaren } from './useMutatiesJaren'
+
+interface Props {
+  onTerug: () => void
+}
+
+interface NieuweRijContext {
+  jaar: number
+  maand: number
+  richting: Richting
+}
+
+export function Huurdersmutaties({ onTerug }: Props) {
+  const { mutaties, loading, addMutatie, updateMutatie, deleteMutatie } = useMutaties()
+  const { jaren, voegJaarToe } = useMutatiesJaren()
+  const toon = useToast()
+  const [jaarFilter, setJaarFilter] = useState<number | 'alle'>(new Date().getFullYear())
+  const [zoekterm, setZoekterm] = useState('')
+  const [nieuweRij, setNieuweRij] = useState<NieuweRijContext | null>(null)
+  const [bewerkId, setBewerkId] = useState<string | null>(null)
+
+  const gefilterd = useMemo(
+    () => filterMutaties(mutaties, jaarFilter, zoekterm),
+    [mutaties, jaarFilter, zoekterm],
+  )
+  const stats = useMemo(() => berekenStats(gefilterd), [gefilterd])
+  const groepen = useMemo(() => groepeerPerMaand(gefilterd), [gefilterd])
+
+  async function handleJaarToevoegen() {
+    const nieuw = await voegJaarToe()
+    toon(nieuw ? `Jaar ${nieuw} toegevoegd` : 'Dit jaar staat er al in')
+  }
+
+  async function handleOpslaanNieuw(context: NieuweRijContext, velden: MutatieVelden) {
+    await addMutatie({ ...velden, jaar: context.jaar, maand: context.maand, richting: context.richting })
+    setNieuweRij(null)
+    toon('Mutatie toegevoegd')
+  }
+
+  async function handleOpslaanBewerken(mutatie: Mutatie, velden: MutatieVelden) {
+    await updateMutatie(mutatie.id, velden)
+    setBewerkId(null)
+    toon('Mutatie bijgewerkt')
+  }
+
+  function handleVerwijderen(mutatie: Mutatie) {
+    if (
+      !window.confirm(
+        `Mutatie van "${mutatie.naam}" verwijderen? Dit kan niet ongedaan worden gemaakt.`,
+      )
+    ) {
+      return
+    }
+    deleteMutatie(mutatie.id)
+    setBewerkId(null)
+    toon('Mutatie verwijderd')
+  }
+
+  function renderCel(mutatie: Mutatie | undefined) {
+    if (mutatie && bewerkId === mutatie.id) {
+      return (
+        <MutatieForm
+          richting={mutatie.richting}
+          alleMutaties={mutaties}
+          initieel={mutatie}
+          onOpslaan={(velden) => handleOpslaanBewerken(mutatie, velden)}
+          onAnnuleren={() => setBewerkId(null)}
+          onVerwijderen={() => handleVerwijderen(mutatie)}
+        />
+      )
+    }
+    if (mutatie) {
+      return <MutatieKaart mutatie={mutatie} onBewerken={() => setBewerkId(mutatie.id)} />
+    }
+    return <div className="hm-card empty" />
+  }
+
+  function renderMaandBlok(groep: MaandGroep) {
+    const maxRijen = Math.max(groep.in.length, groep.uit.length)
+    const toontNieuweRijHier =
+      nieuweRij && nieuweRij.jaar === groep.jaar && nieuweRij.maand === groep.maand
+
+    return (
+      <div className="hm-maand" key={`${groep.jaar}-${groep.maand}`}>
+        <div className="hm-maand-header">
+          <span className="hm-maand-label">
+            {MAANDNAMEN[groep.maand - 1]} {groep.jaar}
+          </span>
+          <span className="hm-maand-line" />
+          <span className="hm-maand-count">
+            {groep.in.length} in · {groep.uit.length} uit
+          </span>
+        </div>
+
+        {Array.from({ length: maxRijen }, (_, i) => (
+          <div className="hm-row" key={i}>
+            {renderCel(groep.in[i])}
+            {renderCel(groep.uit[i])}
+          </div>
+        ))}
+
+        {toontNieuweRijHier && (
+          <div className="hm-row">
+            {nieuweRij.richting === 'in' ? (
+              <MutatieForm
+                richting="in"
+                alleMutaties={mutaties}
+                onOpslaan={(velden) => handleOpslaanNieuw(nieuweRij, velden)}
+                onAnnuleren={() => setNieuweRij(null)}
+              />
+            ) : (
+              <div className="hm-card empty" />
+            )}
+            {nieuweRij.richting === 'uit' ? (
+              <MutatieForm
+                richting="uit"
+                alleMutaties={mutaties}
+                onOpslaan={(velden) => handleOpslaanNieuw(nieuweRij, velden)}
+                onAnnuleren={() => setNieuweRij(null)}
+              />
+            ) : (
+              <div className="hm-card empty" />
+            )}
+          </div>
+        )}
+
+        <div className="hm-row">
+          <button
+            type="button"
+            className="hm-newcard"
+            onClick={() => setNieuweRij({ jaar: groep.jaar, maand: groep.maand, richting: 'in' })}
+          >
+            + Ingaand toevoegen
+          </button>
+          <button
+            type="button"
+            className="hm-newcard out"
+            onClick={() => setNieuweRij({ jaar: groep.jaar, maand: groep.maand, richting: 'uit' })}
+          >
+            + Vertrekkend toevoegen
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="huurdersscherm">
+      <div className="hm-topbar">
+        <div>
+          <button type="button" className="hm-terug" onClick={onTerug}>
+            ← Terug naar start
+          </button>
+          <h1>Huurdersmutaties</h1>
+        </div>
+        <div className="hm-topbar-acties">
+          <input
+            type="search"
+            aria-label="Zoek huurder of locatie"
+            placeholder="Zoek huurder of locatie..."
+            value={zoekterm}
+            onChange={(e) => setZoekterm(e.target.value)}
+          />
+          <select
+            aria-label="Filter op jaar"
+            value={jaarFilter}
+            onChange={(e) =>
+              setJaarFilter(e.target.value === 'alle' ? 'alle' : Number(e.target.value))
+            }
+          >
+            <option value="alle">Alle jaren</option>
+            {jaren.map((jaar) => (
+              <option key={jaar} value={jaar}>
+                {jaar}
+              </option>
+            ))}
+          </select>
+          <button type="button" onClick={handleJaarToevoegen}>
+            + Jaar
+          </button>
+        </div>
+      </div>
+
+      <div className="hm-stats">
+        <div className="hm-stat">
+          <span className="hm-stat-label">Ingaand</span>
+          <span className="hm-stat-val hm-stat-groen">{stats.in}</span>
+        </div>
+        <div className="hm-stat">
+          <span className="hm-stat-label">Vertrekkend</span>
+          <span className="hm-stat-val hm-stat-rood">{stats.uit}</span>
+        </div>
+        <div className="hm-stat">
+          <span className="hm-stat-label">Netto</span>
+          <span className="hm-stat-val">{stats.netto >= 0 ? `+${stats.netto}` : stats.netto}</span>
+        </div>
+        <div className="hm-stat">
+          <span className="hm-stat-label">Totaal</span>
+          <span className="hm-stat-val">{stats.totaal}</span>
+        </div>
+      </div>
+
+      <div className="hm-kolhead">
+        <span className="hm-kolhead-in">↓ Ingaand</span>
+        <span className="hm-kolhead-out">↑ Vertrekkend</span>
+      </div>
+
+      {loading ? (
+        <p>Mutaties laden...</p>
+      ) : groepen.length === 0 ? (
+        <p>Geen mutaties gevonden.</p>
+      ) : (
+        groepen.map(renderMaandBlok)
+      )}
+    </div>
+  )
+}
