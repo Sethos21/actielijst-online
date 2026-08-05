@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useToast } from '../../components/useToast'
+import { exporteerNaarExcel } from './mutatieExcelExport'
 import {
   berekenStats,
   filterMutaties,
@@ -47,9 +48,20 @@ export function Huurdersmutaties({ onTerug }: Props) {
     return basis
   }, [gefilterd, jaarFilter, zoekterm])
 
+  const jaarLabel = jaarFilter === 'alle' ? 'Alle jaren' : String(jaarFilter)
+
   async function handleJaarToevoegen() {
     const nieuw = await voegJaarToe()
     toon(nieuw ? `Jaar ${nieuw} toegevoegd` : 'Dit jaar staat er al in')
+  }
+
+  function handlePrinten() {
+    window.print()
+  }
+
+  function handleExporteren() {
+    exporteerNaarExcel(gefilterd, jaarLabel)
+    toon('Excel-bestand gedownload')
   }
 
   async function handleOpslaanNieuw(context: NieuweRijContext, velden: MutatieVelden) {
@@ -124,7 +136,7 @@ export function Huurdersmutaties({ onTerug }: Props) {
         ))}
 
         {toontNieuweRijHier && (
-          <div className="hm-row">
+          <div className="hm-row no-print">
             {nieuweRij.richting === 'in' ? (
               <MutatieForm
                 richting="in"
@@ -148,7 +160,7 @@ export function Huurdersmutaties({ onTerug }: Props) {
           </div>
         )}
 
-        <div className="hm-row">
+        <div className="hm-row no-print">
           <button
             type="button"
             className="hm-newcard"
@@ -170,14 +182,20 @@ export function Huurdersmutaties({ onTerug }: Props) {
 
   return (
     <div className="huurdersscherm">
+      <div className="print-header">
+        <span className="print-header-merk">BVC</span>
+        <span>Huurdersmutaties — {jaarLabel}</span>
+        <span>{new Date().toLocaleDateString('nl-NL')}</span>
+      </div>
+
       <div className="hm-topbar">
         <div>
-          <button type="button" className="hm-terug" onClick={onTerug}>
+          <button type="button" className="hm-terug no-print" onClick={onTerug}>
             ← Terug naar start
           </button>
           <h1>Huurdersmutaties</h1>
         </div>
-        <div className="hm-topbar-acties">
+        <div className="hm-topbar-acties no-print">
           <input
             type="search"
             aria-label="Zoek huurder of locatie"
@@ -201,6 +219,12 @@ export function Huurdersmutaties({ onTerug }: Props) {
           </select>
           <button type="button" onClick={handleJaarToevoegen}>
             + Jaar
+          </button>
+          <button type="button" onClick={handlePrinten}>
+            Print
+          </button>
+          <button type="button" onClick={handleExporteren}>
+            Excel
           </button>
         </div>
       </div>
