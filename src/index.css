@@ -32,6 +32,68 @@ body,
   overflow-y: auto;
 }
 
+/* ---- Startscherm ---- */
+.startscherm {
+  min-height: 100vh;
+  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  padding: 24px;
+}
+.startscherm-merk {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.startscherm-logo {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--white);
+}
+.startscherm-submerk {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.startscherm-tegels {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.startscherm-tegel {
+  background: var(--white);
+  border: none;
+  border-radius: 14px;
+  padding: 36px;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  text-align: center;
+  font: inherit;
+}
+.startscherm-tegel:hover {
+  background: var(--blue-bg);
+}
+.startscherm-tegel-titel {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--navy);
+}
+.startscherm-tegel-omschrijving {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
 /* ---- Sidebar ---- */
 .sidebar {
   flex-shrink: 0;

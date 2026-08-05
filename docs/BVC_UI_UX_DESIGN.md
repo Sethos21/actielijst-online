@@ -146,13 +146,16 @@ Onderaan gecentreerd, `background: var(--navy)`, witte tekst, transform-transiti
 Deze schermen zijn in de chat besproken. Ze horen bij dezelfde visuele taal (tokens uit sectie 1). Belangrijk verschil in verificatieniveau tussen de twee:
 
 - **Huurdersmutaties**: gebaseerd op twee losse HTML-mockup-bestanden die zijn teruggelezen en gecontroleerd (zie hieronder) — structuur en kleuren zijn geverifieerd tegen de daadwerkelijke bestandsinhoud.
-- **Startscherm en Klantoverzicht**: nooit als los mockup-bestand gebouwd, alleen tekstueel beschreven en besproken in de chat. De specificatie hieronder is een samenvatting van die beschrijving, **niet geverifieerd tegen een visueel bestand**. Zie dit als het beste beschikbare uitgangspunt, niet als pixel-perfecte waarheid — bij twijfel tijdens het bouwen, terugvragen in de chat waar dit is ontworpen.
+- **Startscherm**: aanvankelijk alleen tekstueel beschreven, inmiddels **geverifieerd tegen een screenshot** van het daadwerkelijke ontwerp (augustus 2026) — zie hieronder, dit is nu wél pixel-accuraat qua structuur.
+- **Klantoverzicht**: nog steeds alleen tekstueel beschreven en besproken in de chat, **niet geverifieerd tegen een visueel bestand**. Zie dit als het beste beschikbare uitgangspunt, niet als pixel-perfecte waarheid — bij twijfel tijdens het bouwen, terugvragen in de chat waar dit is ontworpen.
 
 ### Startscherm → `StartScreen.tsx`
-Landingspagina met twee gelijkwaardige keuzetegels: **"Actielijsten"** en **"Huurdersmutaties"**.
-- Achtergrond: `var(--navy)`, volledige viewport-hoogte
-- Twee `.kaart`-tegels naast elkaar (desktop) — witte achtergrond, elk met een titel + korte omschrijving van wat je er kunt doen
-- Klik op "Actielijsten" → navigeert naar Klantoverzicht (niet direct een klant openen)
+Landingspagina met twee gelijkwaardige keuzetegels: **"Actielijsten"** en **"Huurdersmutaties"**. Geverifieerd tegen screenshot.
+- Achtergrond: `var(--navy)`, volledige viewport-hoogte, inhoud verticaal en horizontaal gecentreerd
+- Bovenaan gecentreerd: "BVC" (groot, wit, vet) + "VASTGOED CONSULTANTS" als subtitel (kleiner, uppercase, brede letterspacing, kleur `var(--gold)` — exact het gebruik dat sectie 1 al voorschrijft: "Gold: accent voor subtitels")
+- Twee tegels naast elkaar (desktop): witte achtergrond, groter border-radius en padding dan de standaard `.kaart` (14px / 36px, conform de metrics in sectie 1: "Border-radius grote kaarten" en "Padding kaarten... tot 36px (startscherm-tegels)")
+- Elke tegel: een icoon (lijnstijl, geen foto's) boven de titel — een afvinkbox voor "Actielijsten", een huisje voor "Huurdersmutaties" — dan de titel (navy, 17px/600) en een korte grijze omschrijving (12px)
+- Klik op "Actielijsten" → navigeert naar de sidebar-shell (Klantoverzicht als hoofdweergave, niet direct een klant openen)
 - Klik op "Huurdersmutaties" → navigeert direct naar de maandweergave (geen tussenstap, want er is geen "klant" om eerst te kiezen)
 - Dit scherm heeft geen sidebar en geen "terug"-link — het is het startpunt
 
@@ -203,14 +206,14 @@ Boven de maandenlijst: 4 stat-cards naast elkaar (`grid-template-columns: repeat
 - Bij het openen van een specifieke versie: **duidelijke read-only banner bovenaan** (bijv. lichte amber-achtergrond met tekst "Je bekijkt een eerdere versie — read-only" + knop "Terug naar actuele lijst") — dit voorkomt dat iemand per ongeluk denkt dat hij de live lijst bewerkt
 - De snapshot-tabel zelf: **geen `EditableCell`/`.cel-scroll`-componenten** — gewone statische tekst-weergave, want dit is bevroren data. Gebruik hier dus bewust niet het inline-edit-patroon uit sectie 5.
 
-### Navigatie-update (augustus 2026): sidebar vervangt Startscherm
-**Dit vervangt de "Navigatie is hiërarchisch"-regel in sectie 6 en checklist-item 1 in sectie 9 hieronder.** Op basis van de v17-referentie (`bvc_actielijst_v17.html`) is besloten: een **persistente linker-sidebar** (altijd zichtbaar, niet alleen op een startscherm) met:
+### Navigatie-update (augustus 2026): sidebar ván binnen de Actielijsten-tak
+**Dit vervangt de "Navigatie is hiërarchisch"-regel in sectie 6 en checklist-item 1 in sectie 9 hieronder.** Op basis van de v17-referentie (`bvc_actielijst_v17.html`) is besloten: zodra je vanuit `StartScreen` voor "Actielijsten" kiest, kom je in een **persistente linker-sidebar** (altijd zichtbaar zolang je in de Actielijsten-tak zit) met:
 - BVC-logo/branding bovenaan
 - Menu: Actielijst / Mijn acties / Dashboard (de laatste twee: nog te bouwen, zie projectdocument)
 - Een altijd-zichtbare klantenlijst met open-acties-teller per klant, zodat je zonder tussenscherm kunt wisselen
 - "+ Nieuwe actielijst" onderaan
 
-`StartScreen.tsx` als apart landingsscherm met keuzetegels vervalt. De Klantoverzicht-inhoud (zoekbalk, sorteerbaar op naam en laatste versiedatum) blijft bestaan als hoofdweergave in de content-area, niet als los tussenscherm. `Huurdersmutaties` blijft bereikbaar via het sidebar-menu (exacte plek nog te bepalen bij het bouwen ervan).
+**Correctie (deze versie):** eerder stond hier dat `StartScreen.tsx` als apart landingsscherm zou vervallen — dat is teruggedraaid nadat de gebruiker alsnog een screenshot van het daadwerkelijke ontwerp aanleverde (zie hieronder). `StartScreen` bestaat dus wél, als eerste scherm ná inloggen, vóór de sidebar. De Klantoverzicht-inhoud (zoekbalk, sorteerbaar op naam en laatste versiedatum) blijft bestaan als hoofdweergave in de content-area ván de sidebar-shell, niet als los tussenscherm. `Huurdersmutaties` is vanaf `StartScreen` bereikbaar; zodra dat scherm gebouwd is, komt er ook een sidebar-menu-item voor als je er al in zit.
 
 ---
 
@@ -254,7 +257,7 @@ Boven de maandenlijst: 4 stat-cards naast elkaar (`grid-template-columns: repeat
 
 Loop dit na in de React-implementatie, in volgorde van waarschijnlijkheid:
 
-1. **Bestaat de sidebar-navigatie** (logo, menu, altijd-zichtbare klantenlijst) — zie de "Navigatie-update"-notitie in sectie 5b. `StartScreen` is hiermee vervallen; dit item gaat niet meer over een los startscherm.
+1. **Bestaan `StartScreen` (met de twee keuzetegels) én de sidebar-navigatie binnen de Actielijsten-tak** (logo, menu, altijd-zichtbare klantenlijst) — zie de "Navigatie-update"-notitie in sectie 5b. Als er direct wordt ingelogd op de sidebar/actielijst-tabel zonder het startscherm ertussen, mist er een navigatielaag.
 2. **Bestaat `tokens.css` en wordt het daadwerkelijk geïmporteerd** in de root van de app (bijv. `main.tsx` of `App.tsx`)?
 3. **Gebruiken de componenten de classnamen uit `index.css`**, of zijn er per ongeluk inline styles / Tailwind-utility-classes gebruikt die de tokens negeren?
 4. **Tabelrijen (alleen de actielijst!): vaste hoogte (78px) of auto-height?** Dit geldt niet voor Huurdersmutaties, dat heeft een ander patroon (zie sectie 5b).
