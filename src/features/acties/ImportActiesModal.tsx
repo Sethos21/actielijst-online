@@ -2,6 +2,7 @@ import { useState, type ChangeEvent } from 'react'
 import * as XLSX from 'xlsx'
 import { Modal } from '../../components/Modal'
 import { useToast } from '../../components/useToast'
+import { foutmelding, metTimeout } from '../../lib/metTimeout'
 import { useKlanten } from '../klanten/useKlanten'
 import { TEAMLEDEN } from '../team/teamleden'
 import { importeerActies } from './bulkImporteren'
@@ -17,42 +18,6 @@ interface Props {
 
 const VOORVERTONING_LIMIET = 20
 const IMPORT_TIMEOUT_MS = 30_000
-
-class TimeoutFout extends Error {}
-
-/**
- * Voorkomt dat de UI oneindig op "Bezig..." blijft staan als een
- * Firestore-schrijfactie om wat voor reden dan ook nooit resolvet of
- * afwijst (bv. een netwerkprobleem dat geen directe foutmelding geeft).
- */
-function metTimeout<T>(belofte: Promise<T>, ms: number): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(
-      () => reject(new TimeoutFout(`Duurde langer dan ${ms / 1000} seconden`)),
-      ms,
-    )
-    belofte.then(
-      (waarde) => {
-        clearTimeout(timer)
-        resolve(waarde)
-      },
-      (fout: unknown) => {
-        clearTimeout(timer)
-        reject(fout)
-      },
-    )
-  })
-}
-
-function foutmelding(fout: unknown): string {
-  if (fout instanceof TimeoutFout) {
-    return 'Dit duurt ongewoon lang — controleer je internetverbinding en probeer het opnieuw.'
-  }
-  if (fout instanceof Error) {
-    return `Importeren is niet gelukt: ${fout.message}`
-  }
-  return 'Importeren is niet gelukt. Probeer het opnieuw.'
-}
 
 export function ImportActiesModal({ onSluiten }: Props) {
   const { klanten, addKlant } = useKlanten()
@@ -126,7 +91,7 @@ export function ImportActiesModal({ onSluiten }: Props) {
       )
       onSluiten()
     } catch (err) {
-      setFout(foutmelding(err))
+      setFout(foutmelding(err, 'Importeren'))
     } finally {
       setBezig(false)
     }

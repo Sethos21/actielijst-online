@@ -3,6 +3,8 @@ import { AvatarChip } from '../../components/AvatarChip'
 import { Badge } from '../../components/Badge'
 import { useToast } from '../../components/useToast'
 import { TEAMLEDEN } from '../team/teamleden'
+import { VergaderingAfsluitenModal } from '../versies/VergaderingAfsluitenModal'
+import { VersieBeheerPaneel } from '../versies/VersieBeheerPaneel'
 import { berekenDueDate, isDue } from './dueDate'
 import {
   DOORLOOPTIJD_OPTIES,
@@ -42,6 +44,8 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
   const [sortRichting, setSortRichting] = useState<'asc' | 'desc'>('asc')
   const [actieveFilters, setActieveFilters] = useState<Set<FilterPil>>(new Set())
   const [nieuw, setNieuw] = useState({ onderwerp: '', bedrijf: '', vestiging: '', actie: '' })
+  const [vergaderingModalOpen, setVergaderingModalOpen] = useState(false)
+  const [versiesPaneelOpen, setVersiesPaneelOpen] = useState(false)
 
   function toggleFilter(pil: FilterPil) {
     const nieuweSet = new Set(actieveFilters)
@@ -133,7 +137,21 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
       <button type="button" onClick={onTerug}>
         ← Terug naar klantoverzicht
       </button>
-      <h1>Actielijst — {klantNaam}</h1>
+      <div className="actielijst-titelbalk">
+        <h1>Actielijst — {klantNaam}</h1>
+        <div className="actielijst-titelbalk-acties">
+          <button type="button" onClick={() => setVersiesPaneelOpen(true)}>
+            Versies
+          </button>
+          <button
+            type="button"
+            className="primary"
+            onClick={() => setVergaderingModalOpen(true)}
+          >
+            Vergadering afsluiten
+          </button>
+        </div>
+      </div>
 
       <div>
         {(['open', 'done', 'hold', 'due'] as FilterPil[]).map((pil) => (
@@ -367,6 +385,22 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
             })}
           </tbody>
         </table>
+      )}
+
+      {vergaderingModalOpen && (
+        <VergaderingAfsluitenModal
+          klantId={klantId}
+          klantNaam={klantNaam}
+          acties={acties}
+          onSluiten={() => setVergaderingModalOpen(false)}
+        />
+      )}
+
+      {versiesPaneelOpen && (
+        <VersieBeheerPaneel
+          klantId={klantId}
+          onSluiten={() => setVersiesPaneelOpen(false)}
+        />
       )}
     </div>
   )

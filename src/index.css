@@ -12,35 +12,314 @@
   background: var(--surface);
 }
 
-body {
+html,
+body,
+#root {
+  height: 100%;
   margin: 0;
 }
 
-/* ---- Topbar ---- */
-.app-header {
+/* ---- App-shell (sidebar + inhoud) ---- */
+.app-shell {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  min-height: 100vh;
+}
+
+.app-inhoud {
+  flex: 1;
+  min-width: 0;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* ---- Sidebar ---- */
+.sidebar {
+  flex-shrink: 0;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
   background: var(--navy);
   color: var(--white);
-  padding: 10px 16px;
-  border-radius: var(--radius);
-  margin-bottom: 16px;
+  padding: 16px 0;
 }
-.app-header button {
+
+.sidebar-merk {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0 16px 16px;
+  text-align: left;
+}
+.sidebar-logo {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.sidebar-submerk {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 8px 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.sidebar-menu-item {
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  padding: 8px;
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.sidebar-menu-item:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+.sidebar-menu-item.actief {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--white);
+  font-weight: 600;
+}
+.sidebar-menu-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sidebar-klanten {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8px;
+}
+.sidebar-sectie-titel {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 4px 8px;
+  margin-bottom: 4px;
+}
+.sidebar-klanten ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sidebar-klant-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  padding: 7px 8px;
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+.sidebar-klant-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.sidebar-klant-item.actief {
+  background: var(--navy-light);
+  color: var(--white);
+  font-weight: 600;
+}
+.sidebar-klant-stip {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+.sidebar-klant-stip.heeft-open {
+  background: var(--red);
+}
+.sidebar-klant-naam {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sidebar-klant-teller {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 1px 6px;
+  border-radius: 20px;
+  min-width: 16px;
+  text-align: center;
+}
+
+.sidebar-nieuwe-klant {
+  margin: 12px 8px 0;
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.85);
+  border-radius: var(--radius);
+  padding: 7px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.sidebar-nieuwe-klant:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-footer {
+  margin-top: 16px;
+  padding: 12px 16px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+}
+.sidebar-footer button {
+  align-self: flex-start;
   background: transparent;
   border-color: rgba(255, 255, 255, 0.4);
   color: var(--white);
 }
-.app-header button:hover {
+.sidebar-footer button:hover {
   background: var(--navy-light);
 }
 
-#root {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 24px 16px;
+/* ---- Actielijst-titelbalk ---- */
+.actielijst-titelbalk {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.actielijst-titelbalk h1 {
+  margin: 0;
+}
+.actielijst-titelbalk-acties {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ---- Slide-in paneel (Versiebeheer, later ook Huurdersmutaties-invoer) ---- */
+.paneel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 58, 92, 0.5);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 10;
+}
+.paneel {
+  background: var(--white);
+  width: 420px;
+  max-width: 90vw;
+  height: 100%;
+  box-shadow: var(--shadow);
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: paneel-in 0.15s ease-out;
+}
+@keyframes paneel-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.paneel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.paneel-header h2 {
+  margin: 0;
+}
+.paneel-header button {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+/* ---- Versielijst ---- */
+.versie-lijst {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.versie-kaart {
+  width: 100%;
+  text-align: left;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+  font: inherit;
+}
+.versie-kaart:hover {
+  background: var(--blue-bg);
+}
+.versie-kaart strong {
+  font-size: 13px;
+}
+.versie-kaart span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ---- Read-only banner (versiebeheer) ---- */
+.readonly-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--amber-bg);
+  color: var(--amber);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 12px;
+}
+.readonly-banner button {
+  flex-shrink: 0;
+}
+
+/* ---- Read-only snapshot-tabel (versiebeheer): geen cel-scroll, bevroren data ---- */
+.actielijst-readonly td {
+  height: auto;
+  white-space: pre-wrap;
+  vertical-align: top;
 }
 
 h1 {

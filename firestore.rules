@@ -12,5 +12,11 @@ service cloud.firestore {
     match /acties/{actieId} {
       allow read, write: if request.auth != null;
     }
+
+    // Versiebeheer: read-only snapshots van een actielijst op het moment dat
+    // een vergadering wordt afgesloten. Zie BVC_WEBAPP_PROJECT_v03.md.
+    match /klanten/{klantId}/versies/{versieId} {
+      allow read, write: if request.auth != null;
+    }
   }
 }

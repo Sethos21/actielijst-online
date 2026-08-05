@@ -59,12 +59,45 @@ status (open/done/hold, uitbreidbaar via ⚙), opmerking, vergadering_id
 **Verantwoordelijken en statussen** zijn uitbreidbaar via ⚙-icoon in kolomkop.
 **Alle kolommen zijn sorteerbaar** door op de kolomkop te klikken (nogmaals klikken keert de richting om).
 
+### Versiebeheer
+
+**LET OP: dit ontbrak eerder expliciet in de React-specificatie — moet alsnog gebouwd worden.**
+
+**Wat het is:** een klant-actielijst wordt tijdens een vergadering live bijgewerkt. Bij het **afsluiten van een vergadering** wordt een **read-only snapshot** van de actielijst op dat moment bewaard — zodat je achteraf altijd kunt terugzien hoe de lijst eruitzag ná elke vergadering, ook al verandert de actielijst zelf daarna weer (nieuwe acties, statuswijzigingen, etc.).
+
+**Datamodel (Firestore):**
+```
+/klanten/{klantId}/versies/{versieId}
+naam: string          — bijv. "Vergadering 14 juli 2026"
+datum: timestamp
+aanwezigen: string[]  — of vrije tekst, zoals in de modal
+snapshot: Actie[]     — volledige kopie van alle acties van deze klant op het moment van afsluiten
+aangemaaktDoor: string — welk teamlid de vergadering afsloot
+```
+`snapshot` is een **kopie**, geen referentie — als een actie later wijzigt, blijft de snapshot ongewijzigd. Dit is bewust: het is een historisch document, geen live view.
+
+**Flow:**
+1. Gebruiker klikt "Vergadering afsluiten" (bestaande knop/actie in de actielijst-tabel)
+2. Modal vraagt: vergaderingsnaam, datum, aanwezigen (hergebruikt hetzelfde patroon als "Nieuwe actielijst aanmaken")
+3. Bij bevestigen: alle huidige acties van deze klant worden gekopieerd naar een nieuw document in `versies`
+4. De actielijst zelf **verandert niet** — dit is geen "reset", de acties blijven gewoon open/bewerkbaar. De snapshot is puur een archief-moment.
+
+**Weergave — Versiebeheer-paneel (sidebar panel):**
+- Zijpaneel dat opent vanuit de actielijst-tabel (zelfde slide-in patroon als het Huurdersmutaties-invoerpaneel, zie `BVC_UI_UX_DESIGN.md` §5b)
+- Lijst van eerdere versies, nieuwste bovenaan: naam, datum, aanwezigen
+- Klik op een versie → toont de snapshot **read-only** (geen bewerkbare cellen, geen inline-edit — uitzondering op het "inline boven modal"-principe, want dit is bewust bevroren data)
+- Duidelijk visueel onderscheid tussen "je kijkt naar een oude versie" en "je kijkt naar de live lijst" — banner bovenaan ("Je bekijkt de versie van 14 juli 2026 — read-only") met een knop "Terug naar actuele lijst"
+
+**Waarom dit belangrijk is om niet te vergeten:** dit is het hele bestaansrecht van de rebuild geweest — "altijd de verkeerde versie openen" was het oorspronkelijke probleem met de losse Excel-bestanden. Als versiebeheer ontbreekt, is dat kernprobleem niet opgelost, ook al werkt de rest van de app.
+
 **Schermen:**
 - Klantoverzicht (nieuw in v17) — lijst van alle klanten, sorteerbaar op naam en laatste versiedatum
 - Actielijst per klant
-- Mijn acties (per teamlid, over alle klanten)
-- Dashboard (totaalcijfers + per klant + per teamlid)
+- Mijn acties (per teamlid, over alle klanten) — **nog niet gebouwd, volgende sprint**
+- Dashboard (totaalcijfers + per klant + per teamlid) — **nog niet gebouwd, volgende sprint**
 - Versiebeheer (sidebar panel)
+
+**Navigatie-update (augustus 2026):** de eerder beschreven hiërarchische navigatie (`StartScreen` → `KlantOverzicht` → klant-detail, zie `BVC_UI_UX_DESIGN.md` §6) is **vervangen** door een persistente linker-sidebar (conform v17-referentie): logo, menu (Actielijst / Mijn acties / Dashboard) en een altijd-zichtbare klantenlijst met open-acties-teller, zodat je zonder tussenscherm van klant kunt wisselen. `StartScreen.tsx` als los scherm vervalt hiermee. De Klantoverzicht-inhoud (sorteerbaar op naam en laatste versiedatum) blijft bestaan, maar dan als hoofdweergave binnen de sidebar-shell in plaats van als tussenscherm.
 
 **Bron Excel:** Actielijst_Malcon_-_BVC_6_mei_2026.xls
 Kolommen: Ref · Datum · Onderwerp · Bedrijf · Vestiging · Actiepunt · Verantw. · Gereed op · Status · Informant · Opmerking
