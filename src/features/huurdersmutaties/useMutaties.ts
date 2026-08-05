@@ -17,12 +17,18 @@ export function useMutaties() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, COLLECTION), (snapshot) => {
-      setMutaties(
-        snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Mutatie),
-      )
-      setLoading(false)
-    })
+    const unsubscribe = onSnapshot(
+      collection(db, COLLECTION),
+      (snapshot) => {
+        setMutaties(
+          snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Mutatie),
+        )
+        setLoading(false)
+      },
+      // Zonder dit blijft de pagina oneindig "laden" tonen bij een fout
+      // (bijv. rules die nog niet zijn gedeployed op een PR-preview).
+      () => setLoading(false),
+    )
     return unsubscribe
   }, [])
 

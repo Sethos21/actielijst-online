@@ -11,11 +11,15 @@ export function useMutatiesJaren() {
 
   useEffect(() => {
     const ref = doc(db, ...DOC_PAD)
-    const unsubscribe = onSnapshot(ref, (snapshot) => {
-      const data = snapshot.data()
-      if (data?.jaren) setJaren(data.jaren)
-      setLoading(false)
-    })
+    const unsubscribe = onSnapshot(
+      ref,
+      (snapshot) => {
+        const data = snapshot.data()
+        if (data?.jaren) setJaren(data.jaren)
+        setLoading(false)
+      },
+      () => setLoading(false),
+    )
     return unsubscribe
   }, [])
 
