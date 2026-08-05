@@ -6,6 +6,7 @@ import { LoginForm } from './features/auth/LoginForm'
 import { useAuthUser } from './features/auth/useAuthUser'
 import { KlantoverzichtPage } from './features/klanten/KlantoverzichtPage'
 import type { Klant } from './features/klanten/types'
+import { Sidebar } from './components/Sidebar'
 import { auth } from './lib/firebase'
 
 function App() {
@@ -22,28 +23,33 @@ function App() {
   }
 
   return (
-    <div>
-      <header className="app-header">
-        <span>{user.email}</span>
-        <button onClick={() => signOut(auth)}>Uitloggen</button>
-      </header>
+    <div className="app-shell">
+      <Sidebar
+        geselecteerdeKlantId={geselecteerdeKlant?.id ?? null}
+        onSelectKlant={setGeselecteerdeKlant}
+        onKlantoverzicht={() => setGeselecteerdeKlant(null)}
+        gebruikerEmail={user.email ?? ''}
+        onUitloggen={() => signOut(auth)}
+      />
 
-      {geselecteerdeKlant ? (
-        <ActielijstPage
-          klantId={geselecteerdeKlant.id}
-          klantNaam={geselecteerdeKlant.naam}
-          onTerug={() => setGeselecteerdeKlant(null)}
-        />
-      ) : (
-        <KlantoverzichtPage
-          onSelectKlant={setGeselecteerdeKlant}
-          onImporteren={() => setImportOpen(true)}
-        />
-      )}
+      <main className="app-inhoud">
+        {geselecteerdeKlant ? (
+          <ActielijstPage
+            klantId={geselecteerdeKlant.id}
+            klantNaam={geselecteerdeKlant.naam}
+            onTerug={() => setGeselecteerdeKlant(null)}
+          />
+        ) : (
+          <KlantoverzichtPage
+            onSelectKlant={setGeselecteerdeKlant}
+            onImporteren={() => setImportOpen(true)}
+          />
+        )}
 
-      {importOpen && (
-        <ImportActiesModal onSluiten={() => setImportOpen(false)} />
-      )}
+        {importOpen && (
+          <ImportActiesModal onSluiten={() => setImportOpen(false)} />
+        )}
+      </main>
     </div>
   )
 }

@@ -6,6 +6,14 @@ vi.mock('../../components/useToast', () => ({
   useToast: () => vi.fn(),
 }))
 
+vi.mock('../versies/useVersies', () => ({
+  useVersies: () => ({
+    versies: [],
+    loading: false,
+    sluitVergaderingAf: vi.fn(),
+  }),
+}))
+
 vi.mock('./useActies', () => ({
   useActies: () => ({
     acties: [

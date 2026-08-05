@@ -196,6 +196,22 @@ Boven de maandenlijst: 4 stat-cards naast elkaar (`grid-template-columns: repeat
 
 **Belangrijk verschil met de actielijst-tabel:** dit scherm gebruikt geen 78px-vaste-rij-patroon — het is een leesweergave + apart invoerpaneel, geen bewerkbare tabel. Pas sectie 5's tabelregels hier niet automatisch toe.
 
+### Versiebeheer-paneel → `VersieBeheerPaneel.tsx`
+**Functionele specificatie (datamodel, flow, wanneer dit opent) staat in `BVC_WEBAPP_PROJECT_v03.md`** — dit is alleen de visuele kant.
+- Zelfde slide-in patroon als `MutatieInvoer.tsx`: paneel vanaf rechts, vaste breedte, achtergrond gedimd
+- Lijst van versies: elk item als compacte kaart (naam, datum, aanwezigen), klikbaar
+- Bij het openen van een specifieke versie: **duidelijke read-only banner bovenaan** (bijv. lichte amber-achtergrond met tekst "Je bekijkt een eerdere versie — read-only" + knop "Terug naar actuele lijst") — dit voorkomt dat iemand per ongeluk denkt dat hij de live lijst bewerkt
+- De snapshot-tabel zelf: **geen `EditableCell`/`.cel-scroll`-componenten** — gewone statische tekst-weergave, want dit is bevroren data. Gebruik hier dus bewust niet het inline-edit-patroon uit sectie 5.
+
+### Navigatie-update (augustus 2026): sidebar vervangt Startscherm
+**Dit vervangt de "Navigatie is hiërarchisch"-regel in sectie 6 en checklist-item 1 in sectie 9 hieronder.** Op basis van de v17-referentie (`bvc_actielijst_v17.html`) is besloten: een **persistente linker-sidebar** (altijd zichtbaar, niet alleen op een startscherm) met:
+- BVC-logo/branding bovenaan
+- Menu: Actielijst / Mijn acties / Dashboard (de laatste twee: nog te bouwen, zie projectdocument)
+- Een altijd-zichtbare klantenlijst met open-acties-teller per klant, zodat je zonder tussenscherm kunt wisselen
+- "+ Nieuwe actielijst" onderaan
+
+`StartScreen.tsx` als apart landingsscherm met keuzetegels vervalt. De Klantoverzicht-inhoud (zoekbalk, sorteerbaar op naam en laatste versiedatum) blijft bestaan als hoofdweergave in de content-area, niet als los tussenscherm. `Huurdersmutaties` blijft bereikbaar via het sidebar-menu (exacte plek nog te bepalen bij het bouwen ervan).
+
 ---
 
 ## 6. UX-principes (architectuur-onafhankelijk, gelden ook in React)
@@ -238,7 +254,7 @@ Boven de maandenlijst: 4 stat-cards naast elkaar (`grid-template-columns: repeat
 
 Loop dit na in de React-implementatie, in volgorde van waarschijnlijkheid:
 
-1. **Bestaan alle vier hoofdschermen** — `StartScreen`, `KlantOverzicht`, de actielijst-tabel, en `Huurdersmutaties`? Als er direct wordt ingelogd op de actielijst-tabel zonder start/overzicht ertussen, mist er een hele navigatielaag (zie sectie 5b).
+1. **Bestaat de sidebar-navigatie** (logo, menu, altijd-zichtbare klantenlijst) — zie de "Navigatie-update"-notitie in sectie 5b. `StartScreen` is hiermee vervallen; dit item gaat niet meer over een los startscherm.
 2. **Bestaat `tokens.css` en wordt het daadwerkelijk geïmporteerd** in de root van de app (bijv. `main.tsx` of `App.tsx`)?
 3. **Gebruiken de componenten de classnamen uit `index.css`**, of zijn er per ongeluk inline styles / Tailwind-utility-classes gebruikt die de tokens negeren?
 4. **Tabelrijen (alleen de actielijst!): vaste hoogte (78px) of auto-height?** Dit geldt niet voor Huurdersmutaties, dat heeft een ander patroon (zie sectie 5b).
@@ -247,6 +263,7 @@ Loop dit na in de React-implementatie, in volgorde van waarschijnlijkheid:
 7. **Klantoverzicht: is sorteren op laatste versiedatum daadwerkelijk geïmplementeerd**, niet alleen op naam? Dit was een expliciete eis, makkelijk over het hoofd te zien.
 8. **Huurdersmutaties: is de originele mockup-kleur (`#1a4fa0` e.d.) per ongeluk letterlijk overgenomen** in plaats van gemigreerd naar de huidige tokens (`--navy` etc.)? Zie de kleurmigratie-notitie in sectie 5b — dit is een reële valkuil omdat de mockup-bestanden zelf de oude kleuren bevatten.
 9. **Huurdersmutaties: staat de pijl-kolom (midden, 44px) er nog in**, of is het per ongeluk teruggebracht tot een simpele 2-koloms layout?
+10. **Versiebeheer: bestaat "Vergadering afsluiten" als actie, en wordt daarbij daadwerkelijk een snapshot naar Firestore geschreven?** Dit is functioneel het hele bestaansrecht van de rebuild en dus makkelijk over het hoofd te zien als er alleen naar de tabel-UI wordt gekeken.
 
 ---
 
