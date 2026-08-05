@@ -418,7 +418,8 @@ body,
   }
   /* Invoervelden lezen als platte tekst i.p.v. bewerkbare vakjes. */
   table.actielijst input,
-  table.actielijst select {
+  table.actielijst select,
+  table.actielijst .verantw-select-trigger {
     border: none;
     background: transparent;
     padding: 0;
@@ -691,12 +692,61 @@ table.actielijst .cel-scroll {
   overflow-y: auto;
   display: block;
 }
-table.actielijst .verantw-cel {
+/* ---- Verantwoordelijke-select (multi-select dropdown in de tabelcel) ---- */
+.verantw-select-trigger {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   align-content: flex-start;
   gap: 4px;
-  padding-top: 2px;
+  width: 100%;
+  min-height: 26px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 2px;
+}
+.verantw-select-trigger:hover {
+  border-color: var(--border-strong);
+}
+.verantw-select-trigger:focus-visible {
+  outline: none;
+  border-color: var(--navy);
+  box-shadow: var(--shadow);
+}
+.verantw-select-leeg {
+  color: var(--text-muted);
+}
+.avatar-chip-klein {
+  width: 20px;
+  height: 20px;
+  font-size: 9px;
+  cursor: inherit;
+}
+.verantw-select-menu {
+  position: fixed;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 160px;
+  z-index: 20;
+}
+.verantw-select-optie {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 12px;
+}
+.verantw-select-optie:hover {
+  background: var(--blue-bg);
 }
 
 /* ---- Modal ---- */

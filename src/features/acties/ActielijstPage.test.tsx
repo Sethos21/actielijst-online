@@ -97,13 +97,31 @@ describe('ActielijstPage', () => {
     expect(document.querySelectorAll('.badge-due')).toHaveLength(1)
   })
 
-  it('toont een avatar-chip per teamlid, actief voor de toegewezen verantwoordelijke', () => {
+  it('toont de geselecteerde verantwoordelijke als compacte chip, "—" als niemand is toegewezen', () => {
     render(
       <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
     )
 
-    const tonChips = screen.getAllByLabelText('Ton')
-    expect(tonChips[0]).toHaveClass('actief')
+    expect(
+      screen.getByLabelText('Verantwoordelijke voor Lift laten keuren'),
+    ).toHaveTextContent('TO')
+    expect(
+      screen.getByLabelText('Verantwoordelijke voor Op hold gezette actie'),
+    ).toHaveTextContent('—')
+  })
+
+  it('opent de verantwoordelijke-dropdown en toont een checkbox per teamlid, aangevinkt voor de huidige selectie', async () => {
+    const user = userEvent.setup()
+    render(
+      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+    )
+
+    await user.click(
+      screen.getByLabelText('Verantwoordelijke voor Lift laten keuren'),
+    )
+
+    expect(screen.getByRole('checkbox', { name: 'Ton' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Seth' })).not.toBeChecked()
   })
 
   it('toont stat-cards met de juiste tellingen (open/due/afgerond/on hold)', () => {

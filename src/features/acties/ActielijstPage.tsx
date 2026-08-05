@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { AvatarChip } from '../../components/AvatarChip'
 import { Badge } from '../../components/Badge'
+import { VerantwoordelijkeSelect } from '../../components/VerantwoordelijkeSelect'
 import { useToast } from '../../components/useToast'
 import { TEAMLEDEN, type Teamlid } from '../team/teamleden'
 import { VergaderingAfsluitenModal } from '../versies/VergaderingAfsluitenModal'
@@ -387,16 +387,13 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
                     </span>
                   </td>
                   <td>
-                    <span className="cel-scroll verantw-cel">
-                      {TEAMLEDEN.map((naam) => (
-                        <AvatarChip
-                          key={naam}
-                          naam={naam}
-                          alleNamen={TEAMLEDEN}
-                          actief={actie.verantw.includes(naam)}
-                          onToggle={() => toggleVerantw(actie, naam)}
-                        />
-                      ))}
+                    <span className="cel-scroll">
+                      <VerantwoordelijkeSelect
+                        actieOmschrijving={actie.actie}
+                        geselecteerd={actie.verantw}
+                        alleNamen={TEAMLEDEN}
+                        onToggle={(naam) => toggleVerantw(actie, naam)}
+                      />
                     </span>
                   </td>
                   <td>
