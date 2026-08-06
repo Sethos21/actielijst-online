@@ -91,3 +91,8 @@ export function berekenStats(mutaties: Mutatie[]): MutatieStats {
     totaal: mutaties.length,
   }
 }
+
+/** Een jaar ligt in de toekomst als het na het huidige kalenderjaar valt. */
+export function isToekomstigJaar(jaar: number, huidigJaar = new Date().getFullYear()): boolean {
+  return jaar > huidigJaar
+}

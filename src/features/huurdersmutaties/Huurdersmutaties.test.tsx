@@ -169,6 +169,17 @@ describe('Huurdersmutaties', () => {
     expect(toon).toHaveBeenCalledWith('Jaar 2028 toegevoegd')
   })
 
+  it('markeert maanden van een toekomstig jaar met een "Toekomstig"-badge', async () => {
+    const user = userEvent.setup()
+    render(<Huurdersmutaties onTerug={vi.fn()} />)
+
+    expect(screen.queryByText('Toekomstig')).not.toBeInTheDocument()
+
+    await user.selectOptions(screen.getByLabelText('Filter op jaar'), '2027')
+
+    expect(screen.getAllByText('Toekomstig')).toHaveLength(12)
+  })
+
   it('roept onTerug aan bij klikken op "Terug naar start"', async () => {
     const user = userEvent.setup()
     const onTerug = vi.fn()
