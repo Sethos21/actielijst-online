@@ -30,6 +30,15 @@ vi.mock('../klanten/useKlanten', () => ({
   }),
 }))
 
+let mockPanden: { id: string }[] = []
+vi.mock('../panden/usePanden', () => ({
+  usePanden: () => ({
+    panden: mockPanden,
+    loading: false,
+    addPand: vi.fn(),
+  }),
+}))
+
 // ImportActiesModal (nu ook bereikbaar vanuit ActielijstPage) importeert via
 // bulkImporteren.ts de echte Firebase-app — die initialiseert zonder geldige
 // env-vars niet in deze testomgeving, dus stubben net als in App.test.tsx.
@@ -113,11 +122,49 @@ describe('ActielijstPage', () => {
     exporteerNaarExcel.mockClear()
     deleteActie.mockClear()
     updateActie.mockClear()
+    mockPanden = []
+  })
+
+  it('roept onPandenOpen aan bij klikken op de Panden-knop, zonder badge als er geen panden zijn', () => {
+    const onPandenOpen = vi.fn()
+    render(
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={onPandenOpen}
+      />,
+    )
+
+    const knop = screen.getByRole('button', { name: /Panden/ })
+    expect(knop.querySelector('.count-badge')).not.toBeInTheDocument()
+
+    knop.click()
+    expect(onPandenOpen).toHaveBeenCalledOnce()
+  })
+
+  it('toont een count-badge met het aantal panden op de Panden-knop', () => {
+    mockPanden = [{ id: 'p1' }, { id: 'p2' }]
+    render(
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: /Panden/ })).toHaveTextContent('2')
   })
 
   it('toont acties en markeert een verlopen open actie als Due in de statuskolom', () => {
     render(
-      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+      />,
     )
 
     expect(screen.getByDisplayValue('Lift laten keuren')).toBeInTheDocument()
@@ -129,7 +176,12 @@ describe('ActielijstPage', () => {
 
   it('markeert een on-hold actie nooit als Due, ondanks verlopen datum', () => {
     render(
-      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+      />,
     )
 
     // Er is precies 1 due statusveld: de on-hold actie (zelfde verlopen datum) telt niet mee.
@@ -141,7 +193,12 @@ describe('ActielijstPage', () => {
 
   it('toont de geselecteerde verantwoordelijke als compacte chip, "—" als niemand is toegewezen', () => {
     render(
-      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+      />,
     )
 
     expect(
@@ -155,7 +212,12 @@ describe('ActielijstPage', () => {
   it('opent de verantwoordelijke-dropdown en toont een checkbox per teamlid, aangevinkt voor de huidige selectie', async () => {
     const user = userEvent.setup()
     render(
-      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+      />,
     )
 
     await user.click(
@@ -168,7 +230,12 @@ describe('ActielijstPage', () => {
 
   it('toont stat-cards met de juiste tellingen (open/due/afgerond/on hold)', () => {
     render(
-      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+      />,
     )
 
     const waarden = Array.from(document.querySelectorAll('.stat-waarde')).map(
@@ -180,7 +247,12 @@ describe('ActielijstPage', () => {
   it('filtert op zoekterm', async () => {
     const user = userEvent.setup()
     render(
-      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+      />,
     )
 
     await user.type(screen.getByLabelText('Zoeken in actielijst'), 'Hoofdkantoor')
@@ -194,7 +266,12 @@ describe('ActielijstPage', () => {
   it('filtert op een teamlid-pill', async () => {
     const user = userEvent.setup()
     render(
-      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+      />,
     )
 
     await user.click(screen.getByLabelText('Filter op Ton'))
@@ -208,7 +285,12 @@ describe('ActielijstPage', () => {
   it('combineert een status-pill en een teamlid-pill met AND, niet OR', async () => {
     const user = userEvent.setup()
     render(
-      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+      />,
     )
 
     await user.click(screen.getByRole('button', { name: 'Open' }))
@@ -228,7 +310,12 @@ describe('ActielijstPage', () => {
   it('de "Alle"-pil toont weer alle acties na filteren', async () => {
     const user = userEvent.setup()
     render(
-      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+      />,
     )
 
     await user.click(screen.getByLabelText('Filter op Ton'))
@@ -242,7 +329,12 @@ describe('ActielijstPage', () => {
 
   it('toont het ref-nummer gekoppeld aan de rij i.p.v. een herberekende positie', () => {
     render(
-      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+      />,
     )
 
     const rijnummers = Array.from(
@@ -254,7 +346,12 @@ describe('ActielijstPage', () => {
   it('sorteert standaard al oplopend op # en sorteert daadwerkelijk, niet alleen visueel', async () => {
     const user = userEvent.setup()
     render(
-      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+      />,
     )
     const rijnummers = () =>
       Array.from(document.querySelectorAll('table.actielijst tbody tr')).map(
@@ -277,7 +374,12 @@ describe('ActielijstPage', () => {
     const user = userEvent.setup()
     const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {})
     render(
-      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+      />,
     )
 
     await user.click(screen.getByRole('button', { name: 'Print' }))
@@ -289,7 +391,12 @@ describe('ActielijstPage', () => {
   it('exporteert de actuele (gefilterde) lijst via de Excel-knop', async () => {
     const user = userEvent.setup()
     render(
-      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+      />,
     )
 
     await user.click(screen.getByLabelText('Filter op Ton'))
@@ -305,7 +412,12 @@ describe('ActielijstPage', () => {
   it('een snel-toegevoegde actie blijft onderin staan, ook als er op een kolom gesorteerd is', async () => {
     const user = userEvent.setup()
     render(
-      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+      />,
     )
 
     // Sorteer op Vestiging (heeft voor elke rij een andere waarde) zodat de
@@ -327,7 +439,12 @@ describe('ActielijstPage', () => {
     const user = userEvent.setup()
     const confirmSpy = vi.spyOn(window, 'confirm')
     render(
-      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+      />,
     )
 
     confirmSpy.mockReturnValueOnce(false)
@@ -344,7 +461,12 @@ describe('ActielijstPage', () => {
   it('het formulier bovenin slaat ook verantwoordelijke, doorlooptijd en opmerking op', async () => {
     const user = userEvent.setup()
     render(
-      <ActielijstPage klantId="klant-1" klantNaam="Malcon" onTerug={vi.fn()} />,
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+      />,
     )
 
     const formulier = document.querySelector('form.no-print') as HTMLElement | null

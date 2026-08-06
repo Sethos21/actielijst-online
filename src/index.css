@@ -280,6 +280,15 @@ body,
   gap: 8px;
   flex-shrink: 0;
 }
+.count-badge {
+  background: var(--red);
+  color: var(--white);
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 1px 6px;
+  margin-left: 2px;
+}
 
 /* ---- "+ Nieuwe actie toevoegen" onder de tabel — snel een lege rij erbij ---- */
 .actielijst-nieuwe-rij {
@@ -341,6 +350,184 @@ body,
   line-height: 1;
   cursor: pointer;
   color: var(--text-muted);
+}
+
+/* ---- Panden-paneel — eigen (navy-header) opmaak conform mockup, los van .paneel ---- */
+.panden-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 58, 92, 0.35);
+  z-index: 10;
+}
+.panden-paneel {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 380px;
+  background: var(--white);
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  animation: paneel-in 0.15s ease-out;
+}
+.panden-paneel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--navy);
+}
+.panden-paneel-titel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--white);
+}
+.panden-paneel-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 18px;
+  cursor: pointer;
+}
+.panden-paneel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+.pand-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  background: var(--white);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.pand-item:hover {
+  background: var(--blue-bg);
+  border-color: var(--border-strong);
+}
+.pand-icoon {
+  font-size: 15px;
+}
+.pand-naam {
+  font-size: 13px;
+  font-weight: 500;
+  flex: 1;
+}
+.pand-pijl {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.panden-paneel-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  background: #fafbfd;
+}
+.nieuw-pand-form {
+  display: flex;
+  gap: 8px;
+}
+.nieuw-pand-input {
+  flex: 1;
+  font-size: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.nieuw-pand-btn {
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--navy);
+  background: var(--navy);
+  color: var(--white);
+  cursor: pointer;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ---- Pand-detailpagina (kruimelpad + tabs) ---- */
+.terug {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+.kruimel {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0 0 4px;
+}
+.kruimel b {
+  color: var(--navy);
+}
+h1.titel {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--navy);
+  margin: 0 0 16px;
+}
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 11px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.tab.actief {
+  color: var(--navy);
+  border-bottom-color: var(--navy);
+  font-weight: 600;
+}
+.badge-klein {
+  background: var(--red-bg);
+  color: var(--red);
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 1px 5px;
+  margin-left: 5px;
+}
+.leeg-state {
+  background: var(--white);
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+  padding: 48px;
+  text-align: center;
+}
+.leeg-icoon {
+  font-size: 32px;
+  margin-bottom: 10px;
+  opacity: 0.5;
+}
+.leeg-tekst {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.leeg-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
 }
 
 /* ---- Versielijst ---- */

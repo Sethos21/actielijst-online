@@ -9,6 +9,9 @@ import { DashboardPage } from './features/dashboard/DashboardPage'
 import { Huurdersmutaties } from './features/huurdersmutaties/Huurdersmutaties'
 import { KlantoverzichtPage } from './features/klanten/KlantoverzichtPage'
 import type { Klant } from './features/klanten/types'
+import { PandDetailPage } from './features/panden/PandDetailPage'
+import { PandenPaneel } from './features/panden/PandenPaneel'
+import type { Pand } from './features/panden/types'
 import { Sidebar } from './components/Sidebar'
 import { StartScreen } from './components/StartScreen'
 import { auth } from './lib/firebase'
@@ -21,6 +24,8 @@ function App() {
   const [scherm, setScherm] = useState<Scherm>('start')
   const [weergave, setWeergave] = useState<Weergave>('klantoverzicht')
   const [geselecteerdeKlant, setGeselecteerdeKlant] = useState<Klant | null>(null)
+  const [geselecteerdPand, setGeselecteerdPand] = useState<Pand | null>(null)
+  const [pandenPaneelOpen, setPandenPaneelOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
 
   if (loading) {
@@ -36,21 +41,30 @@ function App() {
     setScherm('start')
     setWeergave('klantoverzicht')
     setGeselecteerdeKlant(null)
+    setGeselecteerdPand(null)
   }
 
   function handleKlantoverzicht() {
     setWeergave('klantoverzicht')
     setGeselecteerdeKlant(null)
+    setGeselecteerdPand(null)
   }
 
   function handleMijnActies() {
     setWeergave('mijn-acties')
     setGeselecteerdeKlant(null)
+    setGeselecteerdPand(null)
   }
 
   function handleDashboard() {
     setWeergave('dashboard')
     setGeselecteerdeKlant(null)
+    setGeselecteerdPand(null)
+  }
+
+  function handleSelectKlant(klant: Klant) {
+    setGeselecteerdeKlant(klant)
+    setGeselecteerdPand(null)
   }
 
   if (scherm === 'start') {
@@ -71,7 +85,7 @@ function App() {
       <Sidebar
         geselecteerdeKlantId={geselecteerdeKlant?.id ?? null}
         weergave={weergave}
-        onSelectKlant={setGeselecteerdeKlant}
+        onSelectKlant={handleSelectKlant}
         onKlantoverzicht={handleKlantoverzicht}
         onMijnActies={handleMijnActies}
         onDashboard={handleDashboard}
@@ -80,11 +94,18 @@ function App() {
       />
 
       <main className="app-inhoud">
-        {geselecteerdeKlant ? (
+        {geselecteerdPand && geselecteerdeKlant ? (
+          <PandDetailPage
+            pand={geselecteerdPand}
+            klantNaam={geselecteerdeKlant.naam}
+            onTerug={() => setGeselecteerdPand(null)}
+          />
+        ) : geselecteerdeKlant ? (
           <ActielijstPage
             klantId={geselecteerdeKlant.id}
             klantNaam={geselecteerdeKlant.naam}
             onTerug={() => setGeselecteerdeKlant(null)}
+            onPandenOpen={() => setPandenPaneelOpen(true)}
           />
         ) : weergave === 'mijn-acties' ? (
           <MijnActiesPage />
@@ -100,6 +121,18 @@ function App() {
 
         {importOpen && (
           <ImportActiesModal onSluiten={() => setImportOpen(false)} />
+        )}
+
+        {pandenPaneelOpen && geselecteerdeKlant && (
+          <PandenPaneel
+            klantId={geselecteerdeKlant.id}
+            klantNaam={geselecteerdeKlant.naam}
+            onSluiten={() => setPandenPaneelOpen(false)}
+            onSelectPand={(pand) => {
+              setGeselecteerdPand(pand)
+              setPandenPaneelOpen(false)
+            }}
+          />
         )}
       </main>
     </div>
