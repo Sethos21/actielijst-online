@@ -25,14 +25,15 @@ function maakActie(overrides: Partial<ActieItem>): ActieItem {
 }
 
 describe('berekenSamenvattingPerTeamlid', () => {
-  it('telt open (niet-due) en due apart, per teamlid', () => {
+  it('telt open (incl. due) en due apart, per teamlid', () => {
     const acties = [
       maakActie({ id: '1', verantw: ['Ton'], status: 'open', aangemaaktOp: '2999-01-01' }), // open, niet due
-      maakActie({ id: '2', verantw: ['Ton'], status: 'open', aangemaaktOp: '2000-01-01' }), // due
+      maakActie({ id: '2', verantw: ['Ton'], status: 'open', aangemaaktOp: '2000-01-01' }), // open, due
       maakActie({ id: '3', verantw: ['Seth'], status: 'open', aangemaaktOp: '2999-01-01' }),
     ]
     const samenvatting = berekenSamenvattingPerTeamlid(acties, ['Ton', 'Seth'])
-    expect(samenvatting.Ton).toEqual({ open: 1, due: 1 })
+    // Ton heeft 2 openstaande acties (due-acties tellen mee bij "open") en 1 due.
+    expect(samenvatting.Ton).toEqual({ open: 2, due: 1 })
     expect(samenvatting.Seth).toEqual({ open: 1, due: 0 })
   })
 

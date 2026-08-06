@@ -6,7 +6,11 @@ export interface TeamlidSamenvatting {
   due: number
 }
 
-/** Open (niet-due) en due-telling per teamlid, over alle klanten heen. */
+/**
+ * Open (incl. due) en due-telling per teamlid, over alle klanten heen.
+ * "open" telt alle openstaande acties, due-acties inbegrepen — consistent
+ * met de tellingen elders in de app (Dashboard, Sidebar, Klantoverzicht).
+ */
 export function berekenSamenvattingPerTeamlid(
   acties: ActieItem[],
   teamleden: readonly string[],
@@ -15,7 +19,7 @@ export function berekenSamenvattingPerTeamlid(
   for (const naam of teamleden) {
     const vanTeamlid = acties.filter((a) => a.verantw.includes(naam))
     samenvatting[naam] = {
-      open: vanTeamlid.filter((a) => a.status === 'open' && !isDue(a)).length,
+      open: vanTeamlid.filter((a) => a.status === 'open').length,
       due: vanTeamlid.filter((a) => isDue(a)).length,
     }
   }

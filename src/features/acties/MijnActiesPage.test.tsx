@@ -82,8 +82,9 @@ describe('MijnActiesPage', () => {
     render(<MijnActiesPage />)
 
     const tonKnop = screen.getByRole('button', { name: /Ton/ })
-    // Ton: 1 open-niet-due (Schilderwerk, 2999) + 1 due (Onderhoud, 2020) — Dak telt niet mee (done).
-    expect(tonKnop).toHaveTextContent('1 open')
+    // Ton: 2 open (Schilderwerk 2999 + Onderhoud 2020, due-acties tellen mee bij "open")
+    // en 1 due (Onderhoud) — Dak telt niet mee (done).
+    expect(tonKnop).toHaveTextContent('2 open')
     expect(tonKnop).toHaveTextContent('1 due')
 
     const sethKnop = screen.getByRole('button', { name: /Seth/ })
