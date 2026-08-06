@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { OnderhoudTab } from '../onderhoud/OnderhoudTab'
+import { useOnderhoud } from '../onderhoud/useOnderhoud'
 import type { Pand } from './types'
 
 type Tab = 'overzicht' | 'documenten' | 'onderhoud' | 'mjop'
@@ -11,6 +13,7 @@ interface Props {
 
 export function PandDetailPage({ pand, klantNaam, onTerug }: Props) {
   const [tab, setTab] = useState<Tab>('overzicht')
+  const { onderhoudDueCount } = useOnderhoud(pand.id)
 
   return (
     <div>
@@ -43,6 +46,9 @@ export function PandDetailPage({ pand, klantNaam, onTerug }: Props) {
           onClick={() => setTab('onderhoud')}
         >
           Jaarlijks onderhoud
+          {onderhoudDueCount > 0 && (
+            <span className="badge-klein">{onderhoudDueCount}</span>
+          )}
         </button>
         <button
           type="button"
@@ -69,9 +75,7 @@ export function PandDetailPage({ pand, klantNaam, onTerug }: Props) {
         </div>
       )}
       {tab === 'onderhoud' && (
-        <div className="leeg-state">
-          <div className="leeg-tekst">Jaarlijks onderhoud — nog niet gebouwd, volgende stap.</div>
-        </div>
+        <OnderhoudTab pandId={pand.id} klantId={pand.klantId} />
       )}
       {tab === 'mjop' && (
         <div className="leeg-state">

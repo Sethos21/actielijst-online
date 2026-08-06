@@ -4,6 +4,17 @@ import { describe, expect, it, vi } from 'vitest'
 import { PandDetailPage } from './PandDetailPage'
 import type { Pand } from './types'
 
+let mockOnderhoudDueCount = 0
+vi.mock('../onderhoud/useOnderhoud', () => ({
+  useOnderhoud: () => ({
+    onderhoud: [],
+    loading: false,
+    addOnderhoud: vi.fn(),
+    vinkAf: vi.fn(),
+    onderhoudDueCount: mockOnderhoudDueCount,
+  }),
+}))
+
 const PAND: Pand = {
   id: 'p1',
   klantId: 'klant-1',
@@ -43,11 +54,9 @@ describe('PandDetailPage', () => {
     ).toBeInTheDocument()
 
     await user.click(
-      screen.getByRole('button', { name: 'Jaarlijks onderhoud' }),
+      screen.getByRole('button', { name: /Jaarlijks onderhoud/ }),
     )
-    expect(
-      screen.getByText('Jaarlijks onderhoud — nog niet gebouwd, volgende stap.'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('Nog geen onderhoudsitems.')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'MJOP' }))
     expect(
@@ -62,5 +71,15 @@ describe('PandDetailPage', () => {
 
     await user.click(screen.getByRole('button', { name: '← Terug naar panden' }))
     expect(onTerug).toHaveBeenCalledOnce()
+  })
+
+  it('toont een badge met het aantal due/geplande onderhoudsitems op de tab', () => {
+    mockOnderhoudDueCount = 2
+    renderPagina()
+
+    expect(
+      screen.getByRole('button', { name: /Jaarlijks onderhoud/ }),
+    ).toHaveTextContent('2')
+    mockOnderhoudDueCount = 0
   })
 })
