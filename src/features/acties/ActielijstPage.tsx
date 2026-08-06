@@ -1,14 +1,14 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { lazy, Suspense, useMemo, useState, type FormEvent } from 'react'
 import { InvoerdatumVeld } from '../../components/InvoerdatumVeld'
 import { UitstelKnop } from '../../components/UitstelKnop'
 import { VerantwoordelijkeSelect } from '../../components/VerantwoordelijkeSelect'
 import { useToast } from '../../components/useToast'
 import { TEAMLEDEN, type Teamlid } from '../team/teamleden'
+import { usePanden } from '../panden/usePanden'
 import { VergaderingAfsluitenModal } from '../versies/VergaderingAfsluitenModal'
 import { VersieBeheerPaneel } from '../versies/VersieBeheerPaneel'
 import { berekenDueDate, isDue } from './dueDate'
 import { exporteerNaarExcel } from './excelExport'
-import { ImportActiesModal } from './ImportActiesModal'
 import {
   DOORLOOPTIJD_OPTIES,
   type ActieItem,
@@ -17,10 +17,16 @@ import {
 } from './types'
 import { useActies } from './useActies'
 
+// Alleen nodig ná een klik op "Excel importeren" — niet in het hoofdbundel.
+const ImportActiesModal = lazy(() =>
+  import('./ImportActiesModal').then((m) => ({ default: m.ImportActiesModal })),
+)
+
 interface Props {
   klantId: string
   klantNaam: string
   onTerug: () => void
+  onPandenOpen: () => void
 }
 
 type SortVeld =
@@ -61,9 +67,10 @@ const UITSTEL_OPTIES: { label: string; eenheid: 'w' | 'm'; aantal: number }[] = 
   { label: '6 maanden', eenheid: 'm', aantal: 6 },
 ]
 
-export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
+export function ActielijstPage({ klantId, klantNaam, onTerug, onPandenOpen }: Props) {
   const { acties, loading, addActie, updateActie, deleteActie, uitstellen } =
     useActies(klantId)
+  const { panden } = usePanden(klantId)
   const toon = useToast()
   const [sortVeld, setSortVeld] = useState<SortVeld>('ref')
   const [sortRichting, setSortRichting] = useState<'asc' | 'desc'>('asc')
@@ -241,8 +248,8 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
     window.print()
   }
 
-  function handleExporteren() {
-    exporteerNaarExcel(gesorteerdeActies, klantNaam)
+  async function handleExporteren() {
+    await exporteerNaarExcel(gesorteerdeActies, klantNaam)
     toon('Excel-bestand gedownload')
   }
 
@@ -291,6 +298,9 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
       <div className="actielijst-titelbalk">
         <h1>Actielijst — {klantNaam}</h1>
         <div className="actielijst-titelbalk-acties no-print">
+          <button type="button" onClick={onPandenOpen}>
+            🏠 Panden {panden.length > 0 && <span className="count-badge">{panden.length}</span>}
+          </button>
           <button type="button" onClick={() => setVersiesPaneelOpen(true)}>
             Versies
           </button>
@@ -622,10 +632,12 @@ export function ActielijstPage({ klantId, klantNaam, onTerug }: Props) {
       </button>
 
       {importOpen && (
-        <ImportActiesModal
-          standaardKlantId={klantId}
-          onSluiten={() => setImportOpen(false)}
-        />
+        <Suspense fallback={null}>
+          <ImportActiesModal
+            standaardKlantId={klantId}
+            onSluiten={() => setImportOpen(false)}
+          />
+        </Suspense>
       )}
 
       {vergaderingModalOpen && (

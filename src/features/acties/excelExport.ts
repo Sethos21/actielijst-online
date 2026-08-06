@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx'
+import type * as XLSXType from 'xlsx'
 import { berekenDueDate } from './dueDate'
 import type { ActieItem, ActieStatus } from './types'
 
@@ -30,7 +30,10 @@ const KOLOMBREEDTES = [24, 20, 18, 36, 16, 12, 12, 12, 10, 30]
  * betaalde Pro-versie). Geverifieerd door het geschreven bestand terug in
  * te lezen: de kolombreedtes komen terug, de freeze-pane niet.
  */
-export function bouwActielijstWerkboek(acties: ActieItem[]): XLSX.WorkBook {
+export function bouwActielijstWerkboek(
+  acties: ActieItem[],
+  XLSX: typeof XLSXType,
+): XLSXType.WorkBook {
   const rijen = [
     KOLOMMEN,
     ...acties.map((actie) => [
@@ -63,7 +66,10 @@ export function bestandsnaamVoor(klantNaam: string): string {
   return `Actielijst_${veilig}_${datum}.xlsx`
 }
 
-export function exporteerNaarExcel(acties: ActieItem[], klantNaam: string) {
-  const werkboek = bouwActielijstWerkboek(acties)
+/** Laadt xlsx pas bij daadwerkelijk exporteren, zodat de library niet in de
+ * hoofdbundel zit — de Excel-knop is niet iets dat elke gebruiker gebruikt. */
+export async function exporteerNaarExcel(acties: ActieItem[], klantNaam: string) {
+  const XLSX = await import('xlsx')
+  const werkboek = bouwActielijstWerkboek(acties, XLSX)
   XLSX.writeFile(werkboek, bestandsnaamVoor(klantNaam))
 }
