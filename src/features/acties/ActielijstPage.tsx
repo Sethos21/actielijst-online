@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { lazy, Suspense, useMemo, useState, type FormEvent } from 'react'
 import { InvoerdatumVeld } from '../../components/InvoerdatumVeld'
 import { UitstelKnop } from '../../components/UitstelKnop'
 import { VerantwoordelijkeSelect } from '../../components/VerantwoordelijkeSelect'
@@ -9,7 +9,6 @@ import { VergaderingAfsluitenModal } from '../versies/VergaderingAfsluitenModal'
 import { VersieBeheerPaneel } from '../versies/VersieBeheerPaneel'
 import { berekenDueDate, isDue } from './dueDate'
 import { exporteerNaarExcel } from './excelExport'
-import { ImportActiesModal } from './ImportActiesModal'
 import {
   DOORLOOPTIJD_OPTIES,
   type ActieItem,
@@ -17,6 +16,11 @@ import {
   type Doorlooptijd,
 } from './types'
 import { useActies } from './useActies'
+
+// Alleen nodig ná een klik op "Excel importeren" — niet in het hoofdbundel.
+const ImportActiesModal = lazy(() =>
+  import('./ImportActiesModal').then((m) => ({ default: m.ImportActiesModal })),
+)
 
 interface Props {
   klantId: string
@@ -628,10 +632,12 @@ export function ActielijstPage({ klantId, klantNaam, onTerug, onPandenOpen }: Pr
       </button>
 
       {importOpen && (
-        <ImportActiesModal
-          standaardKlantId={klantId}
-          onSluiten={() => setImportOpen(false)}
-        />
+        <Suspense fallback={null}>
+          <ImportActiesModal
+            standaardKlantId={klantId}
+            onSluiten={() => setImportOpen(false)}
+          />
+        </Suspense>
       )}
 
       {vergaderingModalOpen && (

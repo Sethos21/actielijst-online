@@ -1,12 +1,10 @@
 import { signOut } from 'firebase/auth'
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { ActielijstPage } from './features/acties/ActielijstPage'
-import { ImportActiesModal } from './features/acties/ImportActiesModal'
 import { MijnActiesPage } from './features/acties/MijnActiesPage'
 import { LoginForm } from './features/auth/LoginForm'
 import { useAuthUser } from './features/auth/useAuthUser'
 import { DashboardPage } from './features/dashboard/DashboardPage'
-import { Huurdersmutaties } from './features/huurdersmutaties/Huurdersmutaties'
 import { KlantoverzichtPage } from './features/klanten/KlantoverzichtPage'
 import type { Klant } from './features/klanten/types'
 import { PandDetailPage } from './features/panden/PandDetailPage'
@@ -15,6 +13,19 @@ import type { Pand } from './features/panden/types'
 import { Sidebar } from './components/Sidebar'
 import { StartScreen } from './components/StartScreen'
 import { auth } from './lib/firebase'
+
+// Losstaande schermen/modals, alleen nodig ná een expliciete gebruikersactie
+// (kies Huurdersmutaties, klik Importeren) — niet nodig voor de initiële load.
+const Huurdersmutaties = lazy(() =>
+  import('./features/huurdersmutaties/Huurdersmutaties').then((m) => ({
+    default: m.Huurdersmutaties,
+  })),
+)
+const ImportActiesModal = lazy(() =>
+  import('./features/acties/ImportActiesModal').then((m) => ({
+    default: m.ImportActiesModal,
+  })),
+)
 
 type Scherm = 'start' | 'actielijsten' | 'huurdersmutaties'
 type Weergave = 'klantoverzicht' | 'mijn-acties' | 'dashboard'
@@ -77,7 +88,11 @@ function App() {
   }
 
   if (scherm === 'huurdersmutaties') {
-    return <Huurdersmutaties onTerug={() => setScherm('start')} />
+    return (
+      <Suspense fallback={<p>Laden...</p>}>
+        <Huurdersmutaties onTerug={() => setScherm('start')} />
+      </Suspense>
+    )
   }
 
   return (
@@ -120,7 +135,9 @@ function App() {
         )}
 
         {importOpen && (
-          <ImportActiesModal onSluiten={() => setImportOpen(false)} />
+          <Suspense fallback={null}>
+            <ImportActiesModal onSluiten={() => setImportOpen(false)} />
+          </Suspense>
         )}
 
         {pandenPaneelOpen && geselecteerdeKlant && (

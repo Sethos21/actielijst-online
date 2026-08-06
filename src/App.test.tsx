@@ -91,7 +91,7 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: /Huurdersmutaties/ }))
 
-    expect(screen.getByText('Huurdersmutaties-stub')).toBeInTheDocument()
+    expect(await screen.findByText('Huurdersmutaties-stub')).toBeInTheDocument()
   })
 
   it('gaat terug naar het Startscherm vanuit Huurdersmutaties', async () => {
@@ -99,6 +99,7 @@ describe('App', () => {
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: /Huurdersmutaties/ }))
+    await screen.findByText('Huurdersmutaties-stub')
     await user.click(screen.getByRole('button', { name: '← Terug naar start' }))
 
     expect(
