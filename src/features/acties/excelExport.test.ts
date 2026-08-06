@@ -23,7 +23,7 @@ function maakActie(overrides: Partial<ActieItem> = {}): ActieItem {
 
 describe('bouwActielijstWerkboek', () => {
   it('bevat een headerrij en een datarij per actie', () => {
-    const werkboek = bouwActielijstWerkboek([maakActie()])
+    const werkboek = bouwActielijstWerkboek([maakActie()], XLSX)
     const blad = werkboek.Sheets['Actielijst']
     const rijen = XLSX.utils.sheet_to_json<string[]>(blad, { header: 1 })
 
@@ -54,14 +54,14 @@ describe('bouwActielijstWerkboek', () => {
   })
 
   it('vertaalt status naar het Nederlandse label', () => {
-    const werkboek = bouwActielijstWerkboek([maakActie({ status: 'hold' })])
+    const werkboek = bouwActielijstWerkboek([maakActie({ status: 'hold' })], XLSX)
     const blad = werkboek.Sheets['Actielijst']
     const rijen = XLSX.utils.sheet_to_json<string[]>(blad, { header: 1 })
     expect(rijen[1][8]).toBe('On hold')
   })
 
   it('zet kolombreedtes zodat het bestand leesbaar opent in Excel', () => {
-    const werkboek = bouwActielijstWerkboek([maakActie()])
+    const werkboek = bouwActielijstWerkboek([maakActie()], XLSX)
     const blad = werkboek.Sheets['Actielijst']
     expect(blad['!cols']).toHaveLength(10)
   })

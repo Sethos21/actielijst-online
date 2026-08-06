@@ -248,8 +248,8 @@ export function ActielijstPage({ klantId, klantNaam, onTerug, onPandenOpen }: Pr
     window.print()
   }
 
-  function handleExporteren() {
-    exporteerNaarExcel(gesorteerdeActies, klantNaam)
+  async function handleExporteren() {
+    await exporteerNaarExcel(gesorteerdeActies, klantNaam)
     toon('Excel-bestand gedownload')
   }
 
