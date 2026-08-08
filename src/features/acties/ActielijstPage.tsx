@@ -1,3 +1,4 @@
+import { deleteField, type UpdateData } from 'firebase/firestore'
 import { lazy, Suspense, useMemo, useState, type FormEvent } from 'react'
 import { InvoerdatumVeld } from '../../components/InvoerdatumVeld'
 import { UitstelKnop } from '../../components/UitstelKnop'
@@ -9,13 +10,16 @@ import { VergaderingAfsluitenModal } from '../versies/VergaderingAfsluitenModal'
 import { VersieBeheerPaneel } from '../versies/VersieBeheerPaneel'
 import { berekenDueDate, isDue } from './dueDate'
 import { exporteerNaarExcel } from './excelExport'
+import { VestigingCel } from './VestigingCel'
 import {
   DOORLOOPTIJD_OPTIES,
+  type ActieHerkomst,
   type ActieItem,
   type ActieStatus,
   type Doorlooptijd,
 } from './types'
 import { useActies } from './useActies'
+import type { Pand } from '../panden/types'
 
 // Alleen nodig ná een klik op "Excel importeren" — niet in het hoofdbundel.
 const ImportActiesModal = lazy(() =>
@@ -27,6 +31,7 @@ interface Props {
   klantNaam: string
   onTerug: () => void
   onPandenOpen: () => void
+  onNavigeerNaarBron: (pand: Pand, herkomst: ActieHerkomst) => void
 }
 
 type SortVeld =
@@ -67,7 +72,13 @@ const UITSTEL_OPTIES: { label: string; eenheid: 'w' | 'm'; aantal: number }[] = 
   { label: '6 maanden', eenheid: 'm', aantal: 6 },
 ]
 
-export function ActielijstPage({ klantId, klantNaam, onTerug, onPandenOpen }: Props) {
+export function ActielijstPage({
+  klantId,
+  klantNaam,
+  onTerug,
+  onPandenOpen,
+  onNavigeerNaarBron,
+}: Props) {
   const { acties, loading, addActie, updateActie, deleteActie, uitstellen } =
     useActies(klantId)
   const { panden } = usePanden(klantId)
@@ -498,6 +509,21 @@ export function ActielijstPage({ klantId, klantNaam, onTerug, onPandenOpen }: Pr
                           updateActie(actie.id, { onderwerp: e.target.value })
                         }
                       />
+                      {actie.herkomst && (
+                        <button
+                          type="button"
+                          className="actie-herkomst"
+                          onClick={() => {
+                            const pand = panden.find((p) => p.id === actie.pandId)
+                            if (pand) onNavigeerNaarBron(pand, actie.herkomst!)
+                          }}
+                        >
+                          {actie.herkomst.type === 'onderhoud' && '🔧'}
+                          {actie.herkomst.type === 'mjop' && '📅'}
+                          {actie.herkomst.type === 'document' && '📄'} vanuit{' '}
+                          {actie.herkomst.type}: {actie.herkomst.label}
+                        </button>
+                      )}
                     </span>
                   </td>
                   <td>
@@ -513,11 +539,23 @@ export function ActielijstPage({ klantId, klantNaam, onTerug, onPandenOpen }: Pr
                   </td>
                   <td>
                     <span className="cel-scroll">
-                      <input
-                        aria-label={`Vestiging voor ${actie.actie}`}
-                        value={actie.vestiging}
-                        onChange={(e) =>
-                          updateActie(actie.id, { vestiging: e.target.value })
+                      <VestigingCel
+                        klantId={klantId}
+                        klantNaam={klantNaam}
+                        actieOmschrijving={actie.actie}
+                        pandId={actie.pandId}
+                        vestigingTekst={actie.vestiging}
+                        onKiesPand={(pand) =>
+                          updateActie(actie.id, {
+                            pandId: pand.id,
+                            vestiging: pand.naam,
+                          })
+                        }
+                        onVrijeTekst={(tekst) =>
+                          updateActie(actie.id, {
+                            pandId: deleteField(),
+                            vestiging: tekst,
+                          })
                         }
                       />
                     </span>
@@ -574,11 +612,18 @@ export function ActielijstPage({ klantId, klantNaam, onTerug, onPandenOpen }: Pr
                           due_ ? 'due' : actie.status
                         }`}
                         value={actie.status}
-                        onChange={(e) =>
-                          updateActie(actie.id, {
-                            status: e.target.value as ActieStatus,
-                          })
-                        }
+                        onChange={(e) => {
+                          const nieuweStatus = e.target.value as ActieStatus
+                          const patch: UpdateData<ActieItem> = { status: nieuweStatus }
+                          if (nieuweStatus === 'done' && actie.status !== 'done') {
+                            patch.afgerondOp = new Date().toISOString().slice(0, 10)
+                          }
+                          if (nieuweStatus !== 'done' && actie.status === 'done') {
+                            // heropend — telt niet meer mee als "afgerond in periode X"
+                            patch.afgerondOp = deleteField()
+                          }
+                          updateActie(actie.id, patch)
+                        }}
                       >
                         <option value="open">{due_ ? 'Due' : 'Open'}</option>
                         <option value="done">Gereed</option>

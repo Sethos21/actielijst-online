@@ -33,6 +33,7 @@ export function useOnderhoud(pandId: string) {
     naam: string
     verantw: string
     klantId: string
+    leverancier?: string
   }) {
     if (!nieuw.naam.trim()) return
     const nu = Date.now()
@@ -44,6 +45,7 @@ export function useOnderhoud(pandId: string) {
       herhaling: 'jaarlijks',
       volgendeDatum: nu,
       aangemaaktOp: nu,
+      ...(nieuw.leverancier?.trim() ? { leverancier: nieuw.leverancier.trim() } : {}),
     })
   }
 
@@ -63,4 +65,24 @@ export function useOnderhoud(pandId: string) {
   }).length
 
   return { onderhoud, loading, addOnderhoud, vinkAf, onderhoudDueCount }
+}
+
+/** Alle onderhoudsitems van één klant, over al haar panden heen — gebruikt
+ * door Rapportage, die geen los pand kiest maar per klant rapporteert. */
+export function useOnderhoudVoorKlant(klantId: string) {
+  const [onderhoud, setOnderhoud] = useState<Onderhoud[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const q = query(collection(db, COLLECTION), where('klantId', '==', klantId))
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setOnderhoud(
+        snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Onderhoud),
+      )
+      setLoading(false)
+    })
+    return unsubscribe
+  }, [klantId])
+
+  return { onderhoud, loading }
 }

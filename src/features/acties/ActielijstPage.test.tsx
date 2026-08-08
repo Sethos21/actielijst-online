@@ -30,7 +30,7 @@ vi.mock('../klanten/useKlanten', () => ({
   }),
 }))
 
-let mockPanden: { id: string }[] = []
+let mockPanden: { id: string; naam: string }[] = []
 vi.mock('../panden/usePanden', () => ({
   usePanden: () => ({
     panden: mockPanden,
@@ -133,6 +133,7 @@ describe('ActielijstPage', () => {
         klantNaam="Malcon"
         onTerug={vi.fn()}
         onPandenOpen={onPandenOpen}
+        onNavigeerNaarBron={vi.fn()}
       />,
     )
 
@@ -144,13 +145,17 @@ describe('ActielijstPage', () => {
   })
 
   it('toont een count-badge met het aantal panden op de Panden-knop', () => {
-    mockPanden = [{ id: 'p1' }, { id: 'p2' }]
+    mockPanden = [
+      { id: 'p1', naam: 'Hoofdstraat 12' },
+      { id: 'p2', naam: 'Kerkstraat 4' },
+    ]
     render(
       <ActielijstPage
         klantId="klant-1"
         klantNaam="Malcon"
         onTerug={vi.fn()}
         onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
       />,
     )
 
@@ -164,6 +169,7 @@ describe('ActielijstPage', () => {
         klantNaam="Malcon"
         onTerug={vi.fn()}
         onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
       />,
     )
 
@@ -174,6 +180,50 @@ describe('ActielijstPage', () => {
     )
   })
 
+  it('zet afgerondOp op vandaag zodra een actie op Gereed wordt gezet', async () => {
+    const vandaag = new Date().toISOString().slice(0, 10)
+    const user = userEvent.setup()
+    render(
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
+      />,
+    )
+
+    await user.selectOptions(
+      screen.getByLabelText('Status voor Lift laten keuren'),
+      'done',
+    )
+
+    expect(updateActie).toHaveBeenCalledWith('1', {
+      status: 'done',
+      afgerondOp: vandaag,
+    })
+  })
+
+  it('voegt geen afgerondOp toe bij een statuswijziging die niet naar Gereed gaat', async () => {
+    const user = userEvent.setup()
+    render(
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
+      />,
+    )
+
+    await user.selectOptions(
+      screen.getByLabelText('Status voor Lift laten keuren'),
+      'hold',
+    )
+
+    expect(updateActie).toHaveBeenCalledWith('1', { status: 'hold' })
+  })
+
   it('markeert een on-hold actie nooit als Due, ondanks verlopen datum', () => {
     render(
       <ActielijstPage
@@ -181,6 +231,7 @@ describe('ActielijstPage', () => {
         klantNaam="Malcon"
         onTerug={vi.fn()}
         onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
       />,
     )
 
@@ -198,6 +249,7 @@ describe('ActielijstPage', () => {
         klantNaam="Malcon"
         onTerug={vi.fn()}
         onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
       />,
     )
 
@@ -217,6 +269,7 @@ describe('ActielijstPage', () => {
         klantNaam="Malcon"
         onTerug={vi.fn()}
         onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
       />,
     )
 
@@ -235,6 +288,7 @@ describe('ActielijstPage', () => {
         klantNaam="Malcon"
         onTerug={vi.fn()}
         onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
       />,
     )
 
@@ -252,6 +306,7 @@ describe('ActielijstPage', () => {
         klantNaam="Malcon"
         onTerug={vi.fn()}
         onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
       />,
     )
 
@@ -271,6 +326,7 @@ describe('ActielijstPage', () => {
         klantNaam="Malcon"
         onTerug={vi.fn()}
         onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
       />,
     )
 
@@ -290,6 +346,7 @@ describe('ActielijstPage', () => {
         klantNaam="Malcon"
         onTerug={vi.fn()}
         onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
       />,
     )
 
@@ -315,6 +372,7 @@ describe('ActielijstPage', () => {
         klantNaam="Malcon"
         onTerug={vi.fn()}
         onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
       />,
     )
 
@@ -334,6 +392,7 @@ describe('ActielijstPage', () => {
         klantNaam="Malcon"
         onTerug={vi.fn()}
         onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
       />,
     )
 
@@ -351,6 +410,7 @@ describe('ActielijstPage', () => {
         klantNaam="Malcon"
         onTerug={vi.fn()}
         onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
       />,
     )
     const rijnummers = () =>
@@ -379,6 +439,7 @@ describe('ActielijstPage', () => {
         klantNaam="Malcon"
         onTerug={vi.fn()}
         onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
       />,
     )
 
@@ -396,6 +457,7 @@ describe('ActielijstPage', () => {
         klantNaam="Malcon"
         onTerug={vi.fn()}
         onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
       />,
     )
 
@@ -417,12 +479,13 @@ describe('ActielijstPage', () => {
         klantNaam="Malcon"
         onTerug={vi.fn()}
         onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
       />,
     )
 
     // Sorteer op Vestiging (heeft voor elke rij een andere waarde) zodat de
     // standaardvolgorde daadwerkelijk omgooit.
-    await user.click(screen.getByRole('button', { name: /^Vestiging/ }))
+    await user.click(screen.getByRole('button', { name: /^Vestiging[▲▼▾]/ }))
 
     await user.click(
       screen.getByRole('button', { name: '+ Nieuwe actie toevoegen' }),
@@ -444,6 +507,7 @@ describe('ActielijstPage', () => {
         klantNaam="Malcon"
         onTerug={vi.fn()}
         onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
       />,
     )
 
@@ -466,6 +530,7 @@ describe('ActielijstPage', () => {
         klantNaam="Malcon"
         onTerug={vi.fn()}
         onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
       />,
     )
 

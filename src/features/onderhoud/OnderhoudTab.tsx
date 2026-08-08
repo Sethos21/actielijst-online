@@ -1,67 +1,58 @@
-import { useState, type FormEvent } from 'react'
-import { TEAMLEDEN } from '../team/teamleden'
+import { useState } from 'react'
+import { bouwActieVanuitBron } from '../acties/bouwActieVanuitBron'
+import { useActies } from '../acties/useActies'
 import {
   bepaalOnderhoudStatus,
   formatKorteDatum,
   formatOnderhoudStatusLabel,
 } from './dueDate'
+import { OnderhoudStandaardlijstBeheer } from './OnderhoudStandaardlijstBeheer'
+import { ToevoegenVanuitStandaardlijst } from './ToevoegenVanuitStandaardlijst'
 import { useOnderhoud } from './useOnderhoud'
 
 interface Props {
   pandId: string
   klantId: string
+  pandNaam: string
 }
 
-export function OnderhoudTab({ pandId, klantId }: Props) {
-  const { onderhoud, loading, addOnderhoud, vinkAf } = useOnderhoud(pandId)
-  const [formulierOpen, setFormulierOpen] = useState(false)
-  const [naam, setNaam] = useState('')
-  const [verantw, setVerantw] = useState<string>(TEAMLEDEN[0])
+export function OnderhoudTab({ pandId, klantId, pandNaam }: Props) {
+  const { onderhoud, loading, vinkAf } = useOnderhoud(pandId)
+  const { addActie } = useActies(klantId)
+  const [toevoegenOpen, setToevoegenOpen] = useState(false)
+  const [beherenOpen, setBeherenOpen] = useState(false)
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-    await addOnderhoud({ naam, verantw, klantId })
-    setNaam('')
-    setVerantw(TEAMLEDEN[0])
-    setFormulierOpen(false)
-  }
+  const alGekoppeldeNamen = new Set(onderhoud.map((item) => item.naam))
 
   return (
     <div>
       <div className="toolbar">
         <div className="toolbar-titel">Onderhoudsitems</div>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => setFormulierOpen((open) => !open)}
-        >
-          + Item toevoegen
-        </button>
+        <div className="toolbar-acties">
+          <button type="button" onClick={() => setBeherenOpen(true)}>
+            ⚙ Beheren
+          </button>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => setToevoegenOpen((open) => !open)}
+          >
+            + Item toevoegen
+          </button>
+        </div>
       </div>
 
-      {formulierOpen && (
-        <form onSubmit={handleSubmit} className="onderhoud-nieuw-form">
-          <input
-            aria-label="Naam onderhoudsitem"
-            value={naam}
-            onChange={(e) => setNaam(e.target.value)}
-            placeholder="Naam onderhoudsitem..."
-          />
-          <select
-            aria-label="Verantwoordelijke voor onderhoudsitem"
-            value={verantw}
-            onChange={(e) => setVerantw(e.target.value)}
-          >
-            {TEAMLEDEN.map((lid) => (
-              <option key={lid} value={lid}>
-                {lid}
-              </option>
-            ))}
-          </select>
-          <button type="submit" className="btn-primary">
-            Toevoegen
-          </button>
-        </form>
+      {toevoegenOpen && (
+        <ToevoegenVanuitStandaardlijst
+          pandId={pandId}
+          klantId={klantId}
+          alGekoppeldeNamen={alGekoppeldeNamen}
+          onGesloten={() => setToevoegenOpen(false)}
+        />
+      )}
+
+      {beherenOpen && (
+        <OnderhoudStandaardlijstBeheer onSluiten={() => setBeherenOpen(false)} />
       )}
 
       {loading ? (
@@ -90,16 +81,34 @@ export function OnderhoudTab({ pandId, klantId }: Props) {
                     {item.naam}
                   </div>
                   <div className="check-meta">
+                    {item.leverancier ? `Leverancier: ${item.leverancier} · ` : ''}
                     {item.laatstUitgevoerdOp
-                      ? `Laatst uitgevoerd: ${formatKorteDatum(item.laatstUitgevoerdOp)} · `
-                      : ''}
-                    Verantwoordelijke: {item.verantw}
+                      ? `Laatst uitgevoerd: ${formatKorteDatum(item.laatstUitgevoerdOp)}`
+                      : 'Nog niet uitgevoerd'}
                   </div>
                 </div>
                 <span className="check-herhaling">⟳ {item.herhaling}</span>
                 <span className={`check-status ${status}`}>
                   {formatOnderhoudStatusLabel(item.volgendeDatum)}
                 </span>
+                <button
+                  type="button"
+                  className="check-actie-btn"
+                  onClick={() =>
+                    addActie(
+                      bouwActieVanuitBron({
+                        type: 'onderhoud',
+                        bronId: item.id,
+                        label: item.naam,
+                        klantId,
+                        pandId,
+                        pandNaam,
+                      }),
+                    )
+                  }
+                >
+                  + Actie aanmaken
+                </button>
               </div>
             )
           })}

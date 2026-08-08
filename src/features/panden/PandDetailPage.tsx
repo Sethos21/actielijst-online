@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { DocumentenTab } from '../documenten/DocumentenTab'
+import { MjopTab } from '../mjop/MjopTab'
 import { OnderhoudTab } from '../onderhoud/OnderhoudTab'
 import { useOnderhoud } from '../onderhoud/useOnderhoud'
 import type { Pand } from './types'
@@ -9,10 +11,16 @@ interface Props {
   pand: Pand
   klantNaam: string
   onTerug: () => void
+  initieelTab?: Tab
 }
 
-export function PandDetailPage({ pand, klantNaam, onTerug }: Props) {
-  const [tab, setTab] = useState<Tab>('overzicht')
+export function PandDetailPage({
+  pand,
+  klantNaam,
+  onTerug,
+  initieelTab = 'overzicht',
+}: Props) {
+  const [tab, setTab] = useState<Tab>(initieelTab)
   const { onderhoudDueCount } = useOnderhoud(pand.id)
 
   return (
@@ -70,17 +78,13 @@ export function PandDetailPage({ pand, klantNaam, onTerug }: Props) {
         </div>
       )}
       {tab === 'documenten' && (
-        <div className="leeg-state">
-          <div className="leeg-tekst">Documenten — nog niet gebouwd, volgende stap.</div>
-        </div>
+        <DocumentenTab pandId={pand.id} klantId={pand.klantId} pandNaam={pand.naam} />
       )}
       {tab === 'onderhoud' && (
-        <OnderhoudTab pandId={pand.id} klantId={pand.klantId} />
+        <OnderhoudTab pandId={pand.id} klantId={pand.klantId} pandNaam={pand.naam} />
       )}
       {tab === 'mjop' && (
-        <div className="leeg-state">
-          <div className="leeg-tekst">MJOP — nog niet gebouwd, aparte vervolgstap.</div>
-        </div>
+        <MjopTab pandId={pand.id} klantId={pand.klantId} pandNaam={pand.naam} />
       )}
     </div>
   )
