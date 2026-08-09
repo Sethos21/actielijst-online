@@ -30,6 +30,11 @@ export const VOORBEELD_STANDAARD_TYPES: { naam: string; icoon: string }[] = [
   { naam: 'Rookmelders controle', icoon: '🔔' },
   { naam: 'Deurautomaat onderhoud', icoon: '🚪' },
   { naam: 'Liftonderhoud', icoon: '🛗' },
+  { naam: 'Elektrische installatie', icoon: '⚡' },
+  { naam: 'Luchtbehandeling (incl. filters)', icoon: '🌬️' },
+  { naam: 'Airco onderhoud', icoon: '❄️' },
+  { naam: 'Brandmeldinstallatie (BMI)', icoon: '🚨' },
+  { naam: 'Alarminstallatie', icoon: '🔒' },
 ]
 
 /** Systeembrede, door het hele team beheerbare lijst van onderhoudstypen —
