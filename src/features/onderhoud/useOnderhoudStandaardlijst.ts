@@ -20,6 +20,18 @@ export interface StandaardType {
   aangemaaktOp: number
 }
 
+/** Veelvoorkomende onderhoudscategorieën bij vastgoedbeheer — gebruikt als
+ * startpunt voor teams die de standaardlijst nog leeg aantreffen. Geen
+ * verplichte set: het team kan ze na het toevoegen alsnog verwijderen. */
+export const VOORBEELD_STANDAARD_TYPES: { naam: string; icoon: string }[] = [
+  { naam: 'CV-ketel onderhoud', icoon: '🔧' },
+  { naam: 'Dakinspectie', icoon: '🏠' },
+  { naam: 'Brandblusser controle', icoon: '🧯' },
+  { naam: 'Rookmelders controle', icoon: '🔔' },
+  { naam: 'Deurautomaat onderhoud', icoon: '🚪' },
+  { naam: 'Liftonderhoud', icoon: '🛗' },
+]
+
 /** Systeembrede, door het hele team beheerbare lijst van onderhoudstypen —
  * los van een specifiek pand (zie VOORSTEL rapportage/onderhoud/mjop §3). */
 export function useOnderhoudStandaardlijst() {
@@ -49,5 +61,11 @@ export function useOnderhoudStandaardlijst() {
     await deleteDoc(doc(db, COLLECTION, typeId))
   }
 
-  return { types, loading, voegTypeToe, verwijderType }
+  async function vulMetVoorbeelden() {
+    await Promise.all(
+      VOORBEELD_STANDAARD_TYPES.map((type) => voegTypeToe(type.naam, type.icoon)),
+    )
+  }
+
+  return { types, loading, voegTypeToe, verwijderType, vulMetVoorbeelden }
 }

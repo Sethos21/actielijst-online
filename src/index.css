@@ -1919,6 +1919,12 @@ table.actielijst .cel-scroll select.status-select {
 }
 
 /* ---- Onderhoud-standaardlijst (beheerscherm + toevoegen-vanuit-pand) ---- */
+.standaardlijst-leeg {
+  margin-bottom: 14px;
+}
+.standaardlijst-leeg p {
+  margin-bottom: 10px;
+}
 .standaardlijst-lijst {
   list-style: none;
   margin: 0 0 14px;

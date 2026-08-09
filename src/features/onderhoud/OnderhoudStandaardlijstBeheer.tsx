@@ -7,7 +7,8 @@ interface Props {
 }
 
 export function OnderhoudStandaardlijstBeheer({ onSluiten }: Props) {
-  const { types, loading, voegTypeToe, verwijderType } = useOnderhoudStandaardlijst()
+  const { types, loading, voegTypeToe, verwijderType, vulMetVoorbeelden } =
+    useOnderhoudStandaardlijst()
   const [naam, setNaam] = useState('')
 
   async function handleSubmit(event: FormEvent) {
@@ -21,7 +22,12 @@ export function OnderhoudStandaardlijstBeheer({ onSluiten }: Props) {
       {loading ? (
         <p>Laden...</p>
       ) : types.length === 0 ? (
-        <p>Nog geen standaardtypen.</p>
+        <div className="standaardlijst-leeg">
+          <p>Nog geen standaardtypen.</p>
+          <button type="button" className="btn-secundair-klein" onClick={vulMetVoorbeelden}>
+            Vul met veelgebruikte types
+          </button>
+        </div>
       ) : (
         <ul className="standaardlijst-lijst">
           {types.map((type) => (
