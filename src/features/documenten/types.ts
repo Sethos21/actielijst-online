@@ -11,4 +11,7 @@ export interface Document {
   geuploadDoor: string // teamlid, handmatig gekozen (gedeeld team-account, zie VergaderingAfsluitenModal)
   geuploadOp: number
   opmerking?: string
+  gearchiveerdOp?: number
+  gearchiveerdDoor?: string
+  gearchiveerdReden?: string
 }

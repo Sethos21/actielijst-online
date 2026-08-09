@@ -1,6 +1,7 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   onSnapshot,
   orderBy,
@@ -13,6 +14,30 @@ import { db } from '../../lib/firebase'
 import type { MjopPost } from './types'
 
 const COLLECTION = 'mjop'
+
+export async function updatePost(postId: string, patch: Partial<MjopPost>) {
+  await updateDoc(doc(db, COLLECTION, postId), patch)
+}
+
+export async function archiveerMjopPost(postId: string, gearchiveerdDoor?: string, reden?: string) {
+  await updateDoc(doc(db, COLLECTION, postId), {
+    gearchiveerdOp: Date.now(),
+    ...(gearchiveerdDoor?.trim() ? { gearchiveerdDoor: gearchiveerdDoor.trim() } : {}),
+    ...(reden?.trim() ? { gearchiveerdReden: reden.trim() } : {}),
+  })
+}
+
+export async function herstelMjopPost(postId: string) {
+  await updateDoc(doc(db, COLLECTION, postId), {
+    gearchiveerdOp: null,
+    gearchiveerdDoor: null,
+    gearchiveerdReden: null,
+  })
+}
+
+export async function verwijderMjopPostDefinitief(postId: string) {
+  await deleteDoc(doc(db, COLLECTION, postId))
+}
 
 export function useMjop(pandId: string) {
   const [posten, setPosten] = useState<MjopPost[]>([])
@@ -35,9 +60,13 @@ export function useMjop(pandId: string) {
     await addDoc(collection(db, COLLECTION), { ...post, pandId })
   }
 
-  async function updatePost(postId: string, patch: Partial<MjopPost>) {
-    await updateDoc(doc(db, COLLECTION, postId), patch)
+  return {
+    posten,
+    loading,
+    addPost,
+    updatePost,
+    archiveer: archiveerMjopPost,
+    herstel: herstelMjopPost,
+    verwijderDefinitief: verwijderMjopPostDefinitief,
   }
-
-  return { posten, loading, addPost, updatePost }
 }

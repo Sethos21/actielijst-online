@@ -1,9 +1,11 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PandenPaneel } from './PandenPaneel'
 
 const addPand = vi.fn()
+const updatePand = vi.fn()
+const archiveer = vi.fn()
 const onSluiten = vi.fn()
 const onSelectPand = vi.fn()
 
@@ -12,9 +14,18 @@ vi.mock('./usePanden', () => ({
     panden: [
       { id: 'p1', klantId: 'klant-1', naam: 'Hoofdstraat 12', aangemaaktOp: 1 },
       { id: 'p2', klantId: 'klant-1', naam: 'Kerkstraat 4', aangemaaktOp: 2 },
+      {
+        id: 'p3',
+        klantId: 'klant-1',
+        naam: 'Molenweg 7',
+        aangemaaktOp: 3,
+        gearchiveerdOp: Date.now(),
+      },
     ],
     loading: false,
     addPand,
+    updatePand,
+    archiveer,
   }),
 }))
 
@@ -30,12 +41,21 @@ function renderPaneel() {
 }
 
 describe('PandenPaneel', () => {
-  it('toont de klantnaam en de lijst met panden', () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('toont de klantnaam en de lijst met actieve panden', () => {
     renderPaneel()
 
     expect(screen.getByText('Panden — Malcon')).toBeInTheDocument()
     expect(screen.getByText('Hoofdstraat 12')).toBeInTheDocument()
     expect(screen.getByText('Kerkstraat 4')).toBeInTheDocument()
+  })
+
+  it('toont gearchiveerde panden niet', () => {
+    renderPaneel()
+    expect(screen.queryByText('Molenweg 7')).not.toBeInTheDocument()
   })
 
   it('selecteert een pand bij klikken', async () => {
@@ -68,5 +88,29 @@ describe('PandenPaneel', () => {
     await user.click(screen.getByRole('button', { name: '+ Toevoegen' }))
 
     expect(addPand).toHaveBeenCalledWith('Dorpsstraat 9')
+  })
+
+  it('bewerkt de naam van een pand inline', async () => {
+    const user = userEvent.setup()
+    renderPaneel()
+
+    await user.click(screen.getByLabelText('Bewerken: Hoofdstraat 12'))
+    const input = screen.getByLabelText('Naam bewerken voor Hoofdstraat 12')
+    await user.clear(input)
+    await user.type(input, 'Hoofdstraat 12a')
+    await user.click(screen.getByRole('button', { name: 'Opslaan' }))
+
+    expect(updatePand).toHaveBeenCalledWith('p1', { naam: 'Hoofdstraat 12a' })
+    expect(onSelectPand).not.toHaveBeenCalled()
+  })
+
+  it('archiveert een pand met opgegeven teamlid en reden', async () => {
+    vi.spyOn(window, 'prompt').mockReturnValueOnce('Ton').mockReturnValueOnce('verkocht')
+    const user = userEvent.setup()
+    renderPaneel()
+
+    await user.click(screen.getByLabelText('Archiveren: Hoofdstraat 12'))
+
+    expect(archiveer).toHaveBeenCalledWith('p1', 'Ton', 'verkocht')
   })
 })

@@ -21,6 +21,7 @@ vi.mock('./components/Sidebar', () => ({
     onMijnActies: () => void
     onDashboard: () => void
     onRapportage: () => void
+    onArchief: () => void
   }) => (
     <div>
       Sidebar-stub
@@ -35,6 +36,9 @@ vi.mock('./components/Sidebar', () => ({
       </button>
       <button type="button" onClick={props.onRapportage}>
         Stub-rapportage
+      </button>
+      <button type="button" onClick={props.onArchief}>
+        Stub-archief
       </button>
     </div>
   ),
@@ -58,6 +62,10 @@ vi.mock('./features/dashboard/DashboardPage', () => ({
 
 vi.mock('./features/rapportage/RapportagePage', () => ({
   RapportagePage: () => <div>Rapportage-stub</div>,
+}))
+
+vi.mock('./features/archief/ArchiefPage', () => ({
+  ArchiefPage: () => <div>Archief-stub</div>,
 }))
 
 vi.mock('./features/huurdersmutaties/Huurdersmutaties', () => ({
@@ -143,6 +151,16 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Stub-rapportage' }))
 
     expect(screen.getByText('Rapportage-stub')).toBeInTheDocument()
+  })
+
+  it('navigeert naar Archief via de sidebar', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: /Actielijsten/ }))
+    await user.click(screen.getByRole('button', { name: 'Stub-archief' }))
+
+    expect(screen.getByText('Archief-stub')).toBeInTheDocument()
   })
 
   it('reset naar het Startscherm bij uitloggen', async () => {

@@ -5,6 +5,8 @@ import { DocumentenTab } from './DocumentenTab'
 
 const uploadDocument = vi.fn()
 const updateOpmerking = vi.fn()
+const updateTag = vi.fn()
+const archiveer = vi.fn()
 
 let mockDocumenten: {
   id: string
@@ -14,6 +16,7 @@ let mockDocumenten: {
   geuploadDoor: string
   geuploadOp: number
   opmerking?: string
+  gearchiveerdOp?: number
 }[] = []
 
 vi.mock('./useDocumenten', () => ({
@@ -22,7 +25,14 @@ vi.mock('./useDocumenten', () => ({
     loading: false,
     uploadDocument,
     updateOpmerking,
+    updateTag,
+    archiveer,
   }),
+}))
+
+const downloadAlleDocumentenAlsZip = vi.fn()
+vi.mock('./zipDownload', () => ({
+  downloadAlleDocumentenAlsZip: (...args: unknown[]) => downloadAlleDocumentenAlsZip(...args),
 }))
 
 const addActie = vi.fn()
@@ -41,7 +51,11 @@ describe('DocumentenTab', () => {
     mockDocumenten = []
     uploadDocument.mockClear()
     updateOpmerking.mockClear()
+    updateTag.mockClear()
+    archiveer.mockClear()
+    downloadAlleDocumentenAlsZip.mockClear()
     addActie.mockClear()
+    vi.restoreAllMocks()
   })
 
   it('toont een lege staat als er nog geen documenten zijn', () => {
@@ -75,11 +89,30 @@ describe('DocumentenTab', () => {
       screen.getByText('Energielabel_Hoofdstraat12.pdf'),
     ).toBeInTheDocument()
     expect(screen.getByText('Geüpload 3 mei 2026 · Seth')).toBeInTheDocument()
-    expect(screen.getByText('Energielabel')).toBeInTheDocument()
+    expect(screen.getByLabelText('Type voor Energielabel_Hoofdstraat12.pdf')).toHaveValue(
+      'energielabel',
+    )
     expect(screen.getByText('Label loopt af per 1 mei 2036.')).toBeInTheDocument()
 
     expect(screen.getByText('Keuringsrapport_CV_2026.pdf')).toBeInTheDocument()
     expect(screen.getByText('+ opmerking toevoegen')).toBeInTheDocument()
+  })
+
+  it('toont gearchiveerde documenten niet en telt alleen actieve documenten', () => {
+    mockDocumenten = [
+      {
+        id: 'd1',
+        naam: 'Oud_energielabel.pdf',
+        tag: 'energielabel',
+        storageUrl: 'https://storage.example/d1',
+        geuploadDoor: 'Seth',
+        geuploadOp: Date.now(),
+        gearchiveerdOp: Date.now(),
+      },
+    ]
+    renderTab()
+    expect(screen.getByText('Nog geen documenten.')).toBeInTheDocument()
+    expect(screen.getByText('0 documenten')).toBeInTheDocument()
   })
 
   it('opent het uploadformulier en roept uploadDocument aan met de gekozen velden', async () => {
@@ -131,6 +164,111 @@ describe('DocumentenTab', () => {
     await user.tab()
 
     expect(updateOpmerking).toHaveBeenCalledWith('d2', 'Volgende keuring in 2027')
+  })
+
+  it('kopieert een bestaande opmerking naar het klembord', async () => {
+    mockDocumenten = [
+      {
+        id: 'd1',
+        naam: 'Bouwtekening.dwg',
+        tag: 'overig',
+        storageUrl: 'https://storage.example/d1',
+        geuploadDoor: 'Ton',
+        geuploadOp: Date.now(),
+        opmerking: '\\\\server\\documenten\\pand12',
+      },
+    ]
+    const user = userEvent.setup()
+    // user-event installeert zelf een Clipboard-stub op navigator.clipboard
+    // zodra setup() draait — pas daarna spy'en, anders wordt de spy overschreven.
+    const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined)
+    renderTab()
+
+    await user.click(screen.getByRole('button', { name: '📋 Kopieer' }))
+
+    expect(writeText).toHaveBeenCalledWith('\\\\server\\documenten\\pand12')
+  })
+
+  it('wijzigt het type van een document via de select', async () => {
+    mockDocumenten = [
+      {
+        id: 'd1',
+        naam: 'Contract.pdf',
+        tag: 'contract',
+        storageUrl: 'https://storage.example/d1',
+        geuploadDoor: 'Ton',
+        geuploadOp: Date.now(),
+      },
+    ]
+    const user = userEvent.setup()
+    renderTab()
+
+    await user.selectOptions(screen.getByLabelText('Type voor Contract.pdf'), 'overig')
+
+    expect(updateTag).toHaveBeenCalledWith('d1', 'overig')
+  })
+
+  it('archiveert een document met opgegeven teamlid en reden', async () => {
+    mockDocumenten = [
+      {
+        id: 'd1',
+        naam: 'Oud_energielabel.pdf',
+        tag: 'energielabel',
+        storageUrl: 'https://storage.example/d1',
+        geuploadDoor: 'Seth',
+        geuploadOp: Date.now(),
+      },
+    ]
+    vi.spyOn(window, 'prompt').mockReturnValueOnce('Seth').mockReturnValueOnce('vervangen')
+    const user = userEvent.setup()
+    renderTab()
+
+    await user.click(screen.getByLabelText('Archiveren: Oud_energielabel.pdf'))
+
+    expect(archiveer).toHaveBeenCalledWith('d1', 'Seth', 'vervangen')
+  })
+
+  it('downloadt alle actieve documenten als ZIP', async () => {
+    mockDocumenten = [
+      {
+        id: 'd1',
+        naam: 'Contract.pdf',
+        tag: 'contract',
+        storageUrl: 'https://storage.example/d1',
+        geuploadDoor: 'Ton',
+        geuploadOp: Date.now(),
+      },
+    ]
+    const user = userEvent.setup()
+    renderTab()
+
+    await user.click(screen.getByRole('button', { name: '⬇ Alles als ZIP' }))
+
+    expect(downloadAlleDocumentenAlsZip).toHaveBeenCalledWith(mockDocumenten, 'Hoofdstraat 12')
+  })
+
+  it('opent het document in een nieuw tabblad bij dubbelklikken op de rij', async () => {
+    mockDocumenten = [
+      {
+        id: 'd1',
+        naam: 'Contract.pdf',
+        tag: 'contract',
+        storageUrl: 'https://storage.example/d1',
+        geuploadDoor: 'Ton',
+        geuploadOp: Date.now(),
+      },
+    ]
+    const windowOpen = vi.spyOn(window, 'open').mockImplementation(() => null)
+    const user = userEvent.setup()
+    renderTab()
+
+    await user.dblClick(screen.getByText('Contract.pdf'))
+
+    expect(windowOpen).toHaveBeenCalledWith(
+      'https://storage.example/d1',
+      '_blank',
+      'noopener,noreferrer',
+    )
   })
 
   it('maakt een actie aan vanuit een document, met pand en herkomst gevuld', async () => {

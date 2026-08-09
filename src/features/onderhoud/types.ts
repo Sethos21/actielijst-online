@@ -11,4 +11,7 @@ export interface Onderhoud {
   laatstUitgevoerdOp?: number
   volgendeDatum: number // bepaalt de due-status, zie dueDate.ts
   aangemaaktOp: number
+  gearchiveerdOp?: number
+  gearchiveerdDoor?: string
+  gearchiveerdReden?: string
 }

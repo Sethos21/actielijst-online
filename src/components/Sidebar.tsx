@@ -2,7 +2,7 @@ import type { Klant } from '../features/klanten/types'
 import { useActieStats } from '../features/acties/useActieStats'
 import { useKlanten } from '../features/klanten/useKlanten'
 
-type Weergave = 'klantoverzicht' | 'mijn-acties' | 'dashboard' | 'rapportage'
+type Weergave = 'klantoverzicht' | 'mijn-acties' | 'dashboard' | 'rapportage' | 'archief'
 
 interface Props {
   geselecteerdeKlantId: string | null
@@ -12,6 +12,7 @@ interface Props {
   onMijnActies: () => void
   onDashboard: () => void
   onRapportage: () => void
+  onArchief: () => void
   gebruikerEmail: string
   onUitloggen: () => void
 }
@@ -24,6 +25,7 @@ export function Sidebar({
   onMijnActies,
   onDashboard,
   onRapportage,
+  onArchief,
   gebruikerEmail,
   onUitloggen,
 }: Props) {
@@ -73,6 +75,15 @@ export function Sidebar({
           onClick={onRapportage}
         >
           Rapportage
+        </button>
+        <button
+          type="button"
+          className={`sidebar-menu-item ${
+            !geselecteerdeKlantId && weergave === 'archief' ? 'actief' : ''
+          }`}
+          onClick={onArchief}
+        >
+          Archief
         </button>
       </nav>
 

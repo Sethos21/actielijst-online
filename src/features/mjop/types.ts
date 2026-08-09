@@ -10,4 +10,7 @@ export interface MjopPost {
   status: MjopStatus // handmatig ingesteld, geen automatische datumberekening
   toegevoegdDoor: string
   aangemaaktOp: number
+  gearchiveerdOp?: number
+  gearchiveerdDoor?: string
+  gearchiveerdReden?: string
 }

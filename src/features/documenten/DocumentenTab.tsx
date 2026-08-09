@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { bouwActieVanuitBron } from '../acties/bouwActieVanuitBron'
 import { useActies } from '../acties/useActies'
+import { vraagArchiveerGegevens } from '../archief/archiveerPrompt'
 import { formatKorteDatum } from '../onderhoud/dueDate'
 import { TEAMLEDEN } from '../team/teamleden'
-import type { DocumentTag } from './types'
+import type { Document, DocumentTag } from './types'
 import { useDocumenten } from './useDocumenten'
+import { downloadAlleDocumentenAlsZip } from './zipDownload'
 
 interface Props {
   pandId: string
@@ -20,7 +22,8 @@ const TAG_LABELS: Record<DocumentTag, string> = {
 }
 
 export function DocumentenTab({ pandId, klantId, pandNaam }: Props) {
-  const { documenten, loading, uploadDocument, updateOpmerking } = useDocumenten(pandId)
+  const { documenten, loading, uploadDocument, updateOpmerking, updateTag, archiveer } =
+    useDocumenten(pandId)
   const { addActie } = useActies(klantId)
   const [formulierOpen, setFormulierOpen] = useState(false)
   const [bestand, setBestand] = useState<File | null>(null)
@@ -30,6 +33,8 @@ export function DocumentenTab({ pandId, klantId, pandNaam }: Props) {
   const [bezigMetUploaden, setBezigMetUploaden] = useState(false)
   const [opmerkingBewerken, setOpmerkingBewerken] = useState<string | null>(null)
   const [nieuweOpmerking, setNieuweOpmerking] = useState('')
+
+  const actieveDocumenten = documenten.filter((document) => !document.gearchiveerdOp)
 
   async function handleUpload(event: FormEvent) {
     event.preventDefault()
@@ -55,17 +60,32 @@ export function DocumentenTab({ pandId, klantId, pandNaam }: Props) {
     setNieuweOpmerking('')
   }
 
+  function handleArchiveren(document: Document) {
+    const gegevens = vraagArchiveerGegevens()
+    if (gegevens) archiveer(document.id, gegevens.door, gegevens.reden)
+  }
+
   return (
     <div>
       <div className="toolbar">
-        <div className="toolbar-titel">{documenten.length} documenten</div>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => setFormulierOpen((open) => !open)}
-        >
-          + Document uploaden
-        </button>
+        <div className="toolbar-titel">{actieveDocumenten.length} documenten</div>
+        <div className="toolbar-acties">
+          <button
+            type="button"
+            className="btn-secundair-klein"
+            onClick={() => downloadAlleDocumentenAlsZip(actieveDocumenten, pandNaam)}
+            disabled={actieveDocumenten.length === 0}
+          >
+            ⬇ Alles als ZIP
+          </button>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => setFormulierOpen((open) => !open)}
+          >
+            + Document uploaden
+          </button>
+        </div>
       </div>
 
       {formulierOpen && (
@@ -111,7 +131,11 @@ export function DocumentenTab({ pandId, klantId, pandNaam }: Props) {
               aria-label="Opmerking bij document"
               value={opmerking}
               onChange={(e) => setOpmerking(e.target.value)}
-              placeholder="Bijv. geldigheidsdatum, bijzonderheden..."
+              placeholder={
+                'Bijv. geldigheidsdatum, bijzonderheden... Staat het document niet in de ' +
+                'cloud maar op een lokale/netwerkserver? Zet hier het pad neer, bijv. ' +
+                '\\\\server\\documenten\\pand12'
+              }
             />
           </label>
           <button
@@ -126,15 +150,21 @@ export function DocumentenTab({ pandId, klantId, pandNaam }: Props) {
 
       {loading ? (
         <p>Documenten laden...</p>
-      ) : documenten.length === 0 ? (
+      ) : actieveDocumenten.length === 0 ? (
         <div className="leeg-state">
           <div className="leeg-tekst">Nog geen documenten.</div>
         </div>
       ) : (
         <div className="documenten-lijst">
-          {documenten.map((document) => (
+          {actieveDocumenten.map((document) => (
             <div className="document-item" key={document.id}>
-              <div className="document-rij">
+              <div
+                className="document-rij"
+                onDoubleClick={() =>
+                  window.open(document.storageUrl, '_blank', 'noopener,noreferrer')
+                }
+                title="Dubbelklik om te openen in nieuw tabblad"
+              >
                 <span className="document-icoon">📄</span>
                 <div className="document-info">
                   <div className="document-naam">{document.naam}</div>
@@ -142,9 +172,18 @@ export function DocumentenTab({ pandId, klantId, pandNaam }: Props) {
                     Geüpload {formatKorteDatum(document.geuploadOp)} · {document.geuploadDoor}
                   </div>
                 </div>
-                <span className={`doc-tag doc-tag-${document.tag}`}>
-                  {TAG_LABELS[document.tag]}
-                </span>
+                <select
+                  aria-label={`Type voor ${document.naam}`}
+                  className={`doc-tag doc-tag-${document.tag}`}
+                  value={document.tag}
+                  onChange={(e) => updateTag(document.id, e.target.value as DocumentTag)}
+                >
+                  {Object.entries(TAG_LABELS).map(([waarde, label]) => (
+                    <option key={waarde} value={waarde}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
                 <a
                   className="document-download"
                   href={document.storageUrl}
@@ -154,6 +193,14 @@ export function DocumentenTab({ pandId, klantId, pandNaam }: Props) {
                 >
                   ⬇
                 </a>
+                <button
+                  type="button"
+                  className="icoon-knop"
+                  aria-label={`Archiveren: ${document.naam}`}
+                  onClick={() => handleArchiveren(document)}
+                >
+                  📦
+                </button>
                 <button
                   type="button"
                   className="check-actie-btn"
@@ -174,7 +221,16 @@ export function DocumentenTab({ pandId, klantId, pandNaam }: Props) {
                 </button>
               </div>
               {document.opmerking ? (
-                <div className="document-opmerking">{document.opmerking}</div>
+                <div className="document-opmerking">
+                  <span className="document-opmerking-tekst">{document.opmerking}</span>
+                  <button
+                    type="button"
+                    className="document-kopieer-btn"
+                    onClick={() => navigator.clipboard.writeText(document.opmerking!)}
+                  >
+                    📋 Kopieer
+                  </button>
+                </div>
               ) : opmerkingBewerken === document.id ? (
                 <div className="document-opmerking-form">
                   <input

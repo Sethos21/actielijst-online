@@ -2,6 +2,7 @@ import { signOut } from 'firebase/auth'
 import { lazy, Suspense, useState } from 'react'
 import { ActielijstPage } from './features/acties/ActielijstPage'
 import { MijnActiesPage } from './features/acties/MijnActiesPage'
+import { ArchiefPage } from './features/archief/ArchiefPage'
 import { LoginForm } from './features/auth/LoginForm'
 import { useAuthUser } from './features/auth/useAuthUser'
 import { DashboardPage } from './features/dashboard/DashboardPage'
@@ -30,7 +31,7 @@ const ImportActiesModal = lazy(() =>
 )
 
 type Scherm = 'start' | 'actielijsten' | 'huurdersmutaties'
-type Weergave = 'klantoverzicht' | 'mijn-acties' | 'dashboard' | 'rapportage'
+type Weergave = 'klantoverzicht' | 'mijn-acties' | 'dashboard' | 'rapportage' | 'archief'
 
 function App() {
   const { user, loading } = useAuthUser()
@@ -84,6 +85,12 @@ function App() {
     setGeselecteerdPand(null)
   }
 
+  function handleArchief() {
+    setWeergave('archief')
+    setGeselecteerdeKlant(null)
+    setGeselecteerdPand(null)
+  }
+
   function handleSelectKlant(klant: Klant) {
     setGeselecteerdeKlant(klant)
     setGeselecteerdPand(null)
@@ -127,6 +134,7 @@ function App() {
         onMijnActies={handleMijnActies}
         onDashboard={handleDashboard}
         onRapportage={handleRapportage}
+        onArchief={handleArchief}
         gebruikerEmail={user.email ?? ''}
         onUitloggen={handleUitloggen}
       />
@@ -154,6 +162,8 @@ function App() {
           <DashboardPage onSelectKlant={setGeselecteerdeKlant} />
         ) : weergave === 'rapportage' ? (
           <RapportagePage />
+        ) : weergave === 'archief' ? (
+          <ArchiefPage />
         ) : (
           <KlantoverzichtPage
             onSelectKlant={setGeselecteerdeKlant}
