@@ -5,6 +5,8 @@ import { OnderhoudTab } from './OnderhoudTab'
 
 const addOnderhoud = vi.fn()
 const vinkAf = vi.fn()
+const updateOnderhoud = vi.fn()
+const archiveer = vi.fn()
 const voegTypeToe = vi.fn()
 const verwijderType = vi.fn()
 
@@ -16,6 +18,7 @@ let mockOnderhoud: {
   herhaling: string
   laatstUitgevoerdOp?: number
   volgendeDatum: number
+  gearchiveerdOp?: number
 }[] = []
 
 let mockStandaardTypes: {
@@ -35,6 +38,8 @@ vi.mock('./useOnderhoud', () => ({
     loading: false,
     addOnderhoud,
     vinkAf,
+    updateOnderhoud,
+    archiveer,
     onderhoudDueCount: 0,
   }),
 }))
@@ -64,9 +69,12 @@ describe('OnderhoudTab', () => {
     mockOnderhoud = []
     addOnderhoud.mockClear()
     vinkAf.mockClear()
+    updateOnderhoud.mockClear()
+    archiveer.mockClear()
     voegTypeToe.mockClear()
     verwijderType.mockClear()
     addActie.mockClear()
+    vi.restoreAllMocks()
   })
 
   it('toont een lege staat als er nog geen onderhoudsitems zijn', () => {
@@ -207,6 +215,76 @@ describe('OnderhoudTab', () => {
       type: 'onderhoud',
       bronId: 'o1',
       label: 'CV-ketel onderhoud',
+    })
+  })
+
+  it('toont gearchiveerde onderhoudsitems niet', () => {
+    mockOnderhoud = [
+      {
+        id: '1',
+        naam: 'CV-ketel onderhoud',
+        verantw: 'Ton',
+        herhaling: 'jaarlijks',
+        volgendeDatum: Date.now(),
+        gearchiveerdOp: Date.now(),
+      },
+    ]
+    renderTab()
+    expect(screen.getByText('Nog geen onderhoudsitems.')).toBeInTheDocument()
+  })
+
+  it('archiveert een item met opgegeven teamlid en reden', async () => {
+    mockOnderhoud = [
+      {
+        id: '1',
+        naam: 'CV-ketel onderhoud',
+        verantw: 'Ton',
+        herhaling: 'jaarlijks',
+        volgendeDatum: Date.now(),
+      },
+    ]
+    vi.spyOn(window, 'prompt').mockReturnValueOnce('Ton').mockReturnValueOnce('vervangen')
+    const user = userEvent.setup()
+    renderTab()
+
+    await user.click(screen.getByLabelText('Archiveren: CV-ketel onderhoud'))
+
+    expect(archiveer).toHaveBeenCalledWith('1', 'Ton', 'vervangen')
+  })
+
+  it('bewerkt naam, leverancier en verantwoordelijke inline', async () => {
+    mockOnderhoud = [
+      {
+        id: '1',
+        naam: 'CV-ketel onderhoud',
+        verantw: 'Ton',
+        leverancier: 'Oude leverancier',
+        herhaling: 'jaarlijks',
+        volgendeDatum: Date.now(),
+      },
+    ]
+    const user = userEvent.setup()
+    renderTab()
+
+    await user.click(screen.getByLabelText('Bewerken: CV-ketel onderhoud'))
+    const naamInput = screen.getByLabelText('Naam bewerken voor CV-ketel onderhoud')
+    await user.clear(naamInput)
+    await user.type(naamInput, 'CV-ketel groot onderhoud')
+    const leverancierInput = screen.getByLabelText(
+      'Leverancier bewerken voor CV-ketel onderhoud',
+    )
+    await user.clear(leverancierInput)
+    await user.type(leverancierInput, 'Nieuwe leverancier')
+    await user.selectOptions(
+      screen.getByLabelText('Verantwoordelijke bewerken voor CV-ketel onderhoud'),
+      'Marjan',
+    )
+    await user.click(screen.getByRole('button', { name: 'Opslaan' }))
+
+    expect(updateOnderhoud).toHaveBeenCalledWith('1', {
+      naam: 'CV-ketel groot onderhoud',
+      verantw: 'Marjan',
+      leverancier: 'Nieuwe leverancier',
     })
   })
 

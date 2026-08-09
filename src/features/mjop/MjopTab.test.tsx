@@ -6,6 +6,7 @@ import type { MjopPost } from './types'
 
 const addPost = vi.fn()
 const updatePost = vi.fn()
+const archiveer = vi.fn()
 const addActie = vi.fn()
 
 let mockPosten: MjopPost[] = []
@@ -16,6 +17,7 @@ vi.mock('./useMjop', () => ({
     loading: false,
     addPost,
     updatePost,
+    archiveer,
   }),
 }))
 
@@ -32,7 +34,9 @@ describe('MjopTab', () => {
     mockPosten = []
     addPost.mockClear()
     updatePost.mockClear()
+    archiveer.mockClear()
     addActie.mockClear()
+    vi.restoreAllMocks()
   })
 
   it('toont een lege staat als er nog geen MJOP-posten zijn', () => {
@@ -120,6 +124,48 @@ describe('MjopTab', () => {
       toegevoegdDoor: 'Marjan',
       aangemaaktOp: expect.any(Number),
     })
+  })
+
+  it('toont gearchiveerde posten niet en telt ze niet mee in de samenvatting', () => {
+    mockPosten = [
+      {
+        id: '1',
+        pandId: 'p1',
+        klantId: 'klant-1',
+        naam: 'Oude post',
+        jaar: 2026,
+        geschatBedrag: 12000,
+        status: 'gepland',
+        toegevoegdDoor: 'Ton',
+        aangemaaktOp: 1,
+        gearchiveerdOp: Date.now(),
+      },
+    ]
+    renderTab()
+    expect(screen.getByText('Nog geen MJOP-posten.')).toBeInTheDocument()
+  })
+
+  it('archiveert een post met opgegeven teamlid en reden', async () => {
+    mockPosten = [
+      {
+        id: '1',
+        pandId: 'p1',
+        klantId: 'klant-1',
+        naam: 'Buitenschilderwerk kozijnen',
+        jaar: 2026,
+        geschatBedrag: 12000,
+        status: 'gepland',
+        toegevoegdDoor: 'Ton',
+        aangemaaktOp: 1,
+      },
+    ]
+    vi.spyOn(window, 'prompt').mockReturnValueOnce('Ton').mockReturnValueOnce('plan gewijzigd')
+    const user = userEvent.setup()
+    renderTab()
+
+    await user.click(screen.getByLabelText('Archiveren: Buitenschilderwerk kozijnen'))
+
+    expect(archiveer).toHaveBeenCalledWith('1', 'Ton', 'plan gewijzigd')
   })
 
   it('maakt een actie aan vanuit een MJOP-post, met pand en herkomst gevuld', async () => {

@@ -1,6 +1,7 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   onSnapshot,
   query,
@@ -13,6 +14,34 @@ import { bepaalOnderhoudStatus, berekenVolgendeOnderhoudsdatum } from './dueDate
 import type { Onderhoud } from './types'
 
 const COLLECTION = 'onderhoud'
+
+export async function updateOnderhoud(onderhoudId: string, patch: Partial<Onderhoud>) {
+  await updateDoc(doc(db, COLLECTION, onderhoudId), patch)
+}
+
+export async function archiveerOnderhoud(
+  onderhoudId: string,
+  gearchiveerdDoor?: string,
+  reden?: string,
+) {
+  await updateDoc(doc(db, COLLECTION, onderhoudId), {
+    gearchiveerdOp: Date.now(),
+    ...(gearchiveerdDoor?.trim() ? { gearchiveerdDoor: gearchiveerdDoor.trim() } : {}),
+    ...(reden?.trim() ? { gearchiveerdReden: reden.trim() } : {}),
+  })
+}
+
+export async function herstelOnderhoud(onderhoudId: string) {
+  await updateDoc(doc(db, COLLECTION, onderhoudId), {
+    gearchiveerdOp: null,
+    gearchiveerdDoor: null,
+    gearchiveerdReden: null,
+  })
+}
+
+export async function verwijderOnderhoudDefinitief(onderhoudId: string) {
+  await deleteDoc(doc(db, COLLECTION, onderhoudId))
+}
 
 export function useOnderhoud(pandId: string) {
   const [onderhoud, setOnderhoud] = useState<Onderhoud[]>([])
@@ -64,7 +93,17 @@ export function useOnderhoud(pandId: string) {
     return status === 'due' || status === 'gepland'
   }).length
 
-  return { onderhoud, loading, addOnderhoud, vinkAf, onderhoudDueCount }
+  return {
+    onderhoud,
+    loading,
+    addOnderhoud,
+    vinkAf,
+    updateOnderhoud,
+    archiveer: archiveerOnderhoud,
+    herstel: herstelOnderhoud,
+    verwijderDefinitief: verwijderOnderhoudDefinitief,
+    onderhoudDueCount,
+  }
 }
 
 /** Alle onderhoudsitems van één klant, over al haar panden heen — gebruikt

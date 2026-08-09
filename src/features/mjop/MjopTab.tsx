@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { bouwActieVanuitBron } from '../acties/bouwActieVanuitBron'
 import { useActies } from '../acties/useActies'
+import { vraagArchiveerGegevens } from '../archief/archiveerPrompt'
 import { TEAMLEDEN } from '../team/teamleden'
 import { berekenMjopSamenvatting, groepeerPerJaar } from './mjopLogica'
-import type { MjopStatus } from './types'
+import type { MjopPost, MjopStatus } from './types'
 import { useMjop } from './useMjop'
 
 interface Props {
@@ -17,7 +18,7 @@ function formatBedrag(bedrag: number): string {
 }
 
 export function MjopTab({ pandId, klantId, pandNaam }: Props) {
-  const { posten, loading, addPost, updatePost } = useMjop(pandId)
+  const { posten, loading, addPost, updatePost, archiveer } = useMjop(pandId)
   const { addActie } = useActies(klantId)
   const [formulierOpen, setFormulierOpen] = useState(false)
   const [naam, setNaam] = useState('')
@@ -26,8 +27,14 @@ export function MjopTab({ pandId, klantId, pandNaam }: Props) {
   const [geschatBedrag, setGeschatBedrag] = useState('')
   const [toegevoegdDoor, setToegevoegdDoor] = useState<string>(TEAMLEDEN[0])
 
-  const samenvatting = berekenMjopSamenvatting(posten, huidigJaar)
-  const groepen = groepeerPerJaar(posten)
+  const actievePosten = posten.filter((post) => !post.gearchiveerdOp)
+  const samenvatting = berekenMjopSamenvatting(actievePosten, huidigJaar)
+  const groepen = groepeerPerJaar(actievePosten)
+
+  function handleArchiveren(post: MjopPost) {
+    const gegevens = vraagArchiveerGegevens()
+    if (gegevens) archiveer(post.id, gegevens.door, gegevens.reden)
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -128,7 +135,7 @@ export function MjopTab({ pandId, klantId, pandNaam }: Props) {
 
       {loading ? (
         <p>MJOP laden...</p>
-      ) : posten.length === 0 ? (
+      ) : actievePosten.length === 0 ? (
         <div className="leeg-state">
           <div className="leeg-tekst">Nog geen MJOP-posten.</div>
         </div>
@@ -166,6 +173,14 @@ export function MjopTab({ pandId, klantId, pandNaam }: Props) {
                   <option value="dit-jaar">Dit jaar</option>
                   <option value="afgerond">Afgerond</option>
                 </select>
+                <button
+                  type="button"
+                  className="icoon-knop"
+                  aria-label={`Archiveren: ${post.naam}`}
+                  onClick={() => handleArchiveren(post)}
+                >
+                  📦
+                </button>
                 <button
                   type="button"
                   className="check-actie-btn"

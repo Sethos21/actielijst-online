@@ -1,18 +1,54 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   onSnapshot,
   query,
   updateDoc,
   where,
 } from 'firebase/firestore'
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
+import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 import { useEffect, useState } from 'react'
 import { db, storage } from '../../lib/firebase'
 import type { Document, DocumentTag } from './types'
 
 const COLLECTION = 'documenten'
+
+export async function updateOpmerking(documentId: string, opmerking: string) {
+  await updateDoc(doc(db, COLLECTION, documentId), { opmerking })
+}
+
+export async function updateTag(documentId: string, tag: DocumentTag) {
+  await updateDoc(doc(db, COLLECTION, documentId), { tag })
+}
+
+export async function archiveerDocument(
+  documentId: string,
+  gearchiveerdDoor?: string,
+  reden?: string,
+) {
+  await updateDoc(doc(db, COLLECTION, documentId), {
+    gearchiveerdOp: Date.now(),
+    ...(gearchiveerdDoor?.trim() ? { gearchiveerdDoor: gearchiveerdDoor.trim() } : {}),
+    ...(reden?.trim() ? { gearchiveerdReden: reden.trim() } : {}),
+  })
+}
+
+export async function herstelDocument(documentId: string) {
+  await updateDoc(doc(db, COLLECTION, documentId), {
+    gearchiveerdOp: null,
+    gearchiveerdDoor: null,
+    gearchiveerdReden: null,
+  })
+}
+
+/** Ruimt ook het Storage-bestand op — zonder dit blijft het bestand voor
+ * altijd in Firebase Storage staan, ook al is het Firestore-record weg. */
+export async function verwijderDocumentDefinitief(documentId: string, storagePath: string) {
+  await deleteObject(ref(storage, storagePath))
+  await deleteDoc(doc(db, COLLECTION, documentId))
+}
 
 export function useDocumenten(pandId: string) {
   const [documenten, setDocumenten] = useState<Document[]>([])
@@ -54,9 +90,14 @@ export function useDocumenten(pandId: string) {
     })
   }
 
-  async function updateOpmerking(documentId: string, opmerking: string) {
-    await updateDoc(doc(db, COLLECTION, documentId), { opmerking })
+  return {
+    documenten,
+    loading,
+    uploadDocument,
+    updateOpmerking,
+    updateTag,
+    archiveer: archiveerDocument,
+    herstel: herstelDocument,
+    verwijderDefinitief: verwijderDocumentDefinitief,
   }
-
-  return { documenten, loading, uploadDocument, updateOpmerking }
 }
