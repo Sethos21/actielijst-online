@@ -5,11 +5,13 @@ import { MijnActiesPage } from './features/acties/MijnActiesPage'
 import { LoginForm } from './features/auth/LoginForm'
 import { useAuthUser } from './features/auth/useAuthUser'
 import { DashboardPage } from './features/dashboard/DashboardPage'
+import type { ActieHerkomst } from './features/acties/types'
 import { KlantoverzichtPage } from './features/klanten/KlantoverzichtPage'
 import type { Klant } from './features/klanten/types'
 import { PandDetailPage } from './features/panden/PandDetailPage'
 import { PandenPaneel } from './features/panden/PandenPaneel'
 import type { Pand } from './features/panden/types'
+import { RapportagePage } from './features/rapportage/RapportagePage'
 import { Sidebar } from './components/Sidebar'
 import { StartScreen } from './components/StartScreen'
 import { auth } from './lib/firebase'
@@ -28,7 +30,7 @@ const ImportActiesModal = lazy(() =>
 )
 
 type Scherm = 'start' | 'actielijsten' | 'huurdersmutaties'
-type Weergave = 'klantoverzicht' | 'mijn-acties' | 'dashboard'
+type Weergave = 'klantoverzicht' | 'mijn-acties' | 'dashboard' | 'rapportage'
 
 function App() {
   const { user, loading } = useAuthUser()
@@ -36,6 +38,9 @@ function App() {
   const [weergave, setWeergave] = useState<Weergave>('klantoverzicht')
   const [geselecteerdeKlant, setGeselecteerdeKlant] = useState<Klant | null>(null)
   const [geselecteerdPand, setGeselecteerdPand] = useState<Pand | null>(null)
+  const [pandDetailTab, setPandDetailTab] = useState<
+    'overzicht' | 'documenten' | 'onderhoud' | 'mjop'
+  >('overzicht')
   const [pandenPaneelOpen, setPandenPaneelOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
 
@@ -73,9 +78,26 @@ function App() {
     setGeselecteerdPand(null)
   }
 
+  function handleRapportage() {
+    setWeergave('rapportage')
+    setGeselecteerdeKlant(null)
+    setGeselecteerdPand(null)
+  }
+
   function handleSelectKlant(klant: Klant) {
     setGeselecteerdeKlant(klant)
     setGeselecteerdPand(null)
+  }
+
+  function handleNavigeerNaarBron(pand: Pand, herkomst: ActieHerkomst) {
+    setGeselecteerdPand(pand)
+    setPandDetailTab(
+      herkomst.type === 'document'
+        ? 'documenten'
+        : herkomst.type === 'mjop'
+          ? 'mjop'
+          : 'onderhoud',
+    )
   }
 
   if (scherm === 'start') {
@@ -104,6 +126,7 @@ function App() {
         onKlantoverzicht={handleKlantoverzicht}
         onMijnActies={handleMijnActies}
         onDashboard={handleDashboard}
+        onRapportage={handleRapportage}
         gebruikerEmail={user.email ?? ''}
         onUitloggen={handleUitloggen}
       />
@@ -111,9 +134,11 @@ function App() {
       <main className="app-inhoud">
         {geselecteerdPand && geselecteerdeKlant ? (
           <PandDetailPage
+            key={geselecteerdPand.id}
             pand={geselecteerdPand}
             klantNaam={geselecteerdeKlant.naam}
             onTerug={() => setGeselecteerdPand(null)}
+            initieelTab={pandDetailTab}
           />
         ) : geselecteerdeKlant ? (
           <ActielijstPage
@@ -121,11 +146,14 @@ function App() {
             klantNaam={geselecteerdeKlant.naam}
             onTerug={() => setGeselecteerdeKlant(null)}
             onPandenOpen={() => setPandenPaneelOpen(true)}
+            onNavigeerNaarBron={handleNavigeerNaarBron}
           />
         ) : weergave === 'mijn-acties' ? (
           <MijnActiesPage />
         ) : weergave === 'dashboard' ? (
           <DashboardPage onSelectKlant={setGeselecteerdeKlant} />
+        ) : weergave === 'rapportage' ? (
+          <RapportagePage />
         ) : (
           <KlantoverzichtPage
             onSelectKlant={setGeselecteerdeKlant}
@@ -147,6 +175,7 @@ function App() {
             onSluiten={() => setPandenPaneelOpen(false)}
             onSelectPand={(pand) => {
               setGeselecteerdPand(pand)
+              setPandDetailTab('overzicht')
               setPandenPaneelOpen(false)
             }}
           />

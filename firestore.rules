@@ -41,5 +41,16 @@ service cloud.firestore {
     match /onderhoud/{onderhoudId} {
       allow read, write: if request.auth != null;
     }
+
+    // Systeembrede, door het hele team beheerbare lijst van onderhoudstypen —
+    // los van een specifiek pand. Zie VOORSTEL rapportage/onderhoud/mjop §3.
+    match /onderhoudStandaardlijst/{typeId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // MJOP: meerjarenplanning grootonderhoud per pand.
+    match /mjop/{postId} {
+      allow read, write: if request.auth != null;
+    }
   }
 }

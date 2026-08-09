@@ -542,6 +542,10 @@ h1.titel {
   font-weight: 600;
   color: var(--text);
 }
+.toolbar-acties {
+  display: flex;
+  gap: 8px;
+}
 .btn-primary {
   font-size: 12px;
   font-weight: 500;
@@ -639,6 +643,170 @@ h1.titel {
   background: var(--blue-bg);
   padding: 2px 7px;
   border-radius: 10px;
+}
+/* ---- Actie-aanmaken vanuit onderhoud/mjop/document ---- */
+.check-actie-btn {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--navy);
+  background: transparent;
+  border: 1px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.check-actie-btn:hover {
+  background: var(--blue-bg);
+}
+.actie-herkomst {
+  display: block;
+  margin-top: 4px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-align: left;
+}
+.actie-herkomst:hover {
+  color: var(--navy);
+  text-decoration: underline;
+}
+
+/* ---- Documenten-tab ---- */
+.document-upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--white);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.document-upload-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.document-upload-form input,
+.document-upload-form select,
+.document-upload-form textarea {
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: none;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-family: inherit;
+}
+.documenten-lijst {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.document-item {
+  padding: 13px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.document-item:last-child {
+  border-bottom: none;
+}
+.document-rij {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.document-icoon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.document-info {
+  flex: 1;
+  min-width: 0;
+}
+.document-naam {
+  font-size: 13px;
+  font-weight: 500;
+}
+.document-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.doc-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.doc-tag-energielabel {
+  background: var(--green-bg);
+  color: var(--green);
+}
+.doc-tag-keuring {
+  background: var(--amber-bg);
+  color: var(--amber);
+}
+.doc-tag-contract {
+  background: var(--blue-bg);
+  color: var(--navy);
+}
+.doc-tag-overig {
+  background: var(--surface);
+  color: var(--text-muted);
+}
+.document-download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius);
+  background: var(--blue-bg);
+  color: var(--navy);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.document-opmerking {
+  margin-top: 8px;
+  margin-left: 28px;
+  padding-left: 10px;
+  border-left: 2px solid var(--border-strong);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.document-opmerking-form {
+  margin-top: 8px;
+  margin-left: 28px;
+}
+.document-opmerking-form input {
+  width: 100%;
+  font-size: 12px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.document-opmerking-toevoegen {
+  display: block;
+  margin-top: 6px;
+  margin-left: 28px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--text-muted);
+  cursor: pointer;
 }
 
 /* ---- Versielijst ---- */
@@ -926,6 +1094,9 @@ table.klantoverzicht td {
   gap: 12px;
   margin-bottom: 16px;
 }
+.stat-cards-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
 .stat-card {
   background: var(--white);
   border: 1px solid var(--border);
@@ -957,6 +1128,89 @@ table.klantoverzicht td {
 }
 .stat-waarde-hold {
   color: var(--text-secondary);
+}
+
+/* ---- Rapportage-scherm ---- */
+.rapportage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.rapportage-titel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rapportage-titel h1 {
+  margin: 0;
+}
+.rapportage-icoon {
+  font-size: 22px;
+}
+.rapportage-header-acties {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rapportage-info {
+  border: 1px dashed var(--border-strong);
+  background: var(--blue-bg);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+.rapportage-periode {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.rapportage-stat-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.rapportage-sectie-titel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin: 20px 0 8px;
+}
+.rapportage-sectie-optioneel {
+  text-transform: none;
+  font-weight: 400;
+  letter-spacing: normal;
+}
+.rapportage-detail-lijst {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.rapportage-detail-rij {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+.rapportage-detail-rij:last-child {
+  border-bottom: none;
+}
+.rapportage-detail-waarde {
+  font-weight: 600;
+}
+.rapportage-detail-groen {
+  color: var(--green);
+}
+.rapportage-detail-rood {
+  color: var(--red);
 }
 
 /* ---- Filterbalk (pillen + zoekbalk) ---- */
@@ -1216,6 +1470,92 @@ table.actielijst .cel-scroll-tekst textarea:focus {
   font-size: 9px;
   cursor: inherit;
 }
+/* ---- VestigingCel (pand-koppeling in de actielijst) ---- */
+.vestiging-select,
+.vestiging-leeg,
+.vestiging-vrij {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 4px 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.vestiging-select:hover,
+.vestiging-vrij:hover {
+  border-color: var(--border-strong);
+}
+.vestiging-leeg {
+  border: 1px dashed var(--border-strong);
+  color: var(--text-muted);
+  font-style: italic;
+}
+.badge-vrij {
+  background: var(--blue-bg);
+  color: var(--navy);
+  font-size: 9px;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 1px 6px;
+  margin-left: 4px;
+}
+.vestiging-dropdown {
+  position: fixed;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  min-width: 220px;
+  max-height: 70vh;
+  overflow-y: auto;
+  z-index: 20;
+}
+.vestiging-dropdown .dropdown-header {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.vestiging-dropdown .dropdown-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 8px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.vestiging-dropdown .dropdown-item:hover {
+  background: var(--blue-bg);
+}
+.vestiging-dropdown .dropdown-item.actief {
+  color: var(--navy);
+  font-weight: 600;
+}
+.dropdown-vrije-tekst {
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+}
+.dropdown-vrije-tekst-label {
+  display: block;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.dropdown-vrije-tekst input {
+  width: 100%;
+  font-size: 12px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+
 /* ---- Generiek dropdown-menu (portal) — VerantwoordelijkeSelect, UitstelKnop ---- */
 .dropdown-menu {
   position: fixed;
@@ -1327,6 +1667,202 @@ table.actielijst .cel-scroll select.status-select {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 16px;
+}
+
+/* ---- Onderhoud-standaardlijst (beheerscherm + toevoegen-vanuit-pand) ---- */
+.standaardlijst-lijst {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  min-width: 320px;
+}
+.standaardlijst-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.standaardlijst-item:last-child {
+  border-bottom: none;
+}
+.standaardlijst-icoon {
+  font-size: 15px;
+}
+.standaardlijst-naam {
+  flex: 1;
+  font-size: 13px;
+}
+.standaardlijst-toevoegen-form {
+  display: flex;
+  gap: 8px;
+}
+.standaardlijst-toevoegen-form input {
+  flex: 1;
+  font-size: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.standaardlijst-toevoegen-paneel {
+  background: var(--white);
+  border: 1px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+.standaardlijst-toevoegen-paneel h3 {
+  font-size: 14px;
+  color: var(--navy);
+  margin: 0 0 4px;
+}
+.standaardlijst-toevoegen-uitleg {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+}
+.toevoegen-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 13px;
+  cursor: pointer;
+}
+.toevoegen-item.algekoppeld {
+  color: var(--text-muted);
+  cursor: default;
+}
+.toevoegen-item-status {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.standaardlijst-leverancier-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-top: 10px;
+}
+.standaardlijst-leverancier-label input,
+.standaardlijst-leverancier-label select {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: none;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.standaardlijst-toevoegen-acties {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* ---- MJOP-tab ---- */
+.mjop-nieuw-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+  background: var(--white);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.mjop-nieuw-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.mjop-nieuw-form input,
+.mjop-nieuw-form select {
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: none;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mjop-jaargroep {
+  margin-bottom: 14px;
+}
+.mjop-jaar-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy);
+  padding: 6px 2px;
+}
+.mjop-jaar-header span:last-child {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.mjop-post {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+}
+.mjop-post-info {
+  flex: 1;
+  min-width: 0;
+}
+.mjop-post-naam {
+  font-size: 13px;
+  font-weight: 500;
+}
+.mjop-post-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.mjop-post-bedrag {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy);
+  white-space: nowrap;
+}
+.mjop-status {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+}
+.mjop-status-gepland {
+  background: var(--surface);
+  color: var(--text-muted);
+}
+.mjop-status-dit-jaar {
+  background: var(--amber-bg);
+  color: var(--amber);
+}
+.mjop-status-afgerond {
+  background: var(--green-bg);
+  color: var(--green);
 }
 
 /* ---- Foutscherm (ErrorBoundary) ---- */

@@ -15,6 +15,37 @@ vi.mock('../onderhoud/useOnderhoud', () => ({
   }),
 }))
 
+vi.mock('../documenten/useDocumenten', () => ({
+  useDocumenten: () => ({
+    documenten: [],
+    loading: false,
+    uploadDocument: vi.fn(),
+    updateOpmerking: vi.fn(),
+  }),
+}))
+
+vi.mock('../onderhoud/useOnderhoudStandaardlijst', () => ({
+  useOnderhoudStandaardlijst: () => ({
+    types: [],
+    loading: false,
+    voegTypeToe: vi.fn(),
+    verwijderType: vi.fn(),
+  }),
+}))
+
+vi.mock('../acties/useActies', () => ({
+  useActies: () => ({ addActie: vi.fn() }),
+}))
+
+vi.mock('../mjop/useMjop', () => ({
+  useMjop: () => ({
+    posten: [],
+    loading: false,
+    addPost: vi.fn(),
+    updatePost: vi.fn(),
+  }),
+}))
+
 const PAND: Pand = {
   id: 'p1',
   klantId: 'klant-1',
@@ -49,9 +80,7 @@ describe('PandDetailPage', () => {
     renderPagina()
 
     await user.click(screen.getByRole('button', { name: 'Documenten' }))
-    expect(
-      screen.getByText('Documenten — nog niet gebouwd, volgende stap.'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('Nog geen documenten.')).toBeInTheDocument()
 
     await user.click(
       screen.getByRole('button', { name: /Jaarlijks onderhoud/ }),
@@ -59,9 +88,7 @@ describe('PandDetailPage', () => {
     expect(screen.getByText('Nog geen onderhoudsitems.')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'MJOP' }))
-    expect(
-      screen.getByText('MJOP — nog niet gebouwd, aparte vervolgstap.'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('Nog geen MJOP-posten.')).toBeInTheDocument()
   })
 
   it('roept onTerug aan bij klikken op de terug-knop', async () => {

@@ -7,6 +7,7 @@ import {
   query,
   updateDoc,
   where,
+  type UpdateData,
 } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
 import { db } from '../../lib/firebase'
@@ -35,7 +36,7 @@ export function useActies(klantId: string) {
     return ref.id
   }
 
-  async function updateActie(actieId: string, patch: Partial<ActieItem>) {
+  async function updateActie(actieId: string, patch: UpdateData<ActieItem>) {
     await updateDoc(doc(db, COLLECTION, actieId), patch)
   }
 
