@@ -8,6 +8,7 @@ function maakPost(overrides: Partial<MjopPost> = {}): MjopPost {
     pandId: 'p1',
     klantId: 'klant-1',
     naam: 'Post',
+    categorie: 'onderhoud',
     jaar: 2026,
     geschatBedrag: 1000,
     status: 'gepland',

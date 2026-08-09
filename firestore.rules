@@ -52,5 +52,11 @@ service cloud.firestore {
     match /mjop/{postId} {
       allow read, write: if request.auth != null;
     }
+
+    // Systeembrede, door het hele team beheerbare lijst van MJOP-types —
+    // analoog aan onderhoudStandaardlijst hierboven.
+    match /mjopStandaardlijst/{typeId} {
+      allow read, write: if request.auth != null;
+    }
   }
 }

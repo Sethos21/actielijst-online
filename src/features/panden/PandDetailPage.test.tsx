@@ -43,7 +43,22 @@ vi.mock('../mjop/useMjop', () => ({
     loading: false,
     addPost: vi.fn(),
     updatePost: vi.fn(),
+    archiveer: vi.fn(),
   }),
+}))
+
+vi.mock('../mjop/useMjopStandaardlijst', () => ({
+  useMjopStandaardlijst: () => ({
+    types: [],
+    loading: false,
+    voegTypeToe: vi.fn(),
+    verwijderType: vi.fn(),
+  }),
+  MJOP_CATEGORIE_LABELS: {
+    onderhoud: 'Onderhoud',
+    'verbouwing-renovatie': 'Verbouwing/renovatie',
+    vervanging: 'Vervanging',
+  },
 }))
 
 const PAND: Pand = {

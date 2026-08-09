@@ -50,7 +50,14 @@ export function useMjop(pandId: string) {
       orderBy('jaar'),
     )
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setPosten(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as MjopPost))
+      setPosten(
+        snapshot.docs.map((d) => {
+          const data = d.data()
+          // Bestaande posten van vóór het categorie-veld hebben dit nog niet
+          // in Firestore staan — val terug op 'onderhoud' i.p.v. een migratie.
+          return { id: d.id, ...data, categorie: data.categorie ?? 'onderhoud' } as MjopPost
+        }),
+      )
       setLoading(false)
     })
     return unsubscribe

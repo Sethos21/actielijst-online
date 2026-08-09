@@ -3,8 +3,11 @@ import { bouwActieVanuitBron } from '../acties/bouwActieVanuitBron'
 import { useActies } from '../acties/useActies'
 import { vraagArchiveerGegevens } from '../archief/archiveerPrompt'
 import { TEAMLEDEN } from '../team/teamleden'
+import { MjopStandaardlijstBeheer } from './MjopStandaardlijstBeheer'
 import { berekenMjopSamenvatting, groepeerPerJaar } from './mjopLogica'
-import type { MjopPost, MjopStatus } from './types'
+import { ToevoegenVanuitStandaardlijst } from './ToevoegenVanuitStandaardlijst'
+import type { MjopCategorie, MjopPost, MjopStatus } from './types'
+import { MJOP_CATEGORIE_LABELS } from './useMjopStandaardlijst'
 import { useMjop } from './useMjop'
 
 interface Props {
@@ -21,15 +24,19 @@ export function MjopTab({ pandId, klantId, pandNaam }: Props) {
   const { posten, loading, addPost, updatePost, archiveer } = useMjop(pandId)
   const { addActie } = useActies(klantId)
   const [formulierOpen, setFormulierOpen] = useState(false)
+  const [standaardlijstOpen, setStandaardlijstOpen] = useState(false)
+  const [beherenOpen, setBeherenOpen] = useState(false)
   const [naam, setNaam] = useState('')
   const huidigJaar = new Date().getFullYear()
   const [jaar, setJaar] = useState(String(huidigJaar))
   const [geschatBedrag, setGeschatBedrag] = useState('')
+  const [categorie, setCategorie] = useState<MjopCategorie>('onderhoud')
   const [toegevoegdDoor, setToegevoegdDoor] = useState<string>(TEAMLEDEN[0])
 
   const actievePosten = posten.filter((post) => !post.gearchiveerdOp)
   const samenvatting = berekenMjopSamenvatting(actievePosten, huidigJaar)
   const groepen = groepeerPerJaar(actievePosten)
+  const alGekoppeldeNamen = new Set(actievePosten.map((post) => post.naam))
 
   function handleArchiveren(post: MjopPost) {
     const gegevens = vraagArchiveerGegevens()
@@ -43,6 +50,7 @@ export function MjopTab({ pandId, klantId, pandNaam }: Props) {
     await addPost({
       klantId,
       naam: naam.trim(),
+      categorie,
       jaar: gekozenJaar,
       geschatBedrag: parseInt(geschatBedrag, 10) || 0,
       status: gekozenJaar === huidigJaar ? 'dit-jaar' : 'gepland',
@@ -52,6 +60,7 @@ export function MjopTab({ pandId, klantId, pandNaam }: Props) {
     setNaam('')
     setJaar(String(huidigJaar))
     setGeschatBedrag('')
+    setCategorie('onderhoud')
     setToegevoegdDoor(TEAMLEDEN[0])
     setFormulierOpen(false)
   }
@@ -75,14 +84,38 @@ export function MjopTab({ pandId, klantId, pandNaam }: Props) {
 
       <div className="toolbar">
         <div className="toolbar-titel">Geplande posten</div>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => setFormulierOpen((open) => !open)}
-        >
-          + Post toevoegen
-        </button>
+        <div className="toolbar-acties">
+          <button type="button" onClick={() => setBeherenOpen(true)}>
+            ⚙ Beheren
+          </button>
+          <button
+            type="button"
+            onClick={() => setStandaardlijstOpen((open) => !open)}
+          >
+            + Vanuit standaardlijst
+          </button>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => setFormulierOpen((open) => !open)}
+          >
+            + Post toevoegen
+          </button>
+        </div>
       </div>
+
+      {standaardlijstOpen && (
+        <ToevoegenVanuitStandaardlijst
+          pandId={pandId}
+          klantId={klantId}
+          alGekoppeldeNamen={alGekoppeldeNamen}
+          onGesloten={() => setStandaardlijstOpen(false)}
+        />
+      )}
+
+      {beherenOpen && (
+        <MjopStandaardlijstBeheer onSluiten={() => setBeherenOpen(false)} />
+      )}
 
       {formulierOpen && (
         <form onSubmit={handleSubmit} className="mjop-nieuw-form">
@@ -112,6 +145,20 @@ export function MjopTab({ pandId, klantId, pandNaam }: Props) {
               value={geschatBedrag}
               onChange={(e) => setGeschatBedrag(e.target.value)}
             />
+          </label>
+          <label>
+            Categorie
+            <select
+              aria-label="Categorie"
+              value={categorie}
+              onChange={(e) => setCategorie(e.target.value as MjopCategorie)}
+            >
+              {Object.entries(MJOP_CATEGORIE_LABELS).map(([waarde, label]) => (
+                <option key={waarde} value={waarde}>
+                  {label}
+                </option>
+              ))}
+            </select>
           </label>
           <label>
             Toegevoegd door

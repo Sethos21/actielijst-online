@@ -79,6 +79,42 @@ vi.mock('./features/huurdersmutaties/Huurdersmutaties', () => ({
   ),
 }))
 
+vi.mock('./features/panden/PandDetailPage', () => ({
+  PandDetailPage: (props: { pand: { naam: string }; klantNaam: string }) => (
+    <div>
+      PandDetail-stub: {props.klantNaam} / {props.pand.naam}
+    </div>
+  ),
+}))
+
+type StubPand = { id: string; klantId: string; naam: string; aangemaaktOp: number }
+type StubKlant = { id: string; naam: string; aangemaaktOp: number }
+
+vi.mock('./features/panden/PandenOverzichtPage', () => ({
+  PandenOverzichtPage: (props: {
+    onTerug: () => void
+    onSelectPand: (pand: StubPand, klant: StubKlant) => void
+  }) => (
+    <div>
+      PandenOverzicht-stub
+      <button type="button" onClick={props.onTerug}>
+        ← Terug naar start
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          props.onSelectPand(
+            { id: 'p1', klantId: 'klant-1', naam: 'Hoofdstraat 12', aangemaaktOp: 1 },
+            { id: 'klant-1', naam: 'Malcon', aangemaaktOp: 1 },
+          )
+        }
+      >
+        Stub-selecteer-pand
+      </button>
+    </div>
+  ),
+}))
+
 describe('App', () => {
   it('toont het Startscherm als eerste scherm na inloggen', () => {
     render(<App />)
@@ -161,6 +197,51 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Stub-archief' }))
 
     expect(screen.getByText('Archief-stub')).toBeInTheDocument()
+  })
+
+  it('navigeert direct naar het klantoverzicht na kiezen van "Klanten"', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: /Klanten/ }))
+
+    expect(screen.getByText('Sidebar-stub')).toBeInTheDocument()
+    expect(screen.getByText('Klantoverzicht-stub')).toBeInTheDocument()
+  })
+
+  it('navigeert naar het Panden-overzicht na kiezen van "Panden"', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: /Panden/ }))
+
+    expect(await screen.findByText('PandenOverzicht-stub')).toBeInTheDocument()
+  })
+
+  it('gaat terug naar het Startscherm vanuit het Panden-overzicht', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: /Panden/ }))
+    await screen.findByText('PandenOverzicht-stub')
+    await user.click(screen.getByRole('button', { name: '← Terug naar start' }))
+
+    expect(
+      screen.getByRole('button', { name: /Actielijsten/ }),
+    ).toBeInTheDocument()
+  })
+
+  it('toont de juiste klant bij het selecteren van een pand vanuit het Panden-overzicht', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: /Panden/ }))
+    await screen.findByText('PandenOverzicht-stub')
+    await user.click(screen.getByRole('button', { name: 'Stub-selecteer-pand' }))
+
+    expect(
+      screen.getByText('PandDetail-stub: Malcon / Hoofdstraat 12'),
+    ).toBeInTheDocument()
   })
 
   it('reset naar het Startscherm bij uitloggen', async () => {

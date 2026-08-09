@@ -125,3 +125,23 @@ export function useOnderhoudVoorKlant(klantId: string) {
 
   return { onderhoud, loading }
 }
+
+/** Alle onderhoudsitems over alle klanten en panden heen — gebruikt door het
+ * Panden-overzicht om per pand een due-telling te tonen zonder per pand een
+ * eigen listener op te zetten. */
+export function useAlleOnderhoud() {
+  const [onderhoud, setOnderhoud] = useState<Onderhoud[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, COLLECTION), (snapshot) => {
+      setOnderhoud(
+        snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Onderhoud),
+      )
+      setLoading(false)
+    })
+    return unsubscribe
+  }, [])
+
+  return { onderhoud, loading }
+}
