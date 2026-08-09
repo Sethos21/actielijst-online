@@ -1090,6 +1090,34 @@ table.klantoverzicht td {
   background: var(--blue-bg);
 }
 
+/* ---- Panden-overzicht (alle panden van alle klanten) ---- */
+table.panden-overzicht {
+  border-collapse: collapse;
+  width: 100%;
+  background: var(--white);
+}
+table.panden-overzicht th {
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 12px;
+}
+table.panden-overzicht td {
+  border-bottom: 1px solid var(--border);
+  padding: 10px 12px;
+}
+.panden-overzicht-rij {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.panden-overzicht-rij:hover {
+  background: var(--blue-bg);
+}
+
 /* ---- Badge (statuspil) ---- */
 .badge {
   display: inline-flex;
@@ -2118,6 +2146,28 @@ table.actielijst .cel-scroll select.status-select {
 .mjop-status-afgerond {
   background: var(--green-bg);
   color: var(--green);
+}
+.mjop-categorie-label {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: var(--blue-bg);
+  color: var(--navy);
+  white-space: nowrap;
+}
+.mjop-standaardlijst-detailvelden {
+  display: flex;
+  gap: 12px;
+  padding: 8px 14px 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.mjop-standaardlijst-detailvelden input {
+  width: 100%;
+  font-size: 12px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
 }
 
 /* ---- Foutscherm (ErrorBoundary) ---- */

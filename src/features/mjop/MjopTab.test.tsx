@@ -25,6 +25,29 @@ vi.mock('../acties/useActies', () => ({
   useActies: () => ({ addActie }),
 }))
 
+const voegTypeToe = vi.fn()
+const verwijderType = vi.fn()
+let mockStandaardTypes: {
+  id: string
+  naam: string
+  categorie: string
+  icoon: string
+  aangemaaktOp: number
+}[] = []
+vi.mock('./useMjopStandaardlijst', () => ({
+  useMjopStandaardlijst: () => ({
+    types: mockStandaardTypes,
+    loading: false,
+    voegTypeToe,
+    verwijderType,
+  }),
+  MJOP_CATEGORIE_LABELS: {
+    onderhoud: 'Onderhoud',
+    'verbouwing-renovatie': 'Verbouwing/renovatie',
+    vervanging: 'Vervanging',
+  },
+}))
+
 function renderTab() {
   return render(<MjopTab pandId="p1" klantId="klant-1" pandNaam="Hoofdstraat 12" />)
 }
@@ -32,10 +55,13 @@ function renderTab() {
 describe('MjopTab', () => {
   afterEach(() => {
     mockPosten = []
+    mockStandaardTypes = []
     addPost.mockClear()
     updatePost.mockClear()
     archiveer.mockClear()
     addActie.mockClear()
+    voegTypeToe.mockClear()
+    verwijderType.mockClear()
     vi.restoreAllMocks()
   })
 
@@ -51,6 +77,7 @@ describe('MjopTab', () => {
         pandId: 'p1',
         klantId: 'klant-1',
         naam: 'Buitenschilderwerk kozijnen',
+        categorie: 'onderhoud',
         jaar: 2026,
         geschatBedrag: 12000,
         status: 'dit-jaar',
@@ -62,6 +89,7 @@ describe('MjopTab', () => {
         pandId: 'p1',
         klantId: 'klant-1',
         naam: 'Dakbedekking vervangen',
+        categorie: 'onderhoud',
         jaar: 2028,
         geschatBedrag: 35000,
         status: 'gepland',
@@ -85,6 +113,7 @@ describe('MjopTab', () => {
         pandId: 'p1',
         klantId: 'klant-1',
         naam: 'Buitenschilderwerk kozijnen',
+        categorie: 'onderhoud',
         jaar: 2026,
         geschatBedrag: 12000,
         status: 'gepland',
@@ -118,6 +147,7 @@ describe('MjopTab', () => {
     expect(addPost).toHaveBeenCalledWith({
       klantId: 'klant-1',
       naam: 'Gevelreiniging',
+      categorie: 'onderhoud',
       jaar: 2030,
       geschatBedrag: 22000,
       status: 'gepland',
@@ -133,6 +163,7 @@ describe('MjopTab', () => {
         pandId: 'p1',
         klantId: 'klant-1',
         naam: 'Oude post',
+        categorie: 'onderhoud',
         jaar: 2026,
         geschatBedrag: 12000,
         status: 'gepland',
@@ -152,6 +183,7 @@ describe('MjopTab', () => {
         pandId: 'p1',
         klantId: 'klant-1',
         naam: 'Buitenschilderwerk kozijnen',
+        categorie: 'onderhoud',
         jaar: 2026,
         geschatBedrag: 12000,
         status: 'gepland',
@@ -168,6 +200,52 @@ describe('MjopTab', () => {
     expect(archiveer).toHaveBeenCalledWith('1', 'Ton', 'plan gewijzigd')
   })
 
+  it('opent het beheerscherm voor de MJOP-standaardlijst', async () => {
+    mockStandaardTypes = [
+      { id: 't1', naam: 'Dakbedekking vervangen', categorie: 'vervanging', icoon: '🏗️', aangemaaktOp: 1 },
+    ]
+    const user = userEvent.setup()
+    renderTab()
+
+    await user.click(screen.getByRole('button', { name: '⚙ Beheren' }))
+
+    expect(
+      screen.getByRole('dialog', { name: 'MJOP-standaardlijst beheren' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Dakbedekking vervangen')).toBeInTheDocument()
+  })
+
+  it('voegt een post toe vanuit de standaardlijst met jaar, bedrag en categorie', async () => {
+    mockStandaardTypes = [
+      { id: 't1', naam: 'Dakbedekking vervangen', categorie: 'vervanging', icoon: '🏗️', aangemaaktOp: 1 },
+    ]
+    const user = userEvent.setup()
+    renderTab()
+
+    await user.click(screen.getByRole('button', { name: '+ Vanuit standaardlijst' }))
+    await user.click(screen.getByRole('checkbox', { name: /Dakbedekking vervangen/ }))
+    await user.clear(screen.getByLabelText('Jaar voor "Dakbedekking vervangen"'))
+    await user.type(screen.getByLabelText('Jaar voor "Dakbedekking vervangen"'), '2030')
+    await user.type(
+      screen.getByLabelText('Geschat bedrag voor "Dakbedekking vervangen"'),
+      '35000',
+    )
+    await user.click(
+      screen.getByRole('button', { name: '1 item toevoegen aan dit pand' }),
+    )
+
+    expect(addPost).toHaveBeenCalledWith({
+      klantId: 'klant-1',
+      naam: 'Dakbedekking vervangen',
+      categorie: 'vervanging',
+      jaar: 2030,
+      geschatBedrag: 35000,
+      status: 'gepland',
+      toegevoegdDoor: 'Ton',
+      aangemaaktOp: expect.any(Number),
+    })
+  })
+
   it('maakt een actie aan vanuit een MJOP-post, met pand en herkomst gevuld', async () => {
     mockPosten = [
       {
@@ -175,6 +253,7 @@ describe('MjopTab', () => {
         pandId: 'p1',
         klantId: 'klant-1',
         naam: 'Dakbedekking vervangen',
+        categorie: 'onderhoud',
         jaar: 2028,
         geschatBedrag: 35000,
         status: 'gepland',

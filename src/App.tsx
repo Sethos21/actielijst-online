@@ -29,8 +29,13 @@ const ImportActiesModal = lazy(() =>
     default: m.ImportActiesModal,
   })),
 )
+const PandenOverzichtPage = lazy(() =>
+  import('./features/panden/PandenOverzichtPage').then((m) => ({
+    default: m.PandenOverzichtPage,
+  })),
+)
 
-type Scherm = 'start' | 'actielijsten' | 'huurdersmutaties'
+type Scherm = 'start' | 'actielijsten' | 'huurdersmutaties' | 'panden-overzicht'
 type Weergave = 'klantoverzicht' | 'mijn-acties' | 'dashboard' | 'rapportage' | 'archief'
 
 function App() {
@@ -112,6 +117,13 @@ function App() {
       <StartScreen
         onKiesActielijsten={() => setScherm('actielijsten')}
         onKiesHuurdersmutaties={() => setScherm('huurdersmutaties')}
+        onKiesKlanten={() => {
+          setWeergave('klantoverzicht')
+          setGeselecteerdeKlant(null)
+          setGeselecteerdPand(null)
+          setScherm('actielijsten')
+        }}
+        onKiesPanden={() => setScherm('panden-overzicht')}
       />
     )
   }
@@ -120,6 +132,22 @@ function App() {
     return (
       <Suspense fallback={<p>Laden...</p>}>
         <Huurdersmutaties onTerug={() => setScherm('start')} />
+      </Suspense>
+    )
+  }
+
+  if (scherm === 'panden-overzicht') {
+    return (
+      <Suspense fallback={<p>Laden...</p>}>
+        <PandenOverzichtPage
+          onTerug={() => setScherm('start')}
+          onSelectPand={(pand, klant) => {
+            setGeselecteerdeKlant(klant)
+            setGeselecteerdPand(pand)
+            setPandDetailTab('overzicht')
+            setScherm('actielijsten')
+          }}
+        />
       </Suspense>
     )
   }
