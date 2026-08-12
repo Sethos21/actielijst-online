@@ -35,14 +35,21 @@ vi.mock('./zipDownload', () => ({
   downloadAlleDocumentenAlsZip: (...args: unknown[]) => downloadAlleDocumentenAlsZip(...args),
 }))
 
-const addActie = vi.fn()
+const addActie = vi.fn(async (_nieuw: Record<string, unknown>) => 'nieuwe-actie-1')
 vi.mock('../acties/useActies', () => ({
   useActies: () => ({ addActie }),
 }))
 
+const onNavigeerNaarActie = vi.fn()
+
 function renderTab() {
   return render(
-    <DocumentenTab pandId="p1" klantId="klant-1" pandNaam="Hoofdstraat 12" />,
+    <DocumentenTab
+      pandId="p1"
+      klantId="klant-1"
+      pandNaam="Hoofdstraat 12"
+      onNavigeerNaarActie={onNavigeerNaarActie}
+    />,
   )
 }
 
@@ -55,6 +62,7 @@ describe('DocumentenTab', () => {
     archiveer.mockClear()
     downloadAlleDocumentenAlsZip.mockClear()
     addActie.mockClear()
+    onNavigeerNaarActie.mockClear()
     vi.restoreAllMocks()
   })
 
@@ -140,6 +148,19 @@ describe('DocumentenTab', () => {
       'Marjan',
       'Opzegtermijn 3 maanden',
     )
+  })
+
+  it('biedt de uitgebreide documenttypen aan in het uploadformulier', async () => {
+    const user = userEvent.setup()
+    renderTab()
+
+    await user.click(screen.getByRole('button', { name: '+ Document uploaden' }))
+
+    const select = screen.getByLabelText('Type document')
+    for (const type of ['certificaat', 'offerte', 'factuur', 'tekeningen']) {
+      await user.selectOptions(select, type)
+      expect(select).toHaveValue(type)
+    }
   })
 
   it('slaat een toegevoegde opmerking op via updateOpmerking', async () => {
@@ -271,6 +292,73 @@ describe('DocumentenTab', () => {
     )
   })
 
+  it('toont een preview-paneel met ingebedde PDF-viewer bij klikken op + Bekijken', async () => {
+    mockDocumenten = [
+      {
+        id: 'd1',
+        naam: 'Contract.pdf',
+        tag: 'contract',
+        storageUrl: 'https://storage.example/d1',
+        geuploadDoor: 'Ton',
+        geuploadOp: Date.now(),
+      },
+    ]
+    const user = userEvent.setup()
+    renderTab()
+
+    await user.click(screen.getByRole('button', { name: '+ Bekijken' }))
+
+    expect(screen.getByTitle('Contract.pdf')).toBeInTheDocument()
+    expect(screen.getByTitle('Contract.pdf').tagName).toBe('IFRAME')
+    expect(
+      screen.getByRole('link', { name: 'Bekijk volledig document ⬈' }),
+    ).toHaveAttribute('href', 'https://storage.example/d1')
+    // Het upload-formulier blijft ernaast beschikbaar.
+    expect(screen.getByLabelText('Bestand')).toBeInTheDocument()
+  })
+
+  it('toont een fallback-melding bij een bestandstype zonder preview', async () => {
+    mockDocumenten = [
+      {
+        id: 'd1',
+        naam: 'Bouwtekening.dwg',
+        tag: 'overig',
+        storageUrl: 'https://storage.example/d1',
+        geuploadDoor: 'Ton',
+        geuploadOp: Date.now(),
+      },
+    ]
+    const user = userEvent.setup()
+    renderTab()
+
+    await user.click(screen.getByRole('button', { name: '+ Bekijken' }))
+
+    expect(
+      screen.getByText('Geen preview beschikbaar voor dit bestandstype.'),
+    ).toBeInTheDocument()
+  })
+
+  it('sluit het preview-paneel via de sluitknop', async () => {
+    mockDocumenten = [
+      {
+        id: 'd1',
+        naam: 'Contract.pdf',
+        tag: 'contract',
+        storageUrl: 'https://storage.example/d1',
+        geuploadDoor: 'Ton',
+        geuploadOp: Date.now(),
+      },
+    ]
+    const user = userEvent.setup()
+    renderTab()
+
+    await user.click(screen.getByRole('button', { name: '+ Bekijken' }))
+    expect(screen.getByTitle('Contract.pdf')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Sluiten' }))
+    expect(screen.queryByTitle('Contract.pdf')).not.toBeInTheDocument()
+  })
+
   it('maakt een actie aan vanuit een document, met pand en herkomst gevuld', async () => {
     mockDocumenten = [
       {
@@ -297,5 +385,6 @@ describe('DocumentenTab', () => {
       bronId: 'd1',
       label: 'Huurcontract_Tiemessen.pdf',
     })
+    expect(onNavigeerNaarActie).toHaveBeenCalledWith('nieuwe-actie-1')
   })
 })

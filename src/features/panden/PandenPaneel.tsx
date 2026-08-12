@@ -14,7 +14,7 @@ interface Props {
  * (navy-header) opmaak conform de goedgekeurde mockup, los van de bestaande .paneel-classes
  * zodat Versiebeheer niet meeverandert. */
 export function PandenPaneel({ klantId, klantNaam, onSluiten, onSelectPand }: Props) {
-  const { panden, loading, addPand, updatePand, archiveer } = usePanden(klantId)
+  const { panden, loading, foutmelding, addPand, updatePand, archiveer } = usePanden(klantId)
   const [nieuwPand, setNieuwPand] = useState('')
   const [bewerkPandId, setBewerkPandId] = useState<string | null>(null)
   const [bewerkNaam, setBewerkNaam] = useState('')
@@ -61,7 +61,9 @@ export function PandenPaneel({ klantId, klantNaam, onSluiten, onSelectPand }: Pr
         </div>
 
         <div className="panden-paneel-body">
-          {loading ? (
+          {foutmelding ? (
+            <p className="foutmelding">{foutmelding}</p>
+          ) : loading ? (
             <p>Panden laden...</p>
           ) : actievePanden.length === 0 ? (
             <p>Nog geen panden. Voeg er hieronder eentje toe.</p>

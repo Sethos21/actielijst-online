@@ -9,6 +9,7 @@ interface Props {
   weergave: Weergave
   onSelectKlant: (klant: Klant) => void
   onKlantoverzicht: () => void
+  onPandenOverzicht: () => void
   onMijnActies: () => void
   onDashboard: () => void
   onRapportage: () => void
@@ -22,6 +23,7 @@ export function Sidebar({
   weergave,
   onSelectKlant,
   onKlantoverzicht,
+  onPandenOverzicht,
   onMijnActies,
   onDashboard,
   onRapportage,
@@ -51,6 +53,13 @@ export function Sidebar({
         </button>
         <button
           type="button"
+          className="sidebar-menu-item"
+          onClick={onPandenOverzicht}
+        >
+          Panden
+        </button>
+        <button
+          type="button"
           className={`sidebar-menu-item ${
             !geselecteerdeKlantId && weergave === 'mijn-acties' ? 'actief' : ''
           }`}
@@ -75,15 +84,6 @@ export function Sidebar({
           onClick={onRapportage}
         >
           Rapportage
-        </button>
-        <button
-          type="button"
-          className={`sidebar-menu-item ${
-            !geselecteerdeKlantId && weergave === 'archief' ? 'actief' : ''
-          }`}
-          onClick={onArchief}
-        >
-          Archief
         </button>
       </nav>
 
@@ -122,6 +122,16 @@ export function Sidebar({
         onClick={onKlantoverzicht}
       >
         + Nieuwe actielijst
+      </button>
+
+      <button
+        type="button"
+        className={`sidebar-menu-item ${
+          !geselecteerdeKlantId && weergave === 'archief' ? 'actief' : ''
+        }`}
+        onClick={onArchief}
+      >
+        Archief
       </button>
 
       <div className="sidebar-footer">

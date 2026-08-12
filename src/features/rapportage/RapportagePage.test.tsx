@@ -119,7 +119,10 @@ describe('RapportagePage', () => {
     render(<RapportagePage />)
 
     expect(screen.getByLabelText('Kies klant')).toHaveValue('klant-1')
-    expect(screen.getByLabelText('Kies kwartaal')).toHaveValue(
+    expect(screen.getByLabelText('Van kwartaal')).toHaveValue(
+      `${HUIDIG_KWARTAAL.jaar}-${HUIDIG_KWARTAAL.kwartaal}`,
+    )
+    expect(screen.getByLabelText('Tot en met kwartaal')).toHaveValue(
       `${HUIDIG_KWARTAAL.jaar}-${HUIDIG_KWARTAAL.kwartaal}`,
     )
     expect(
@@ -162,6 +165,7 @@ describe('RapportagePage', () => {
         naam: 'CV-ketel',
         verantw: 'Ton',
         herhaling: 'jaarlijks',
+        status: 'open',
         volgendeDatum: Date.now(),
         aangemaaktOp: Date.now(),
       },
@@ -188,8 +192,61 @@ describe('RapportagePage', () => {
     await user.click(screen.getByRole('button', { name: 'Excel' }))
 
     expect(exporteerRapportageNaarExcel).toHaveBeenCalledOnce()
-    const [rapport, kwartaal] = exporteerRapportageNaarExcel.mock.calls[0]
+    const [rapport, vanKwartaal, totKwartaal] = exporteerRapportageNaarExcel.mock.calls[0]
     expect(rapport.klantId).toBe('klant-1')
-    expect(kwartaal).toEqual(HUIDIG_KWARTAAL)
+    expect(vanKwartaal).toEqual(HUIDIG_KWARTAAL)
+    expect(totKwartaal).toEqual(HUIDIG_KWARTAAL)
+  })
+
+  it('roept window.print aan bij klikken op Print', async () => {
+    const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {})
+    const user = userEvent.setup()
+    render(<RapportagePage />)
+
+    await user.click(screen.getByRole('button', { name: 'Print' }))
+
+    expect(printSpy).toHaveBeenCalledOnce()
+    printSpy.mockRestore()
+  })
+
+  it('breidt de periode uit over meerdere kwartalen als een latere "tot"-kwartaal gekozen wordt', async () => {
+    const user = userEvent.setup()
+    render(<RapportagePage />)
+
+    const volgendKwartaal =
+      HUIDIG_KWARTAAL.kwartaal === 4
+        ? { jaar: HUIDIG_KWARTAAL.jaar + 1, kwartaal: 1 as const }
+        : { jaar: HUIDIG_KWARTAAL.jaar, kwartaal: ((HUIDIG_KWARTAAL.kwartaal + 1) as 1 | 2 | 3 | 4) }
+
+    await user.selectOptions(
+      screen.getByLabelText('Tot en met kwartaal'),
+      `${volgendKwartaal.jaar}-${volgendKwartaal.kwartaal}`,
+    )
+
+    expect(
+      screen.getByText(
+        `Q${HUIDIG_KWARTAAL.kwartaal} ${HUIDIG_KWARTAAL.jaar} t/m Q${volgendKwartaal.kwartaal} ${volgendKwartaal.jaar}`,
+        { exact: false },
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('schuift "van" mee als een "tot"-kwartaal vóór het huidige "van" gekozen wordt', async () => {
+    const user = userEvent.setup()
+    render(<RapportagePage />)
+
+    const vorigKwartaal =
+      HUIDIG_KWARTAAL.kwartaal === 1
+        ? { jaar: HUIDIG_KWARTAAL.jaar - 1, kwartaal: 4 as const }
+        : { jaar: HUIDIG_KWARTAAL.jaar, kwartaal: ((HUIDIG_KWARTAAL.kwartaal - 1) as 1 | 2 | 3 | 4) }
+
+    await user.selectOptions(
+      screen.getByLabelText('Tot en met kwartaal'),
+      `${vorigKwartaal.jaar}-${vorigKwartaal.kwartaal}`,
+    )
+
+    expect(screen.getByLabelText('Van kwartaal')).toHaveValue(
+      `${vorigKwartaal.jaar}-${vorigKwartaal.kwartaal}`,
+    )
   })
 })

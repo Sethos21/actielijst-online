@@ -7,14 +7,16 @@ import type { MjopPost } from './types'
 const addPost = vi.fn()
 const updatePost = vi.fn()
 const archiveer = vi.fn()
-const addActie = vi.fn()
+const addActie = vi.fn(async (_nieuw: Record<string, unknown>) => 'nieuwe-actie-1')
 
 let mockPosten: MjopPost[] = []
+let mockFoutmelding: string | null = null
 
 vi.mock('./useMjop', () => ({
   useMjop: () => ({
     posten: mockPosten,
     loading: false,
+    foutmelding: mockFoutmelding,
     addPost,
     updatePost,
     archiveer,
@@ -48,21 +50,42 @@ vi.mock('./useMjopStandaardlijst', () => ({
   },
 }))
 
+const onNavigeerNaarActie = vi.fn()
+
 function renderTab() {
-  return render(<MjopTab pandId="p1" klantId="klant-1" pandNaam="Hoofdstraat 12" />)
+  return render(
+    <MjopTab
+      pandId="p1"
+      klantId="klant-1"
+      pandNaam="Hoofdstraat 12"
+      onNavigeerNaarActie={onNavigeerNaarActie}
+    />,
+  )
 }
 
 describe('MjopTab', () => {
   afterEach(() => {
     mockPosten = []
+    mockFoutmelding = null
     mockStandaardTypes = []
     addPost.mockClear()
     updatePost.mockClear()
     archiveer.mockClear()
     addActie.mockClear()
+    onNavigeerNaarActie.mockClear()
     voegTypeToe.mockClear()
     verwijderType.mockClear()
     vi.restoreAllMocks()
+  })
+
+  it('toont een foutmelding in plaats van de lijst als het laden mislukt', () => {
+    mockFoutmelding = 'MJOP kon niet geladen worden. Probeer de pagina te verversen.'
+    renderTab()
+
+    expect(
+      screen.getByText('MJOP kon niet geladen worden. Probeer de pagina te verversen.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Nog geen MJOP-posten.')).not.toBeInTheDocument()
   })
 
   it('toont een lege staat als er nog geen MJOP-posten zijn', () => {
@@ -275,5 +298,6 @@ describe('MjopTab', () => {
       bronId: '1',
       label: 'Dakbedekking vervangen',
     })
+    expect(onNavigeerNaarActie).toHaveBeenCalledWith('nieuwe-actie-1')
   })
 })

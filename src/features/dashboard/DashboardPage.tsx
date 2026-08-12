@@ -3,7 +3,7 @@ import { Badge } from '../../components/Badge'
 import { useAlleActies } from '../acties/useAlleActies'
 import type { Klant } from '../klanten/types'
 import { useKlanten } from '../klanten/useKlanten'
-import { TEAMLEDEN } from '../team/teamleden'
+import { TEAMLEDEN, type Teamlid } from '../team/teamleden'
 import { initialen, teamlidKleurKlasse } from '../team/teamlidKleur'
 import {
   berekenStatsPerKlant,
@@ -13,9 +13,10 @@ import {
 
 interface Props {
   onSelectKlant: (klant: Klant) => void
+  onSelectTeamlid: (teamlid: Teamlid) => void
 }
 
-export function DashboardPage({ onSelectKlant }: Props) {
+export function DashboardPage({ onSelectKlant, onSelectTeamlid }: Props) {
   const { acties, loading: actiesLaden } = useAlleActies()
   const { klanten, loading: klantenLaden } = useKlanten()
 
@@ -52,6 +53,32 @@ export function DashboardPage({ onSelectKlant }: Props) {
       ) : (
         <>
           <section className="dashboard-sectie">
+            <h2>Open acties per teamlid</h2>
+            <div className="dashboard-teamleden">
+              {TEAMLEDEN.map((naam) => {
+                const stats = statsPerTeamlid[naam] ?? { open: 0, due: 0 }
+                return (
+                  <button
+                    type="button"
+                    className="dashboard-teamlid-kaart"
+                    key={naam}
+                    onClick={() => onSelectTeamlid(naam)}
+                  >
+                    <span className={`avatar-chip ${teamlidKleurKlasse(naam, TEAMLEDEN)}`}>
+                      {initialen(naam)}
+                    </span>
+                    <span className="dashboard-teamlid-naam">{naam}</span>
+                    <div className="dashboard-teamlid-tellingen">
+                      <Badge variant="open">{stats.open}</Badge>
+                      {stats.due > 0 && <Badge variant="due">{stats.due} due</Badge>}
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+
+          <section className="dashboard-sectie">
             <h2>Open acties per klant</h2>
             {klanten.length === 0 ? (
               <p>Nog geen klanten.</p>
@@ -77,27 +104,6 @@ export function DashboardPage({ onSelectKlant }: Props) {
                 })}
               </ul>
             )}
-          </section>
-
-          <section className="dashboard-sectie">
-            <h2>Open acties per teamlid</h2>
-            <div className="dashboard-teamleden">
-              {TEAMLEDEN.map((naam) => {
-                const stats = statsPerTeamlid[naam] ?? { open: 0, due: 0 }
-                return (
-                  <div className="dashboard-teamlid-kaart" key={naam}>
-                    <span className={`avatar-chip ${teamlidKleurKlasse(naam, TEAMLEDEN)}`}>
-                      {initialen(naam)}
-                    </span>
-                    <span className="dashboard-teamlid-naam">{naam}</span>
-                    <div className="dashboard-teamlid-tellingen">
-                      <Badge variant="open">{stats.open}</Badge>
-                      {stats.due > 0 && <Badge variant="due">{stats.due} due</Badge>}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
           </section>
         </>
       )}

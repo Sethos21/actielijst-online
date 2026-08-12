@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { OnderhoudTab } from './OnderhoudTab'
 
 const addOnderhoud = vi.fn()
-const vinkAf = vi.fn()
+const markeerUitgevoerd = vi.fn()
 const updateOnderhoud = vi.fn()
 const archiveer = vi.fn()
 const voegTypeToe = vi.fn()
@@ -16,7 +16,9 @@ let mockOnderhoud: {
   verantw: string
   leverancier?: string
   herhaling: string
-  laatstUitgevoerdOp?: number
+  status: string
+  laatstUitgevoerdOp?: string
+  jaar?: number
   volgendeDatum: number
   gearchiveerdOp?: number
 }[] = []
@@ -37,7 +39,7 @@ vi.mock('./useOnderhoud', () => ({
     onderhoud: mockOnderhoud,
     loading: false,
     addOnderhoud,
-    vinkAf,
+    markeerUitgevoerd,
     updateOnderhoud,
     archiveer,
     onderhoudDueCount: 0,
@@ -50,17 +52,25 @@ vi.mock('./useOnderhoudStandaardlijst', () => ({
     loading: false,
     voegTypeToe,
     verwijderType,
+    vulMetVoorbeelden: vi.fn(),
   }),
 }))
 
-const addActie = vi.fn()
+const addActie = vi.fn(async (_nieuw: Record<string, unknown>) => 'nieuwe-actie-1')
 vi.mock('../acties/useActies', () => ({
   useActies: () => ({ addActie }),
 }))
 
+const onNavigeerNaarActie = vi.fn()
+
 function renderTab() {
   return render(
-    <OnderhoudTab pandId="p1" klantId="klant-1" pandNaam="Hoofdstraat 12" />,
+    <OnderhoudTab
+      pandId="p1"
+      klantId="klant-1"
+      pandNaam="Hoofdstraat 12"
+      onNavigeerNaarActie={onNavigeerNaarActie}
+    />,
   )
 }
 
@@ -68,12 +78,13 @@ describe('OnderhoudTab', () => {
   afterEach(() => {
     mockOnderhoud = []
     addOnderhoud.mockClear()
-    vinkAf.mockClear()
+    markeerUitgevoerd.mockClear()
     updateOnderhoud.mockClear()
     archiveer.mockClear()
     voegTypeToe.mockClear()
     verwijderType.mockClear()
     addActie.mockClear()
+    onNavigeerNaarActie.mockClear()
     vi.restoreAllMocks()
   })
 
@@ -82,9 +93,7 @@ describe('OnderhoudTab', () => {
     expect(screen.getByText('Nog geen onderhoudsitems.')).toBeInTheDocument()
   })
 
-  it('toont due/gepland/ok-status met de juiste labels en kleurklassen', () => {
-    const nu = Date.now()
-    const dag = 24 * 60 * 60 * 1000
+  it('toont status, herhaling, leverancier en jaartal per item', () => {
     mockOnderhoud = [
       {
         id: '1',
@@ -92,103 +101,105 @@ describe('OnderhoudTab', () => {
         verantw: 'Ton',
         leverancier: 'Bakker Installatietechniek',
         herhaling: 'jaarlijks',
-        laatstUitgevoerdOp: new Date('2025-01-14').getTime(),
-        volgendeDatum: nu - dag,
+        status: 'due',
+        laatstUitgevoerdOp: '2025-01-14',
+        jaar: 2026,
+        volgendeDatum: Date.now(),
       },
       {
         id: '2',
         naam: 'Dakinspectie',
         verantw: 'Gertjan',
-        herhaling: 'jaarlijks',
-        volgendeDatum: nu + 20 * dag,
-      },
-      {
-        id: '3',
-        naam: 'Brandblusser controle',
-        verantw: 'Seth',
-        herhaling: 'jaarlijks',
-        volgendeDatum: nu + 100 * dag,
+        herhaling: 'kwartaal',
+        status: 'open',
+        volgendeDatum: Date.now(),
       },
     ]
     renderTab()
 
-    expect(screen.getByText('Due')).toBeInTheDocument()
-    expect(screen.getByText('Over 3 weken')).toBeInTheDocument()
-    expect(screen.getByText('Op schema')).toBeInTheDocument()
+    expect(screen.getByText('CV-ketel onderhoud (2026)')).toBeInTheDocument()
     expect(
       screen.getByText('Leverancier: Bakker Installatietechniek · Laatst uitgevoerd: 14 jan 2025'),
     ).toBeInTheDocument()
-    expect(screen.getAllByText('Nog niet uitgevoerd')).toHaveLength(2)
-
-    // Alleen het "op schema"-item toont als afgevinkt/doorgestreept.
-    expect(screen.getByText('Brandblusser controle')).toHaveClass('gedaan')
-    expect(screen.getByText('CV-ketel onderhoud')).not.toHaveClass('gedaan')
+    expect(screen.getByText('Nog niet uitgevoerd')).toBeInTheDocument()
+    expect(screen.getByLabelText('Status voor CV-ketel onderhoud')).toHaveValue('due')
+    expect(screen.getByLabelText('Status voor Dakinspectie')).toHaveValue('open')
+    expect(screen.getByText('⟳ kwartaal')).toBeInTheDocument()
   })
 
-  it('vinkt een item af bij klikken op het vinkje', async () => {
+  it('markeert een item als vandaag uitgevoerd bij klikken op het vinkje', async () => {
     mockOnderhoud = [
       {
         id: '1',
         naam: 'CV-ketel onderhoud',
         verantw: 'Ton',
         herhaling: 'jaarlijks',
-        volgendeDatum: Date.now() - 1000,
-      },
-    ]
-    const user = userEvent.setup()
-    renderTab()
-
-    await user.click(screen.getByLabelText('Afvinken: CV-ketel onderhoud'))
-    expect(vinkAf).toHaveBeenCalledWith('1')
-  })
-
-  it('opent het toevoegen-paneel en toont de standaardlijst, met al-gekoppelde items uitgegrijsd', async () => {
-    mockOnderhoud = [
-      {
-        id: '1',
-        naam: 'CV-ketel onderhoud',
-        verantw: 'Ton',
-        herhaling: 'jaarlijks',
+        status: 'due',
         volgendeDatum: Date.now(),
       },
     ]
     const user = userEvent.setup()
     renderTab()
 
-    await user.click(screen.getByRole('button', { name: '+ Item toevoegen' }))
+    await user.click(screen.getByLabelText('Vandaag uitgevoerd: CV-ketel onderhoud'))
 
-    expect(screen.getByText('al gekoppeld aan dit pand')).toBeInTheDocument()
-    const cvKetelCheckbox = screen.getByRole('checkbox', { name: /CV-ketel onderhoud/ })
-    expect(cvKetelCheckbox).toBeDisabled()
-
-    const dakinspectieCheckbox = screen.getByRole('checkbox', { name: /Dakinspectie/ })
-    expect(dakinspectieCheckbox).not.toBeDisabled()
+    const vandaag = new Date().toISOString().slice(0, 10)
+    expect(markeerUitgevoerd).toHaveBeenCalledWith('1', vandaag)
   })
 
-  it('voegt een geselecteerd standaardtype toe met leverancier en verantwoordelijke', async () => {
+  it('wijzigt de status via de select', async () => {
+    mockOnderhoud = [
+      {
+        id: '1',
+        naam: 'CV-ketel onderhoud',
+        verantw: 'Ton',
+        herhaling: 'jaarlijks',
+        status: 'open',
+        volgendeDatum: Date.now(),
+      },
+    ]
     const user = userEvent.setup()
     renderTab()
 
-    await user.click(screen.getByRole('button', { name: '+ Item toevoegen' }))
-    await user.click(screen.getByRole('checkbox', { name: /Dakinspectie/ }))
-    await user.type(
-      screen.getByLabelText('Leverancier voor Dakinspectie'),
-      'Dakdekkersbedrijf Van Els',
-    )
     await user.selectOptions(
-      screen.getByLabelText('Verantwoordelijke voor onderhoudsitem'),
-      'Gertjan',
-    )
-    await user.click(
-      screen.getByRole('button', { name: '1 item toevoegen aan dit pand' }),
+      screen.getByLabelText('Status voor CV-ketel onderhoud'),
+      'due',
     )
 
-    expect(addOnderhoud).toHaveBeenCalledWith({
-      naam: 'Dakinspectie',
-      verantw: 'Gertjan',
-      klantId: 'klant-1',
-      leverancier: 'Dakdekkersbedrijf Van Els',
-    })
+    expect(updateOnderhoud).toHaveBeenCalledWith('1', { status: 'due' })
+  })
+
+  it('toont een automatisch-gereset-indicator voor voltooide items waarvan de periode verstreken is', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-01'))
+    mockOnderhoud = [
+      {
+        id: '1',
+        naam: 'CV-ketel onderhoud',
+        verantw: 'Ton',
+        herhaling: 'jaarlijks',
+        status: 'voltooid',
+        laatstUitgevoerdOp: '2025-03-01',
+        volgendeDatum: Date.now(),
+      },
+    ]
+    renderTab()
+
+    expect(screen.getByText('🔄 automatisch gereset dit jaar')).toBeInTheDocument()
+    expect(screen.getByLabelText('Status voor CV-ketel onderhoud')).toHaveValue('open')
+    vi.useRealTimers()
+  })
+
+  it('opent het beheerscherm voor de standaardlijst', async () => {
+    const user = userEvent.setup()
+    renderTab()
+
+    await user.click(screen.getByRole('button', { name: '⚙ Beheren' }))
+
+    expect(
+      screen.getByRole('dialog', { name: 'Onderhoud-standaardlijst beheren' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('CV-ketel onderhoud')).toBeInTheDocument()
   })
 
   it('maakt een actie aan vanuit een onderhoudsitem, met pand en herkomst gevuld', async () => {
@@ -198,7 +209,8 @@ describe('OnderhoudTab', () => {
         naam: 'CV-ketel onderhoud',
         verantw: 'Ton',
         herhaling: 'jaarlijks',
-        volgendeDatum: Date.now() - 1000,
+        status: 'due',
+        volgendeDatum: Date.now(),
       },
     ]
     const user = userEvent.setup()
@@ -216,6 +228,7 @@ describe('OnderhoudTab', () => {
       bronId: 'o1',
       label: 'CV-ketel onderhoud',
     })
+    expect(onNavigeerNaarActie).toHaveBeenCalledWith('nieuwe-actie-1')
   })
 
   it('toont gearchiveerde onderhoudsitems niet', () => {
@@ -225,6 +238,7 @@ describe('OnderhoudTab', () => {
         naam: 'CV-ketel onderhoud',
         verantw: 'Ton',
         herhaling: 'jaarlijks',
+        status: 'open',
         volgendeDatum: Date.now(),
         gearchiveerdOp: Date.now(),
       },
@@ -240,6 +254,7 @@ describe('OnderhoudTab', () => {
         naam: 'CV-ketel onderhoud',
         verantw: 'Ton',
         herhaling: 'jaarlijks',
+        status: 'open',
         volgendeDatum: Date.now(),
       },
     ]
@@ -252,7 +267,7 @@ describe('OnderhoudTab', () => {
     expect(archiveer).toHaveBeenCalledWith('1', 'Ton', 'vervangen')
   })
 
-  it('bewerkt naam, leverancier en verantwoordelijke inline', async () => {
+  it('bewerkt naam, leverancier, verantwoordelijke, herhaling, jaar en laatst uitgevoerd inline', async () => {
     mockOnderhoud = [
       {
         id: '1',
@@ -260,6 +275,7 @@ describe('OnderhoudTab', () => {
         verantw: 'Ton',
         leverancier: 'Oude leverancier',
         herhaling: 'jaarlijks',
+        status: 'open',
         volgendeDatum: Date.now(),
       },
     ]
@@ -279,24 +295,24 @@ describe('OnderhoudTab', () => {
       screen.getByLabelText('Verantwoordelijke bewerken voor CV-ketel onderhoud'),
       'Marjan',
     )
+    await user.selectOptions(
+      screen.getByLabelText('Herhaling bewerken voor CV-ketel onderhoud'),
+      'halfjaarlijks',
+    )
+    await user.type(screen.getByLabelText('Jaar bewerken voor CV-ketel onderhoud'), '2027')
+    const datumInput = screen.getByLabelText(
+      'Laatst uitgevoerd bewerken voor CV-ketel onderhoud',
+    )
+    await user.type(datumInput, '2026-03-15')
     await user.click(screen.getByRole('button', { name: 'Opslaan' }))
 
     expect(updateOnderhoud).toHaveBeenCalledWith('1', {
       naam: 'CV-ketel groot onderhoud',
       verantw: 'Marjan',
+      herhaling: 'halfjaarlijks',
       leverancier: 'Nieuwe leverancier',
+      jaar: 2027,
+      laatstUitgevoerdOp: '2026-03-15',
     })
-  })
-
-  it('opent het beheerscherm voor de standaardlijst', async () => {
-    const user = userEvent.setup()
-    renderTab()
-
-    await user.click(screen.getByRole('button', { name: '⚙ Beheren' }))
-
-    expect(
-      screen.getByRole('dialog', { name: 'Onderhoud-standaardlijst beheren' }),
-    ).toBeInTheDocument()
-    expect(screen.getByText('CV-ketel onderhoud')).toBeInTheDocument()
   })
 })

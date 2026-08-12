@@ -3,7 +3,9 @@ import { DocumentenTab } from '../documenten/DocumentenTab'
 import { MjopTab } from '../mjop/MjopTab'
 import { OnderhoudTab } from '../onderhoud/OnderhoudTab'
 import { useOnderhoud } from '../onderhoud/useOnderhoud'
+import { PandOverzichtTab } from './PandOverzichtTab'
 import type { Pand } from './types'
+import { updatePand } from './usePanden'
 
 type Tab = 'overzicht' | 'documenten' | 'onderhoud' | 'mjop'
 
@@ -12,6 +14,7 @@ interface Props {
   klantNaam: string
   onTerug: () => void
   initieelTab?: Tab
+  onNavigeerNaarActie: (actieId: string) => void
 }
 
 export function PandDetailPage({
@@ -19,6 +22,7 @@ export function PandDetailPage({
   klantNaam,
   onTerug,
   initieelTab = 'overzicht',
+  onNavigeerNaarActie,
 }: Props) {
   const [tab, setTab] = useState<Tab>(initieelTab)
   const { onderhoudDueCount } = useOnderhoud(pand.id)
@@ -68,23 +72,31 @@ export function PandDetailPage({
       </div>
 
       {tab === 'overzicht' && (
-        <div className="leeg-state">
-          <div className="leeg-icoon">🏠</div>
-          <div className="leeg-tekst">Dit is het startpunt van de pand-pagina</div>
-          <div className="leeg-sub">
-            Documenten, onderhoud en MJOP komen in de volgende stappen — dit tabblad
-            "Overzicht" is nu nog leeg/toekomstig
-          </div>
-        </div>
+        <PandOverzichtTab pand={pand} onOpgeslagen={(patch) => updatePand(pand.id, patch)} />
       )}
       {tab === 'documenten' && (
-        <DocumentenTab pandId={pand.id} klantId={pand.klantId} pandNaam={pand.naam} />
+        <DocumentenTab
+          pandId={pand.id}
+          klantId={pand.klantId}
+          pandNaam={pand.naam}
+          onNavigeerNaarActie={onNavigeerNaarActie}
+        />
       )}
       {tab === 'onderhoud' && (
-        <OnderhoudTab pandId={pand.id} klantId={pand.klantId} pandNaam={pand.naam} />
+        <OnderhoudTab
+          pandId={pand.id}
+          klantId={pand.klantId}
+          pandNaam={pand.naam}
+          onNavigeerNaarActie={onNavigeerNaarActie}
+        />
       )}
       {tab === 'mjop' && (
-        <MjopTab pandId={pand.id} klantId={pand.klantId} pandNaam={pand.naam} />
+        <MjopTab
+          pandId={pand.id}
+          klantId={pand.klantId}
+          pandNaam={pand.naam}
+          onNavigeerNaarActie={onNavigeerNaarActie}
+        />
       )}
     </div>
   )

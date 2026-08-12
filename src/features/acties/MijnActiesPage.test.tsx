@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { MijnActiesPage } from './MijnActiesPage'
@@ -63,8 +63,20 @@ const ACTIES: ActieItem[] = [
   },
 ]
 
+vi.mock('../../components/useToast', () => ({
+  useToast: () => vi.fn(),
+}))
+
 vi.mock('./useAlleActies', () => ({
   useAlleActies: () => ({ acties: ACTIES, loading: false }),
+}))
+
+// ActieRij (gerenderd door MijnActiesPage) importeert updateActie/deleteActie/
+// uitstellen rechtstreeks als module-level exports van useActies.ts.
+vi.mock('./useActies', () => ({
+  updateActie: vi.fn(),
+  deleteActie: vi.fn(),
+  uitstellen: vi.fn(),
 }))
 
 vi.mock('../klanten/useKlanten', () => ({
@@ -77,9 +89,27 @@ vi.mock('../klanten/useKlanten', () => ({
   }),
 }))
 
+vi.mock('../panden/usePanden', () => ({
+  useAllePanden: () => ({ panden: [], loading: false }),
+  usePanden: () => ({ panden: [], loading: false }),
+}))
+
+const onSelectKlant = vi.fn()
+const onNavigeerNaarBron = vi.fn()
+
+function renderPagina(voorgeselecteerdTeamlid?: 'Ton' | 'Seth' | 'Gertjan' | 'Marjan' | 'Eigenaar') {
+  return render(
+    <MijnActiesPage
+      voorgeselecteerdTeamlid={voorgeselecteerdTeamlid}
+      onSelectKlant={onSelectKlant}
+      onNavigeerNaarBron={onNavigeerNaarBron}
+    />,
+  )
+}
+
 describe('MijnActiesPage', () => {
   it('toont voor elk teamlid een open- en due-telling', () => {
-    render(<MijnActiesPage />)
+    renderPagina()
 
     const tonKnop = screen.getByRole('button', { name: /Ton/ })
     // Ton: 2 open (Schilderwerk 2999 + Onderhoud 2020, due-acties tellen mee bij "open")
@@ -91,36 +121,54 @@ describe('MijnActiesPage', () => {
     expect(sethKnop).toHaveTextContent('1 open')
   })
 
-  it('toont bij het kiezen van een teamlid diens openstaande acties, gegroepeerd per klant', async () => {
+  it('toont bij het kiezen van een teamlid diens openstaande acties, gegroepeerd per klant, als volledige actielijst-tabel', async () => {
     const user = userEvent.setup()
-    render(<MijnActiesPage />)
+    renderPagina()
 
     await user.click(screen.getByRole('button', { name: /Ton/ }))
 
-    expect(screen.getByText('Malcon')).toBeInTheDocument()
-    expect(screen.getByText('Lift laten keuren')).toBeInTheDocument()
-    expect(screen.getByText('Offerte opvragen')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Malcon →' })).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Lift laten keuren')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Offerte opvragen')).toBeInTheDocument()
     // Dak-actie is done, hoort niet bij "openstaand" en dus niet bij klant Bowog hier.
-    expect(screen.queryByText('Bowog')).not.toBeInTheDocument()
-    expect(screen.queryByText('Lekkage verhelpen')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Bowog →' })).not.toBeInTheDocument()
+    expect(screen.queryByDisplayValue('Lekkage verhelpen')).not.toBeInTheDocument()
+  })
+
+  it('toont direct het detail van het voorgeselecteerde teamlid', () => {
+    renderPagina('Ton')
+
+    expect(screen.getByText('Acties voor Ton')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Lift laten keuren')).toBeInTheDocument()
   })
 
   it('markeert een verlopen open actie als Due', async () => {
     const user = userEvent.setup()
-    render(<MijnActiesPage />)
+    renderPagina()
 
     await user.click(screen.getByRole('button', { name: /Ton/ }))
 
-    const kaart = screen.getByText('Lift laten keuren').closest('.mijn-acties-kaart') as HTMLElement
-    expect(within(kaart).getByText('Due')).toBeInTheDocument()
+    expect(
+      screen.getByLabelText('Status voor Lift laten keuren'),
+    ).toHaveDisplayValue('Due')
   })
 
   it('toont een lege staat als het teamlid geen openstaande acties heeft', async () => {
     const user = userEvent.setup()
-    render(<MijnActiesPage />)
+    renderPagina()
 
     await user.click(screen.getByRole('button', { name: /Marjan/ }))
 
     expect(screen.getByText('Geen openstaande acties voor Marjan.')).toBeInTheDocument()
+  })
+
+  it('roept onSelectKlant aan bij klikken op de klantgroep-titel', async () => {
+    const user = userEvent.setup()
+    renderPagina()
+
+    await user.click(screen.getByRole('button', { name: /Ton/ }))
+    await user.click(screen.getByRole('button', { name: 'Malcon →' }))
+
+    expect(onSelectKlant).toHaveBeenCalledWith({ id: 'klant-1', naam: 'Malcon', aangemaaktOp: 1 })
   })
 })

@@ -15,6 +15,21 @@ export function bepaalKwartaalGrenzen(
   return { start, eind }
 }
 
+/** Periode-grenzen over een range van kwartalen heen — bijv. Q2 2026 t/m
+ * Q4 2026. Start volgt uit het "van"-kwartaal, eind (exclusief) uit het
+ * "tot en met"-kwartaal. */
+export function bepaalPeriodeGrenzen(
+  vanJaar: number,
+  vanKwartaal: 1 | 2 | 3 | 4,
+  totJaar: number,
+  totKwartaal: 1 | 2 | 3 | 4,
+): { start: string; eind: string } {
+  return {
+    start: bepaalKwartaalGrenzen(vanJaar, vanKwartaal).start,
+    eind: bepaalKwartaalGrenzen(totJaar, totKwartaal).eind,
+  }
+}
+
 /** Onbetrouwbaar bij afwijkende spelling tussen mutatie.locatie en pand/klantnaam —
  *  geaccepteerd risico, zie VOORSTEL-document sectie 5. Geen structuurwijziging aan
  *  Mutatie zelf, dat blijft een losstaande tak zonder klantId. */
@@ -89,13 +104,13 @@ export function berekenOnderhoudUitgevoerdInPeriode(
   periodeStart: string,
   periodeEind: string,
 ): number {
-  const startMs = new Date(periodeStart + 'T00:00:00').getTime()
-  const eindMs = new Date(periodeEind + 'T00:00:00').getTime()
+  // laatstUitgevoerdOp is een ISO-datum (yyyy-mm-dd) — lexicografische
+  // vergelijking volstaat, geen Date-conversie nodig.
   return onderhoud.filter(
     (item) =>
       item.laatstUitgevoerdOp != null &&
-      item.laatstUitgevoerdOp >= startMs &&
-      item.laatstUitgevoerdOp < eindMs,
+      item.laatstUitgevoerdOp >= periodeStart &&
+      item.laatstUitgevoerdOp < periodeEind,
   ).length
 }
 
@@ -120,6 +135,17 @@ export function genereerKwartaalOpties(huidigJaar: number): Kwartaal[] {
 
 export function formatKwartaalLabel(kwartaal: Kwartaal): string {
   return `Q${kwartaal.kwartaal} ${kwartaal.jaar}`
+}
+
+/** "Q2 2026" bij een los kwartaal, "Q2 2026 t/m Q4 2026" bij een range. */
+export function formatKwartaalRangeLabel(van: Kwartaal, tot: Kwartaal): string {
+  if (van.jaar === tot.jaar && van.kwartaal === tot.kwartaal) return formatKwartaalLabel(van)
+  return `${formatKwartaalLabel(van)} t/m ${formatKwartaalLabel(tot)}`
+}
+
+/** true als het "van"-kwartaal ná het "tot"-kwartaal ligt — een ongeldige range. */
+export function kwartaalNaKwartaal(a: Kwartaal, b: Kwartaal): boolean {
+  return a.jaar > b.jaar || (a.jaar === b.jaar && a.kwartaal > b.kwartaal)
 }
 
 function formatDatumNl(iso: string): string {

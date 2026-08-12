@@ -1,21 +1,17 @@
-import { deleteField, type UpdateData } from 'firebase/firestore'
-import { lazy, Suspense, useMemo, useState, type FormEvent } from 'react'
-import { InvoerdatumVeld } from '../../components/InvoerdatumVeld'
-import { UitstelKnop } from '../../components/UitstelKnop'
+import { lazy, Suspense, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { VerantwoordelijkeSelect } from '../../components/VerantwoordelijkeSelect'
 import { useToast } from '../../components/useToast'
 import { TEAMLEDEN, type Teamlid } from '../team/teamleden'
 import { usePanden } from '../panden/usePanden'
 import { VergaderingAfsluitenModal } from '../versies/VergaderingAfsluitenModal'
 import { VersieBeheerPaneel } from '../versies/VersieBeheerPaneel'
+import { ActieRij } from './ActieRij'
 import { berekenDueDate, isDue } from './dueDate'
 import { exporteerNaarExcel } from './excelExport'
-import { VestigingCel } from './VestigingCel'
 import {
   DOORLOOPTIJD_OPTIES,
   type ActieHerkomst,
   type ActieItem,
-  type ActieStatus,
   type Doorlooptijd,
 } from './types'
 import { useActies } from './useActies'
@@ -32,6 +28,8 @@ interface Props {
   onTerug: () => void
   onPandenOpen: () => void
   onNavigeerNaarBron: (pand: Pand, herkomst: ActieHerkomst) => void
+  scrollNaarActieId?: string | null
+  onGescroldNaarActie?: () => void
 }
 
 type SortVeld =
@@ -59,28 +57,16 @@ function zoekTekst(actie: ActieItem): string {
   return `${actie.onderwerp} ${actie.actie} ${actie.vestiging} ${actie.bedrijf} ${actie.opmerking}`.toLowerCase()
 }
 
-const UITSTEL_OPTIES: { label: string; eenheid: 'w' | 'm'; aantal: number }[] = [
-  { label: '1 week', eenheid: 'w', aantal: 1 },
-  { label: '2 weken', eenheid: 'w', aantal: 2 },
-  { label: '3 weken', eenheid: 'w', aantal: 3 },
-  { label: '4 weken', eenheid: 'w', aantal: 4 },
-  { label: '1 maand', eenheid: 'm', aantal: 1 },
-  { label: '2 maanden', eenheid: 'm', aantal: 2 },
-  { label: '3 maanden', eenheid: 'm', aantal: 3 },
-  { label: '4 maanden', eenheid: 'm', aantal: 4 },
-  { label: '5 maanden', eenheid: 'm', aantal: 5 },
-  { label: '6 maanden', eenheid: 'm', aantal: 6 },
-]
-
 export function ActielijstPage({
   klantId,
   klantNaam,
   onTerug,
   onPandenOpen,
   onNavigeerNaarBron,
+  scrollNaarActieId,
+  onGescroldNaarActie,
 }: Props) {
-  const { acties, loading, addActie, updateActie, deleteActie, uitstellen } =
-    useActies(klantId)
+  const { acties, loading, addActie } = useActies(klantId)
   const { panden } = usePanden(klantId)
   const toon = useToast()
   const [sortVeld, setSortVeld] = useState<SortVeld>('ref')
@@ -103,6 +89,21 @@ export function ActielijstPage({
   // blijven staan, ook als er op een kolom gesorteerd is — anders verdwijnt
   // een net toegevoegde lege rij ergens middenin de lijst.
   const [nieuweRijIds, setNieuweRijIds] = useState<Set<string>>(new Set())
+
+  // Na "+ Actie aanmaken" vanuit Onderhoud/Documenten/MJOP: de nieuwe actie
+  // blijft (net als snel-toegevoegde rijen) onderin gepind, en zodra de rij
+  // in de DOM staat scrollen we ernaartoe.
+  useEffect(() => {
+    if (!scrollNaarActieId) return
+    if (!nieuweRijIds.has(scrollNaarActieId)) {
+      setNieuweRijIds((huidig) => new Set(huidig).add(scrollNaarActieId))
+    }
+    const rij = document.querySelector(`[data-actie-id="${scrollNaarActieId}"]`)
+    if (rij) {
+      rij.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      onGescroldNaarActie?.()
+    }
+  }, [scrollNaarActieId, acties, nieuweRijIds, onGescroldNaarActie])
 
   function toggleFilter(pil: FilterPil) {
     const nieuweSet = new Set(actieveFilters)
@@ -184,19 +185,10 @@ export function ActielijstPage({
     return [...metRichting, ...vastgepind]
   }, [gefilterdeActies, sortVeld, sortRichting, nieuweRijIds])
 
-  function volgendeRef(): string {
-    const hoogsteRef = acties.reduce((max, actie) => {
-      const nummer = Number(actie.ref)
-      return Number.isNaN(nummer) ? max : Math.max(max, nummer)
-    }, 0)
-    return String(hoogsteRef + 1)
-  }
-
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     if (!nieuw.actie.trim()) return
     const id = await addActie({
-      ref: volgendeRef(),
       onderwerp: nieuw.onderwerp,
       bedrijf: nieuw.bedrijf,
       vestiging: nieuw.vestiging,
@@ -232,7 +224,6 @@ export function ActielijstPage({
   /** Snel een lege actie onderaan toevoegen — daarna verder invullen in de rij zelf. */
   async function handleSnelToevoegen() {
     const id = await addActie({
-      ref: volgendeRef(),
       onderwerp: '',
       bedrijf: '',
       vestiging: '',
@@ -247,14 +238,6 @@ export function ActielijstPage({
     toon('Actie toegevoegd')
   }
 
-  function handleVerwijderen(actie: ActieItem) {
-    const omschrijving = actie.actie.trim() || actie.onderwerp.trim() || 'deze actie'
-    if (!window.confirm(`"${omschrijving}" verwijderen? Dit kan niet ongedaan worden gemaakt.`)) {
-      return
-    }
-    deleteActie(actie.id)
-  }
-
   function handlePrinten() {
     window.print()
   }
@@ -262,23 +245,6 @@ export function ActielijstPage({
   async function handleExporteren() {
     await exporteerNaarExcel(gesorteerdeActies, klantNaam)
     toon('Excel-bestand gedownload')
-  }
-
-  function toggleVerantw(actie: ActieItem, naam: string) {
-    const nieuweVerantw = actie.verantw.includes(naam)
-      ? actie.verantw.filter((v) => v !== naam)
-      : [...actie.verantw, naam]
-    updateActie(actie.id, { verantw: nieuweVerantw })
-  }
-
-  async function handleUitstellen(
-    actieId: string,
-    eenheid: 'w' | 'm',
-    aantal: number,
-    label: string,
-  ) {
-    await uitstellen(actieId, eenheid, aantal)
-    toon(`Uitgesteld met ${label}`)
   }
 
   function kolomkop(label: string, veld: SortVeld) {
@@ -482,188 +448,16 @@ export function ActielijstPage({
             </tr>
           </thead>
           <tbody>
-            {gesorteerdeActies.map((actie) => {
-              const due = berekenDueDate(actie)
-              const due_ = isDue(actie)
-              return (
-                <tr
-                  key={actie.id}
-                  className={actie.status === 'done' ? 'actielijst-rij-afgerond' : undefined}
-                >
-                  <td>{actie.ref}</td>
-                  <td>
-                    <span className="cel-scroll">
-                      <InvoerdatumVeld
-                        actieOmschrijving={actie.actie}
-                        waarde={actie.aangemaaktOp}
-                        onWijzig={(iso) => updateActie(actie.id, { aangemaaktOp: iso })}
-                      />
-                    </span>
-                  </td>
-                  <td>
-                    <span className="cel-scroll">
-                      <input
-                        aria-label={`Onderwerp voor ${actie.actie}`}
-                        value={actie.onderwerp}
-                        onChange={(e) =>
-                          updateActie(actie.id, { onderwerp: e.target.value })
-                        }
-                      />
-                      {actie.herkomst && (
-                        <button
-                          type="button"
-                          className="actie-herkomst"
-                          onClick={() => {
-                            const pand = panden.find((p) => p.id === actie.pandId)
-                            if (pand) onNavigeerNaarBron(pand, actie.herkomst!)
-                          }}
-                        >
-                          {actie.herkomst.type === 'onderhoud' && '🔧'}
-                          {actie.herkomst.type === 'mjop' && '📅'}
-                          {actie.herkomst.type === 'document' && '📄'} vanuit{' '}
-                          {actie.herkomst.type}: {actie.herkomst.label}
-                        </button>
-                      )}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="cel-scroll">
-                      <input
-                        aria-label={`Bedrijf voor ${actie.actie}`}
-                        value={actie.bedrijf}
-                        onChange={(e) =>
-                          updateActie(actie.id, { bedrijf: e.target.value })
-                        }
-                      />
-                    </span>
-                  </td>
-                  <td>
-                    <span className="cel-scroll">
-                      <VestigingCel
-                        klantId={klantId}
-                        klantNaam={klantNaam}
-                        actieOmschrijving={actie.actie}
-                        pandId={actie.pandId}
-                        vestigingTekst={actie.vestiging}
-                        onKiesPand={(pand) =>
-                          updateActie(actie.id, {
-                            pandId: pand.id,
-                            vestiging: pand.naam,
-                          })
-                        }
-                        onVrijeTekst={(tekst) =>
-                          updateActie(actie.id, {
-                            pandId: deleteField(),
-                            vestiging: tekst,
-                          })
-                        }
-                      />
-                    </span>
-                  </td>
-                  <td>
-                    <span className="cel-scroll cel-scroll-tekst">
-                      <textarea
-                        aria-label="Actiepunt"
-                        value={actie.actie}
-                        onChange={(e) =>
-                          updateActie(actie.id, { actie: e.target.value })
-                        }
-                      />
-                    </span>
-                  </td>
-                  <td>
-                    <span className="cel-scroll">
-                      <VerantwoordelijkeSelect
-                        actieOmschrijving={actie.actie}
-                        geselecteerd={actie.verantw}
-                        alleNamen={TEAMLEDEN}
-                        onToggle={(naam) => toggleVerantw(actie, naam)}
-                      />
-                    </span>
-                  </td>
-                  <td>
-                    <span className="cel-scroll">
-                      <select
-                        aria-label={`Doorlooptijd voor ${actie.actie}`}
-                        className="doorlooptijd-select"
-                        value={actie.doorlooptijd}
-                        onChange={(e) =>
-                          updateActie(actie.id, {
-                            doorlooptijd: e.target.value as Doorlooptijd,
-                          })
-                        }
-                      >
-                        {DOORLOOPTIJD_OPTIES.map((optie) => (
-                          <option key={optie} value={optie}>
-                            {optie}
-                          </option>
-                        ))}
-                      </select>
-                    </span>
-                  </td>
-                  <td>
-                    <span className="cel-scroll">{due}</span>
-                  </td>
-                  <td>
-                    <span className="cel-scroll">
-                      <select
-                        aria-label={`Status voor ${actie.actie}`}
-                        className={`status-select status-select-${
-                          due_ ? 'due' : actie.status
-                        }`}
-                        value={actie.status}
-                        onChange={(e) => {
-                          const nieuweStatus = e.target.value as ActieStatus
-                          const patch: UpdateData<ActieItem> = { status: nieuweStatus }
-                          if (nieuweStatus === 'done' && actie.status !== 'done') {
-                            patch.afgerondOp = new Date().toISOString().slice(0, 10)
-                          }
-                          if (nieuweStatus !== 'done' && actie.status === 'done') {
-                            // heropend — telt niet meer mee als "afgerond in periode X"
-                            patch.afgerondOp = deleteField()
-                          }
-                          updateActie(actie.id, patch)
-                        }}
-                      >
-                        <option value="open">{due_ ? 'Due' : 'Open'}</option>
-                        <option value="done">Gereed</option>
-                        <option value="hold">On hold</option>
-                      </select>
-                    </span>
-                  </td>
-                  <td>
-                    <span className="cel-scroll cel-scroll-tekst">
-                      <textarea
-                        aria-label={`Opmerking voor ${actie.actie}`}
-                        value={actie.opmerking}
-                        onChange={(e) =>
-                          updateActie(actie.id, { opmerking: e.target.value })
-                        }
-                      />
-                    </span>
-                  </td>
-                  <td className="no-print">
-                    <UitstelKnop
-                      actieOmschrijving={actie.actie}
-                      opties={UITSTEL_OPTIES}
-                      onKies={(keuze) =>
-                        handleUitstellen(actie.id, keuze.eenheid, keuze.aantal, keuze.label)
-                      }
-                    />
-                  </td>
-                  <td className="no-print">
-                    <button
-                      type="button"
-                      className="icoon-knop"
-                      aria-label={`Verwijderen: ${actie.actie}`}
-                      onClick={() => handleVerwijderen(actie)}
-                    >
-                      🗑️
-                    </button>
-                  </td>
-                </tr>
-              )
-            })}
+            {gesorteerdeActies.map((actie) => (
+              <ActieRij
+                key={actie.id}
+                actie={actie}
+                klantNaam={klantNaam}
+                panden={panden}
+                onNavigeerNaarBron={onNavigeerNaarBron}
+                onUitgesteld={(label) => toon(`Uitgesteld met ${label}`)}
+              />
+            ))}
           </tbody>
         </table>
       )}

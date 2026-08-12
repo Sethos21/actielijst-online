@@ -18,6 +18,7 @@ vi.mock('./features/auth/useAuthUser', () => ({
 vi.mock('./components/Sidebar', () => ({
   Sidebar: (props: {
     onUitloggen: () => void
+    onPandenOverzicht: () => void
     onMijnActies: () => void
     onDashboard: () => void
     onRapportage: () => void
@@ -27,6 +28,9 @@ vi.mock('./components/Sidebar', () => ({
       Sidebar-stub
       <button type="button" onClick={props.onUitloggen}>
         Stub-uitloggen
+      </button>
+      <button type="button" onClick={props.onPandenOverzicht}>
+        Stub-panden
       </button>
       <button type="button" onClick={props.onMijnActies}>
         Stub-mijn-acties
@@ -53,11 +57,20 @@ vi.mock('./features/acties/ActielijstPage', () => ({
 }))
 
 vi.mock('./features/acties/MijnActiesPage', () => ({
-  MijnActiesPage: () => <div>Mijn-acties-stub</div>,
+  MijnActiesPage: (props: { voorgeselecteerdTeamlid?: string }) => (
+    <div>Mijn-acties-stub{props.voorgeselecteerdTeamlid ? `: ${props.voorgeselecteerdTeamlid}` : ''}</div>
+  ),
 }))
 
 vi.mock('./features/dashboard/DashboardPage', () => ({
-  DashboardPage: () => <div>Dashboard-stub</div>,
+  DashboardPage: (props: { onSelectTeamlid: (teamlid: string) => void }) => (
+    <div>
+      Dashboard-stub
+      <button type="button" onClick={() => props.onSelectTeamlid('Ton')}>
+        Stub-selecteer-teamlid
+      </button>
+    </div>
+  ),
 }))
 
 vi.mock('./features/rapportage/RapportagePage', () => ({
@@ -80,9 +93,16 @@ vi.mock('./features/huurdersmutaties/Huurdersmutaties', () => ({
 }))
 
 vi.mock('./features/panden/PandDetailPage', () => ({
-  PandDetailPage: (props: { pand: { naam: string }; klantNaam: string }) => (
+  PandDetailPage: (props: {
+    pand: { naam: string }
+    klantNaam: string
+    onTerug: () => void
+  }) => (
     <div>
       PandDetail-stub: {props.klantNaam} / {props.pand.naam}
+      <button type="button" onClick={props.onTerug}>
+        ← Terug naar panden
+      </button>
     </div>
   ),
 }))
@@ -179,6 +199,17 @@ describe('App', () => {
     expect(screen.getByText('Dashboard-stub')).toBeInTheDocument()
   })
 
+  it('navigeert naar Mijn acties met het gekozen teamlid vanuit het Dashboard', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: /Actielijsten/ }))
+    await user.click(screen.getByRole('button', { name: 'Stub-dashboard' }))
+    await user.click(screen.getByRole('button', { name: 'Stub-selecteer-teamlid' }))
+
+    expect(screen.getByText('Mijn-acties-stub: Ton')).toBeInTheDocument()
+  })
+
   it('navigeert naar Rapportage via de sidebar', async () => {
     const user = userEvent.setup()
     render(<App />)
@@ -242,6 +273,30 @@ describe('App', () => {
     expect(
       screen.getByText('PandDetail-stub: Malcon / Hoofdstraat 12'),
     ).toBeInTheDocument()
+  })
+
+  it('gaat terug naar het Panden-overzicht (niet naar de actielijst) als het pand van daaruit geopend werd', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: /Panden/ }))
+    await screen.findByText('PandenOverzicht-stub')
+    await user.click(screen.getByRole('button', { name: 'Stub-selecteer-pand' }))
+    await screen.findByText('PandDetail-stub: Malcon / Hoofdstraat 12')
+
+    await user.click(screen.getByRole('button', { name: '← Terug naar panden' }))
+
+    expect(await screen.findByText('PandenOverzicht-stub')).toBeInTheDocument()
+  })
+
+  it('navigeert naar het Panden-overzicht via de sidebar', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: /Actielijsten/ }))
+    await user.click(screen.getByRole('button', { name: 'Stub-panden' }))
+
+    expect(await screen.findByText('PandenOverzicht-stub')).toBeInTheDocument()
   })
 
   it('reset naar het Startscherm bij uitloggen', async () => {

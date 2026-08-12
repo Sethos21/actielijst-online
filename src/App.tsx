@@ -13,6 +13,7 @@ import { PandDetailPage } from './features/panden/PandDetailPage'
 import { PandenPaneel } from './features/panden/PandenPaneel'
 import type { Pand } from './features/panden/types'
 import { RapportagePage } from './features/rapportage/RapportagePage'
+import type { Teamlid } from './features/team/teamleden'
 import { Sidebar } from './components/Sidebar'
 import { StartScreen } from './components/StartScreen'
 import { auth } from './lib/firebase'
@@ -44,11 +45,14 @@ function App() {
   const [weergave, setWeergave] = useState<Weergave>('klantoverzicht')
   const [geselecteerdeKlant, setGeselecteerdeKlant] = useState<Klant | null>(null)
   const [geselecteerdPand, setGeselecteerdPand] = useState<Pand | null>(null)
+  const [pandGeopendVia, setPandGeopendVia] = useState<'klant' | 'overzicht' | null>(null)
   const [pandDetailTab, setPandDetailTab] = useState<
     'overzicht' | 'documenten' | 'onderhoud' | 'mjop'
   >('overzicht')
   const [pandenPaneelOpen, setPandenPaneelOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
+  const [voorgeselecteerdTeamlid, setVoorgeselecteerdTeamlid] = useState<Teamlid | null>(null)
+  const [scrollNaarActieId, setScrollNaarActieId] = useState<string | null>(null)
 
   if (loading) {
     return <p>Laden...</p>
@@ -73,6 +77,14 @@ function App() {
   }
 
   function handleMijnActies() {
+    setWeergave('mijn-acties')
+    setGeselecteerdeKlant(null)
+    setGeselecteerdPand(null)
+    setVoorgeselecteerdTeamlid(null)
+  }
+
+  function handleSelectTeamlid(teamlid: Teamlid) {
+    setVoorgeselecteerdTeamlid(teamlid)
     setWeergave('mijn-acties')
     setGeselecteerdeKlant(null)
     setGeselecteerdPand(null)
@@ -103,6 +115,7 @@ function App() {
 
   function handleNavigeerNaarBron(pand: Pand, herkomst: ActieHerkomst) {
     setGeselecteerdPand(pand)
+    setPandGeopendVia('klant')
     setPandDetailTab(
       herkomst.type === 'document'
         ? 'documenten'
@@ -110,6 +123,23 @@ function App() {
           ? 'mjop'
           : 'onderhoud',
     )
+  }
+
+  function handleNavigeerNaarBronVanuitMijnActies(
+    klant: Klant,
+    pand: Pand,
+    herkomst: ActieHerkomst,
+  ) {
+    setGeselecteerdeKlant(klant)
+    handleNavigeerNaarBron(pand, herkomst)
+  }
+
+  /** Na "+ Actie aanmaken" vanuit Onderhoud/Documenten/MJOP: terug naar de
+   * actielijst van deze klant, gescrold naar de nieuwe rij. */
+  function handleNavigeerNaarActie(actieId: string) {
+    setGeselecteerdPand(null)
+    setPandGeopendVia(null)
+    setScrollNaarActieId(actieId)
   }
 
   if (scherm === 'start') {
@@ -144,6 +174,7 @@ function App() {
           onSelectPand={(pand, klant) => {
             setGeselecteerdeKlant(klant)
             setGeselecteerdPand(pand)
+            setPandGeopendVia('overzicht')
             setPandDetailTab('overzicht')
             setScherm('actielijsten')
           }}
@@ -159,6 +190,7 @@ function App() {
         weergave={weergave}
         onSelectKlant={handleSelectKlant}
         onKlantoverzicht={handleKlantoverzicht}
+        onPandenOverzicht={() => setScherm('panden-overzicht')}
         onMijnActies={handleMijnActies}
         onDashboard={handleDashboard}
         onRapportage={handleRapportage}
@@ -173,8 +205,18 @@ function App() {
             key={geselecteerdPand.id}
             pand={geselecteerdPand}
             klantNaam={geselecteerdeKlant.naam}
-            onTerug={() => setGeselecteerdPand(null)}
+            onTerug={() => {
+              if (pandGeopendVia === 'overzicht') {
+                setGeselecteerdPand(null)
+                setGeselecteerdeKlant(null)
+                setScherm('panden-overzicht')
+              } else {
+                setGeselecteerdPand(null)
+              }
+              setPandGeopendVia(null)
+            }}
             initieelTab={pandDetailTab}
+            onNavigeerNaarActie={handleNavigeerNaarActie}
           />
         ) : geselecteerdeKlant ? (
           <ActielijstPage
@@ -183,11 +225,20 @@ function App() {
             onTerug={() => setGeselecteerdeKlant(null)}
             onPandenOpen={() => setPandenPaneelOpen(true)}
             onNavigeerNaarBron={handleNavigeerNaarBron}
+            scrollNaarActieId={scrollNaarActieId}
+            onGescroldNaarActie={() => setScrollNaarActieId(null)}
           />
         ) : weergave === 'mijn-acties' ? (
-          <MijnActiesPage />
+          <MijnActiesPage
+            voorgeselecteerdTeamlid={voorgeselecteerdTeamlid ?? undefined}
+            onSelectKlant={handleSelectKlant}
+            onNavigeerNaarBron={handleNavigeerNaarBronVanuitMijnActies}
+          />
         ) : weergave === 'dashboard' ? (
-          <DashboardPage onSelectKlant={setGeselecteerdeKlant} />
+          <DashboardPage
+            onSelectKlant={setGeselecteerdeKlant}
+            onSelectTeamlid={handleSelectTeamlid}
+          />
         ) : weergave === 'rapportage' ? (
           <RapportagePage />
         ) : weergave === 'archief' ? (
@@ -213,6 +264,7 @@ function App() {
             onSluiten={() => setPandenPaneelOpen(false)}
             onSelectPand={(pand) => {
               setGeselecteerdPand(pand)
+              setPandGeopendVia('klant')
               setPandDetailTab('overzicht')
               setPandenPaneelOpen(false)
             }}

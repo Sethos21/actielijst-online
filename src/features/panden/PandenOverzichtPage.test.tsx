@@ -16,7 +16,7 @@ let mockPanden: {
 let mockOnderhoud: {
   id: string
   pandId: string
-  volgendeDatum: number
+  status: string
   gearchiveerdOp?: number
 }[] = []
 
@@ -87,8 +87,8 @@ describe('PandenOverzichtPage', () => {
   it('toont een due-badge met het aantal openstaande onderhoudsitems per pand', () => {
     mockPanden = [{ id: 'p1', klantId: 'klant-1', naam: 'Hoofdstraat 12', aangemaaktOp: 1 }]
     mockOnderhoud = [
-      { id: 'o1', pandId: 'p1', volgendeDatum: Date.now() - 1000 },
-      { id: 'o2', pandId: 'p1', volgendeDatum: Date.now() + 1000 * 60 * 60 * 24 * 100 },
+      { id: 'o1', pandId: 'p1', status: 'due' },
+      { id: 'o2', pandId: 'p1', status: 'open' },
     ]
     renderScherm()
 

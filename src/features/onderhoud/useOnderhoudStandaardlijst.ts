@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
 import { db } from '../../lib/firebase'
+import type { OnderhoudHerhaling } from './types'
 
 const COLLECTION = 'onderhoudStandaardlijst'
 
@@ -16,7 +17,7 @@ export interface StandaardType {
   id: string
   naam: string
   icoon: string
-  herhaling: 'jaarlijks'
+  herhaling: OnderhoudHerhaling
   aangemaaktOp: number
 }
 
@@ -52,12 +53,12 @@ export function useOnderhoudStandaardlijst() {
     return unsubscribe
   }, [])
 
-  async function voegTypeToe(naam: string, icoon: string) {
+  async function voegTypeToe(naam: string, herhaling: OnderhoudHerhaling, icoon: string) {
     if (!naam.trim()) return
     await addDoc(collection(db, COLLECTION), {
       naam: naam.trim(),
       icoon: icoon || '🔧',
-      herhaling: 'jaarlijks',
+      herhaling,
       aangemaaktOp: Date.now(),
     })
   }
@@ -68,7 +69,9 @@ export function useOnderhoudStandaardlijst() {
 
   async function vulMetVoorbeelden() {
     await Promise.all(
-      VOORBEELD_STANDAARD_TYPES.map((type) => voegTypeToe(type.naam, type.icoon)),
+      VOORBEELD_STANDAARD_TYPES.map((type) =>
+        voegTypeToe(type.naam, 'jaarlijks', type.icoon),
+      ),
     )
   }
 

@@ -1,15 +1,16 @@
 import type * as XLSXType from 'xlsx'
-import { formatKwartaalLabel, formatPeriodeLabel } from './kwartaalLogica'
+import { formatKwartaalRangeLabel, formatPeriodeLabel } from './kwartaalLogica'
 import type { Kwartaal, KwartaalRapport } from './types'
 
 export function bouwRapportageWerkboek(
   rapport: KwartaalRapport,
-  kwartaal: Kwartaal,
+  vanKwartaal: Kwartaal,
+  totKwartaal: Kwartaal,
   XLSX: typeof XLSXType,
 ): XLSXType.WorkBook {
   const rijen = [
     ['Kwartaalrapportage', rapport.klantNaam],
-    ['Kwartaal', formatKwartaalLabel(kwartaal)],
+    ['Kwartaal', formatKwartaalRangeLabel(vanKwartaal, totKwartaal)],
     ['Periode', formatPeriodeLabel(rapport.periodeStart, rapport.periodeEind)],
     [],
     ['Acties', ''],
@@ -35,21 +36,30 @@ export function bouwRapportageWerkboek(
   return werkboek
 }
 
-export function bestandsnaamVoor(klantNaam: string, kwartaal: Kwartaal): string {
+export function bestandsnaamVoor(
+  klantNaam: string,
+  vanKwartaal: Kwartaal,
+  totKwartaal: Kwartaal,
+): string {
   const veilig = klantNaam
     .trim()
     .replace(/[^a-zA-Z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '')
-  return `Rapportage_${veilig}_Q${kwartaal.kwartaal}_${kwartaal.jaar}.xlsx`
+  const kwartaalDeel =
+    vanKwartaal.jaar === totKwartaal.jaar && vanKwartaal.kwartaal === totKwartaal.kwartaal
+      ? `Q${vanKwartaal.kwartaal}_${vanKwartaal.jaar}`
+      : `Q${vanKwartaal.kwartaal}_${vanKwartaal.jaar}_tm_Q${totKwartaal.kwartaal}_${totKwartaal.jaar}`
+  return `Rapportage_${veilig}_${kwartaalDeel}.xlsx`
 }
 
 /** Laadt xlsx pas bij daadwerkelijk exporteren, zodat de library niet in de
  * hoofdbundel zit — zie src/features/acties/excelExport.ts voor hetzelfde patroon. */
 export async function exporteerRapportageNaarExcel(
   rapport: KwartaalRapport,
-  kwartaal: Kwartaal,
+  vanKwartaal: Kwartaal,
+  totKwartaal: Kwartaal,
 ) {
   const XLSX = await import('xlsx')
-  const werkboek = bouwRapportageWerkboek(rapport, kwartaal, XLSX)
-  XLSX.writeFile(werkboek, bestandsnaamVoor(rapport.klantNaam, kwartaal))
+  const werkboek = bouwRapportageWerkboek(rapport, vanKwartaal, totKwartaal, XLSX)
+  XLSX.writeFile(werkboek, bestandsnaamVoor(rapport.klantNaam, vanKwartaal, totKwartaal))
 }

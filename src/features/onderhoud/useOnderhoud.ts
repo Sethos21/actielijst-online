@@ -7,16 +7,35 @@ import {
   query,
   updateDoc,
   where,
+  type DocumentData,
+  type QueryDocumentSnapshot,
 } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
 import { db } from '../../lib/firebase'
-import { bepaalOnderhoudStatus, berekenVolgendeOnderhoudsdatum } from './dueDate'
-import type { Onderhoud } from './types'
+import { bepaalEffectieveStatus } from './dueDate'
+import type { Onderhoud, OnderhoudHerhaling } from './types'
 
 const COLLECTION = 'onderhoud'
 
+// Items van vóór de status-uitbreiding hebben dit veld nog niet in Firestore
+// staan — val terug op 'open' i.p.v. een migratie.
+function naarOnderhoud(d: QueryDocumentSnapshot<DocumentData>): Onderhoud {
+  const data = d.data()
+  return { id: d.id, ...data, status: data.status ?? 'open' } as Onderhoud
+}
+
 export async function updateOnderhoud(onderhoudId: string, patch: Partial<Onderhoud>) {
   await updateDoc(doc(db, COLLECTION, onderhoudId), patch)
+}
+
+/** Vervangt de oude eenrichtings-vinkAf. Zet een expliciete, handmatig
+ * ingevulde uitvoerdatum en status 'voltooid' — kan altijd weer worden
+ * teruggedraaid door de status handmatig te wijzigen. */
+export async function markeerUitgevoerd(onderhoudId: string, uitgevoerdOp: string) {
+  await updateDoc(doc(db, COLLECTION, onderhoudId), {
+    laatstUitgevoerdOp: uitgevoerdOp,
+    status: 'voltooid',
+  })
 }
 
 export async function archiveerOnderhoud(
@@ -50,9 +69,7 @@ export function useOnderhoud(pandId: string) {
   useEffect(() => {
     const q = query(collection(db, COLLECTION), where('pandId', '==', pandId))
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setOnderhoud(
-        snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Onderhoud),
-      )
+      setOnderhoud(snapshot.docs.map(naarOnderhoud))
       setLoading(false)
     })
     return unsubscribe
@@ -63,6 +80,7 @@ export function useOnderhoud(pandId: string) {
     verantw: string
     klantId: string
     leverancier?: string
+    herhaling?: OnderhoudHerhaling
   }) {
     if (!nieuw.naam.trim()) return
     const nu = Date.now()
@@ -71,33 +89,25 @@ export function useOnderhoud(pandId: string) {
       klantId: nieuw.klantId,
       naam: nieuw.naam.trim(),
       verantw: nieuw.verantw,
-      herhaling: 'jaarlijks',
+      herhaling: nieuw.herhaling ?? 'jaarlijks',
+      status: 'open',
       volgendeDatum: nu,
       aangemaaktOp: nu,
       ...(nieuw.leverancier?.trim() ? { leverancier: nieuw.leverancier.trim() } : {}),
     })
   }
 
-  async function vinkAf(onderhoudId: string) {
-    const nu = Date.now()
-    await updateDoc(doc(db, COLLECTION, onderhoudId), {
-      laatstUitgevoerdOp: nu,
-      volgendeDatum: berekenVolgendeOnderhoudsdatum(nu),
-    })
-  }
-
-  /** Telt items die Due of bijna Due (gepland) zijn — zelfde patroon als het
-   * open-acties-badge op het dashboard. */
-  const onderhoudDueCount = onderhoud.filter((item) => {
-    const status = bepaalOnderhoudStatus(item.volgendeDatum)
-    return status === 'due' || status === 'gepland'
-  }).length
+  /** Telt items waarvan de effectieve status 'due' is — zelfde patroon als
+   * het open-acties-badge op het dashboard. */
+  const onderhoudDueCount = onderhoud.filter(
+    (item) => bepaalEffectieveStatus(item) === 'due',
+  ).length
 
   return {
     onderhoud,
     loading,
     addOnderhoud,
-    vinkAf,
+    markeerUitgevoerd,
     updateOnderhoud,
     archiveer: archiveerOnderhoud,
     herstel: herstelOnderhoud,
@@ -115,9 +125,7 @@ export function useOnderhoudVoorKlant(klantId: string) {
   useEffect(() => {
     const q = query(collection(db, COLLECTION), where('klantId', '==', klantId))
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setOnderhoud(
-        snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Onderhoud),
-      )
+      setOnderhoud(snapshot.docs.map(naarOnderhoud))
       setLoading(false)
     })
     return unsubscribe
@@ -135,9 +143,7 @@ export function useAlleOnderhoud() {
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, COLLECTION), (snapshot) => {
-      setOnderhoud(
-        snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Onderhoud),
-      )
+      setOnderhoud(snapshot.docs.map(naarOnderhoud))
       setLoading(false)
     })
     return unsubscribe

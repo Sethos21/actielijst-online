@@ -64,7 +64,7 @@ vi.mock('../klanten/useKlanten', () => ({
 
 describe('DashboardPage', () => {
   it('toont de totalen (open, due, afgerond) over alle klanten heen', () => {
-    render(<DashboardPage onSelectKlant={vi.fn()} />)
+    render(<DashboardPage onSelectKlant={vi.fn()} onSelectTeamlid={vi.fn()} />)
 
     expect(screen.getByText('Totaal open (alle klanten)').nextSibling).toHaveTextContent('2')
     expect(screen.getByText('Totaal due').nextSibling).toHaveTextContent('1')
@@ -72,7 +72,7 @@ describe('DashboardPage', () => {
   })
 
   it('toont per klant de open/due/done-tellingen', () => {
-    render(<DashboardPage onSelectKlant={vi.fn()} />)
+    render(<DashboardPage onSelectKlant={vi.fn()} onSelectTeamlid={vi.fn()} />)
 
     const malconRij = screen.getByText('Malcon').closest('.dashboard-klant-rij') as HTMLElement
     expect(within(malconRij).getByText('2 open')).toBeInTheDocument()
@@ -87,7 +87,7 @@ describe('DashboardPage', () => {
   it('roept onSelectKlant aan bij klikken op een klantrij', async () => {
     const user = userEvent.setup()
     const onSelectKlant = vi.fn()
-    render(<DashboardPage onSelectKlant={onSelectKlant} />)
+    render(<DashboardPage onSelectKlant={onSelectKlant} onSelectTeamlid={vi.fn()} />)
 
     await user.click(screen.getByText('Malcon'))
 
@@ -95,7 +95,7 @@ describe('DashboardPage', () => {
   })
 
   it('toont per teamlid de open/due-tellingen', () => {
-    render(<DashboardPage onSelectKlant={vi.fn()} />)
+    render(<DashboardPage onSelectKlant={vi.fn()} onSelectTeamlid={vi.fn()} />)
 
     const tonKaart = screen.getByText('Ton').closest('.dashboard-teamlid-kaart') as HTMLElement
     expect(within(tonKaart).getByText('1')).toBeInTheDocument()
@@ -104,5 +104,22 @@ describe('DashboardPage', () => {
     const marjanKaart = screen.getByText('Marjan').closest('.dashboard-teamlid-kaart') as HTMLElement
     expect(within(marjanKaart).getByText('0')).toBeInTheDocument()
     expect(within(marjanKaart).queryByText(/due/)).not.toBeInTheDocument()
+  })
+
+  it('roept onSelectTeamlid aan bij klikken op een teamlid-kaart', async () => {
+    const user = userEvent.setup()
+    const onSelectTeamlid = vi.fn()
+    render(<DashboardPage onSelectKlant={vi.fn()} onSelectTeamlid={onSelectTeamlid} />)
+
+    await user.click(screen.getByText('Ton'))
+
+    expect(onSelectTeamlid).toHaveBeenCalledWith('Ton')
+  })
+
+  it('toont "Open acties per teamlid" vóór "Open acties per klant"', () => {
+    render(<DashboardPage onSelectKlant={vi.fn()} onSelectTeamlid={vi.fn()} />)
+
+    const koppen = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
+    expect(koppen).toEqual(['Open acties per teamlid', 'Open acties per klant'])
   })
 })

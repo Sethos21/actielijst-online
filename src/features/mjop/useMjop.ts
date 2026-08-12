@@ -42,6 +42,7 @@ export async function verwijderMjopPostDefinitief(postId: string) {
 export function useMjop(pandId: string) {
   const [posten, setPosten] = useState<MjopPost[]>([])
   const [loading, setLoading] = useState(true)
+  const [foutmelding, setFoutmelding] = useState<string | null>(null)
 
   useEffect(() => {
     const q = query(
@@ -49,17 +50,25 @@ export function useMjop(pandId: string) {
       where('pandId', '==', pandId),
       orderBy('jaar'),
     )
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setPosten(
-        snapshot.docs.map((d) => {
-          const data = d.data()
-          // Bestaande posten van vóór het categorie-veld hebben dit nog niet
-          // in Firestore staan — val terug op 'onderhoud' i.p.v. een migratie.
-          return { id: d.id, ...data, categorie: data.categorie ?? 'onderhoud' } as MjopPost
-        }),
-      )
-      setLoading(false)
-    })
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        setPosten(
+          snapshot.docs.map((d) => {
+            const data = d.data()
+            // Bestaande posten van vóór het categorie-veld hebben dit nog niet
+            // in Firestore staan — val terug op 'onderhoud' i.p.v. een migratie.
+            return { id: d.id, ...data, categorie: data.categorie ?? 'onderhoud' } as MjopPost
+          }),
+        )
+        setLoading(false)
+      },
+      (error) => {
+        console.error('Fout bij laden MJOP:', error)
+        setLoading(false)
+        setFoutmelding('MJOP kon niet geladen worden. Probeer de pagina te verversen.')
+      },
+    )
     return unsubscribe
   }, [pandId])
 
@@ -70,6 +79,7 @@ export function useMjop(pandId: string) {
   return {
     posten,
     loading,
+    foutmelding,
     addPost,
     updatePost,
     archiveer: archiveerMjopPost,

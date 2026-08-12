@@ -6,12 +6,14 @@ import { useOnderhoudVoorKlant } from '../onderhoud/useOnderhoud'
 import { usePanden } from '../panden/usePanden'
 import {
   bepaalHuidigKwartaal,
-  bepaalKwartaalGrenzen,
+  bepaalPeriodeGrenzen,
   berekenOnderhoudUitgevoerdInPeriode,
   bouwKwartaalRapport,
   formatKwartaalLabel,
+  formatKwartaalRangeLabel,
   formatPeriodeLabel,
   genereerKwartaalOpties,
+  kwartaalNaKwartaal,
 } from './kwartaalLogica'
 import { exporteerRapportageNaarExcel } from './rapportageExcelExport'
 import type { Kwartaal } from './types'
@@ -23,7 +25,8 @@ function kwartaalSleutel(kwartaal: Kwartaal): string {
 export function RapportagePage() {
   const { klanten, loading: klantenLaden } = useKlanten()
   const [klantId, setKlantId] = useState('')
-  const [kwartaal, setKwartaal] = useState<Kwartaal>(() => bepaalHuidigKwartaal())
+  const [vanKwartaal, setVanKwartaal] = useState<Kwartaal>(() => bepaalHuidigKwartaal())
+  const [totKwartaal, setTotKwartaal] = useState<Kwartaal>(() => bepaalHuidigKwartaal())
 
   const geselecteerdeKlant = klanten.find((k) => k.id === klantId) ?? null
   const { acties, loading: actiesLaden } = useAlleActies()
@@ -40,7 +43,22 @@ export function RapportagePage() {
     [],
   )
 
-  const grenzen = bepaalKwartaalGrenzen(kwartaal.jaar, kwartaal.kwartaal)
+  function kiesVanKwartaal(gekozen: Kwartaal) {
+    setVanKwartaal(gekozen)
+    if (kwartaalNaKwartaal(gekozen, totKwartaal)) setTotKwartaal(gekozen)
+  }
+
+  function kiesTotKwartaal(gekozen: Kwartaal) {
+    setTotKwartaal(gekozen)
+    if (kwartaalNaKwartaal(vanKwartaal, gekozen)) setVanKwartaal(gekozen)
+  }
+
+  const grenzen = bepaalPeriodeGrenzen(
+    vanKwartaal.jaar,
+    vanKwartaal.kwartaal,
+    totKwartaal.jaar,
+    totKwartaal.kwartaal,
+  )
 
   const rapport = useMemo(() => {
     if (!geselecteerdeKlant) return null
@@ -65,17 +83,27 @@ export function RapportagePage() {
 
   async function handleExporteren() {
     if (!rapport) return
-    await exporteerRapportageNaarExcel(rapport, kwartaal)
+    await exporteerRapportageNaarExcel(rapport, vanKwartaal, totKwartaal)
+  }
+
+  function handlePrinten() {
+    window.print()
   }
 
   return (
     <div>
+      <div className="print-header">
+        <span className="print-header-merk">BVC</span>
+        <span>Rapportage — {rapport?.klantNaam ?? ''}</span>
+        <span>{new Date().toLocaleDateString('nl-NL')}</span>
+      </div>
+
       <div className="rapportage-header">
         <div className="rapportage-titel">
           <span className="rapportage-icoon">📊</span>
           <h1>Rapportage</h1>
         </div>
-        <div className="rapportage-header-acties">
+        <div className="rapportage-header-acties no-print">
           <select
             aria-label="Kies klant"
             value={klantId}
@@ -87,22 +115,47 @@ export function RapportagePage() {
               </option>
             ))}
           </select>
-          <select
-            aria-label="Kies kwartaal"
-            value={kwartaalSleutel(kwartaal)}
-            onChange={(e) => {
-              const gekozen = kwartaalOpties.find(
-                (optie) => kwartaalSleutel(optie) === e.target.value,
-              )
-              if (gekozen) setKwartaal(gekozen)
-            }}
-          >
-            {kwartaalOpties.map((optie) => (
-              <option key={kwartaalSleutel(optie)} value={kwartaalSleutel(optie)}>
-                {formatKwartaalLabel(optie)}
-              </option>
-            ))}
-          </select>
+          <label className="rapportage-kwartaal-label">
+            Van
+            <select
+              aria-label="Van kwartaal"
+              value={kwartaalSleutel(vanKwartaal)}
+              onChange={(e) => {
+                const gekozen = kwartaalOpties.find(
+                  (optie) => kwartaalSleutel(optie) === e.target.value,
+                )
+                if (gekozen) kiesVanKwartaal(gekozen)
+              }}
+            >
+              {kwartaalOpties.map((optie) => (
+                <option key={kwartaalSleutel(optie)} value={kwartaalSleutel(optie)}>
+                  {formatKwartaalLabel(optie)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="rapportage-kwartaal-label">
+            Tot en met
+            <select
+              aria-label="Tot en met kwartaal"
+              value={kwartaalSleutel(totKwartaal)}
+              onChange={(e) => {
+                const gekozen = kwartaalOpties.find(
+                  (optie) => kwartaalSleutel(optie) === e.target.value,
+                )
+                if (gekozen) kiesTotKwartaal(gekozen)
+              }}
+            >
+              {kwartaalOpties.map((optie) => (
+                <option key={kwartaalSleutel(optie)} value={kwartaalSleutel(optie)}>
+                  {formatKwartaalLabel(optie)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="button" onClick={handlePrinten} disabled={!rapport}>
+            Print
+          </button>
           <button
             type="button"
             className="btn-primary"
@@ -130,7 +183,8 @@ export function RapportagePage() {
         rapport && (
           <>
             <p className="rapportage-periode">
-              Periode: <strong>{formatPeriodeLabel(rapport.periodeStart, rapport.periodeEind)}</strong>{' '}
+              {formatKwartaalRangeLabel(vanKwartaal, totKwartaal)} — Periode:{' '}
+              <strong>{formatPeriodeLabel(rapport.periodeStart, rapport.periodeEind)}</strong>{' '}
               · {rapport.klantNaam}
             </p>
 

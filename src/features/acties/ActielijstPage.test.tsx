@@ -93,26 +93,35 @@ const BASIS_ACTIES: ActieItem[] = [
   },
 ]
 
-const deleteActie = vi.fn()
-const updateActie = vi.fn()
+const { deleteActie, updateActie, uitstellen } = vi.hoisted(() => ({
+  deleteActie: vi.fn(),
+  updateActie: vi.fn(),
+  uitstellen: vi.fn(),
+}))
 
 // Stateful mock (i.p.v. een vaste array): addActie voegt écht toe aan de
 // lijst, nodig om te testen dat een snel-toegevoegde actie na sorteren
-// onderin blijft staan.
+// onderin blijft staan. updateActie/deleteActie/uitstellen zijn module-level
+// exports (ActieRij.tsx importeert ze rechtstreeks, niet via de hook).
 vi.mock('./useActies', () => ({
+  updateActie,
+  deleteActie,
+  uitstellen,
   useActies: () => {
     const [acties, setActies] = useState(BASIS_ACTIES)
     return {
       acties,
       loading: false,
-      addActie: vi.fn(async (nieuw: Omit<ActieItem, 'id' | 'klantId'>) => {
+      addActie: vi.fn(async (nieuw: Omit<ActieItem, 'id' | 'klantId' | 'ref'> & { ref?: string }) => {
         const id = `nieuw-${acties.length + 1}`
-        setActies((huidig) => [...huidig, { ...nieuw, id, klantId: 'klant-1' }])
+        const hoogsteRef = acties.reduce((max, actie) => {
+          const nummer = Number(actie.ref)
+          return Number.isNaN(nummer) ? max : Math.max(max, nummer)
+        }, 0)
+        const ref = nieuw.ref?.trim() || String(hoogsteRef + 1)
+        setActies((huidig) => [...huidig, { ...nieuw, ref, id, klantId: 'klant-1' }])
         return id
       }),
-      updateActie,
-      deleteActie,
-      uitstellen: vi.fn(),
     }
   },
 }))
