@@ -4,13 +4,20 @@ import { describe, expect, it, vi } from 'vitest'
 import { PandDetailPage } from './PandDetailPage'
 import type { Pand } from './types'
 
+const updatePand = vi.fn()
+vi.mock('./usePanden', () => ({
+  updatePand: (...args: unknown[]) => updatePand(...args),
+}))
+
 let mockOnderhoudDueCount = 0
 vi.mock('../onderhoud/useOnderhoud', () => ({
   useOnderhoud: () => ({
     onderhoud: [],
     loading: false,
     addOnderhoud: vi.fn(),
-    vinkAf: vi.fn(),
+    markeerUitgevoerd: vi.fn(),
+    updateOnderhoud: vi.fn(),
+    archiveer: vi.fn(),
     onderhoudDueCount: mockOnderhoudDueCount,
   }),
 }))
@@ -70,7 +77,12 @@ const PAND: Pand = {
 
 function renderPagina(onTerug = vi.fn()) {
   return render(
-    <PandDetailPage pand={PAND} klantNaam="Malcon" onTerug={onTerug} />,
+    <PandDetailPage
+      pand={PAND}
+      klantNaam="Malcon"
+      onTerug={onTerug}
+      onNavigeerNaarActie={vi.fn()}
+    />,
   )
 }
 
@@ -82,12 +94,25 @@ describe('PandDetailPage', () => {
     expect(screen.getByText('🏠 Hoofdstraat 12')).toBeInTheDocument()
   })
 
-  it('toont standaard het Overzicht-tabblad', () => {
+  it('toont standaard het Overzicht-tabblad met naam- en adresveld', () => {
     renderPagina()
 
-    expect(
-      screen.getByText('Dit is het startpunt van de pand-pagina'),
-    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Pandnaam')).toHaveValue('Hoofdstraat 12')
+    expect(screen.getByLabelText('Adres')).toHaveValue('')
+  })
+
+  it('slaat naam en adres op vanuit het Overzicht-tabblad', async () => {
+    const user = userEvent.setup()
+    renderPagina()
+
+    await user.clear(screen.getByLabelText('Adres'))
+    await user.type(screen.getByLabelText('Adres'), 'Hoofdstraat 12, Vlijmen')
+    await user.click(screen.getByRole('button', { name: 'Opslaan' }))
+
+    expect(updatePand).toHaveBeenCalledWith('p1', {
+      naam: 'Hoofdstraat 12',
+      adres: 'Hoofdstraat 12, Vlijmen',
+    })
   })
 
   it('wisselt van tabblad bij klikken', async () => {

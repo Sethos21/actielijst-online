@@ -17,7 +17,7 @@ const COLLECTION = 'panden'
 
 export async function updatePand(
   pandId: string,
-  patch: Partial<Pick<Pand, 'naam' | 'opmerking'>>,
+  patch: Partial<Pick<Pand, 'naam' | 'adres' | 'opmerking'>>,
 ) {
   await updateDoc(doc(db, COLLECTION, pandId), patch)
 }
@@ -46,6 +46,7 @@ export async function verwijderPandDefinitief(pandId: string) {
 export function usePanden(klantId: string) {
   const [panden, setPanden] = useState<Pand[]>([])
   const [loading, setLoading] = useState(true)
+  const [foutmelding, setFoutmelding] = useState<string | null>(null)
 
   useEffect(() => {
     const q = query(
@@ -53,10 +54,18 @@ export function usePanden(klantId: string) {
       where('klantId', '==', klantId),
       orderBy('naam'),
     )
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setPanden(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Pand))
-      setLoading(false)
-    })
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        setPanden(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Pand))
+        setLoading(false)
+      },
+      (error) => {
+        console.error('Fout bij laden panden:', error)
+        setLoading(false)
+        setFoutmelding('Panden konden niet geladen worden. Probeer de pagina te verversen.')
+      },
+    )
     return unsubscribe
   }, [klantId])
 
@@ -73,6 +82,7 @@ export function usePanden(klantId: string) {
   return {
     panden,
     loading,
+    foutmelding,
     addPand,
     updatePand,
     archiveer: archiveerPand,

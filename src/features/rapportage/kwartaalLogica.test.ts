@@ -5,11 +5,14 @@ import type { Onderhoud } from '../onderhoud/types'
 import {
   bepaalHuidigKwartaal,
   bepaalKwartaalGrenzen,
+  bepaalPeriodeGrenzen,
   berekenOnderhoudUitgevoerdInPeriode,
   bouwKwartaalRapport,
   formatKwartaalLabel,
+  formatKwartaalRangeLabel,
   formatPeriodeLabel,
   genereerKwartaalOpties,
+  kwartaalNaKwartaal,
   mutatieHoortBijKlant,
 } from './kwartaalLogica'
 
@@ -63,6 +66,45 @@ describe('bepaalKwartaalGrenzen', () => {
       start: '2026-10-01',
       eind: '2027-01-01',
     })
+  })
+})
+
+describe('bepaalPeriodeGrenzen', () => {
+  it('berekent de grenzen over een range van kwartalen heen', () => {
+    expect(bepaalPeriodeGrenzen(2026, 2, 2026, 4)).toEqual({
+      start: '2026-04-01',
+      eind: '2027-01-01',
+    })
+  })
+
+  it('valt terug op een los kwartaal als van en tot gelijk zijn', () => {
+    expect(bepaalPeriodeGrenzen(2026, 2, 2026, 2)).toEqual(bepaalKwartaalGrenzen(2026, 2))
+  })
+})
+
+describe('formatKwartaalRangeLabel', () => {
+  it('toont één kwartaal als van en tot gelijk zijn', () => {
+    expect(
+      formatKwartaalRangeLabel({ jaar: 2026, kwartaal: 2 }, { jaar: 2026, kwartaal: 2 }),
+    ).toBe('Q2 2026')
+  })
+
+  it('toont een range als van en tot verschillen', () => {
+    expect(
+      formatKwartaalRangeLabel({ jaar: 2026, kwartaal: 2 }, { jaar: 2026, kwartaal: 4 }),
+    ).toBe('Q2 2026 t/m Q4 2026')
+  })
+})
+
+describe('kwartaalNaKwartaal', () => {
+  it('is true als a ná b ligt', () => {
+    expect(kwartaalNaKwartaal({ jaar: 2026, kwartaal: 3 }, { jaar: 2026, kwartaal: 2 })).toBe(true)
+    expect(kwartaalNaKwartaal({ jaar: 2027, kwartaal: 1 }, { jaar: 2026, kwartaal: 4 })).toBe(true)
+  })
+
+  it('is false als a vóór of gelijk aan b ligt', () => {
+    expect(kwartaalNaKwartaal({ jaar: 2026, kwartaal: 2 }, { jaar: 2026, kwartaal: 3 })).toBe(false)
+    expect(kwartaalNaKwartaal({ jaar: 2026, kwartaal: 2 }, { jaar: 2026, kwartaal: 2 })).toBe(false)
   })
 })
 
@@ -172,6 +214,7 @@ describe('berekenOnderhoudUitgevoerdInPeriode', () => {
       naam: 'CV-ketel',
       verantw: 'Ton',
       herhaling: 'jaarlijks',
+      status: 'open',
       volgendeDatum: Date.now(),
       aangemaaktOp: Date.now(),
       ...overrides,
@@ -180,8 +223,8 @@ describe('berekenOnderhoudUitgevoerdInPeriode', () => {
 
   it('telt alleen items uitgevoerd binnen de periode', () => {
     const items = [
-      onderhoud({ laatstUitgevoerdOp: new Date('2026-05-01').getTime() }),
-      onderhoud({ laatstUitgevoerdOp: new Date('2026-01-01').getTime() }),
+      onderhoud({ laatstUitgevoerdOp: '2026-05-01' }),
+      onderhoud({ laatstUitgevoerdOp: '2026-01-01' }),
       onderhoud({ laatstUitgevoerdOp: undefined }),
     ]
     expect(berekenOnderhoudUitgevoerdInPeriode(items, '2026-04-01', '2026-07-01')).toBe(1)

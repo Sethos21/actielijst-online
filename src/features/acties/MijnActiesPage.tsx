@@ -1,20 +1,38 @@
 import { useMemo, useState } from 'react'
-import { Badge } from '../../components/Badge'
+import { useToast } from '../../components/useToast'
+import type { Klant } from '../klanten/types'
+import { useKlanten } from '../klanten/useKlanten'
+import { useAllePanden } from '../panden/usePanden'
+import type { Pand } from '../panden/types'
 import { initialen, teamlidKleurKlasse } from '../team/teamlidKleur'
 import { TEAMLEDEN, type Teamlid } from '../team/teamleden'
-import { useKlanten } from '../klanten/useKlanten'
-import { isDue } from './dueDate'
+import { ActieRij } from './ActieRij'
 import {
   berekenSamenvattingPerTeamlid,
   filterActiesVoorTeamlid,
   groepeerPerKlant,
 } from './mijnActiesLogica'
+import type { ActieHerkomst } from './types'
 import { useAlleActies } from './useAlleActies'
 
-export function MijnActiesPage() {
+interface Props {
+  voorgeselecteerdTeamlid?: Teamlid
+  onSelectKlant: (klant: Klant) => void
+  onNavigeerNaarBron: (klant: Klant, pand: Pand, herkomst: ActieHerkomst) => void
+}
+
+export function MijnActiesPage({
+  voorgeselecteerdTeamlid,
+  onSelectKlant,
+  onNavigeerNaarBron,
+}: Props) {
   const { acties, loading } = useAlleActies()
   const { klanten } = useKlanten()
-  const [gekozenTeamlid, setGekozenTeamlid] = useState<Teamlid | null>(null)
+  const { panden } = useAllePanden()
+  const toon = useToast()
+  const [gekozenTeamlid, setGekozenTeamlid] = useState<Teamlid | null>(
+    voorgeselecteerdTeamlid ?? null,
+  )
 
   const samenvatting = useMemo(
     () => berekenSamenvattingPerTeamlid(acties, TEAMLEDEN),
@@ -31,8 +49,12 @@ export function MijnActiesPage() {
     [actiesVoorTeamlid],
   )
 
+  function vindKlant(klantId: string): Klant | undefined {
+    return klanten.find((k) => k.id === klantId)
+  }
+
   function klantNaam(klantId: string): string {
-    return klanten.find((k) => k.id === klantId)?.naam ?? klantId
+    return vindKlant(klantId)?.naam ?? klantId
   }
 
   return (
@@ -79,25 +101,50 @@ export function MijnActiesPage() {
               ) : (
                 perKlant.map(({ klantId, acties: klantActies }) => (
                   <div className="mijn-acties-klantgroep" key={klantId}>
-                    <span className="mijn-acties-klantgroep-titel">{klantNaam(klantId)}</span>
-                    {klantActies.map((actie) => (
-                      <div className="mijn-acties-kaart" key={actie.id}>
-                        <span className="mijn-acties-kaart-onderwerp">{actie.onderwerp}</span>
-                        <span className="mijn-acties-kaart-actie">{actie.actie}</span>
-                        <span className="mijn-acties-kaart-meta">
-                          <Badge
-                            variant={
-                              isDue(actie) ? 'due' : actie.status === 'hold' ? 'hold' : 'open'
-                            }
-                          >
-                            {isDue(actie) ? 'Due' : actie.status === 'hold' ? 'On hold' : 'Open'}
-                          </Badge>
-                          {actie.vestiging && (
-                            <span className="mijn-acties-kaart-vestiging">{actie.vestiging}</span>
-                          )}
-                        </span>
-                      </div>
-                    ))}
+                    <button
+                      type="button"
+                      className="mijn-acties-klantgroep-titel"
+                      onClick={() => {
+                        const klant = vindKlant(klantId)
+                        if (klant) onSelectKlant(klant)
+                      }}
+                    >
+                      {klantNaam(klantId)} →
+                    </button>
+                    <table className="actielijst">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Invoerdatum</th>
+                          <th>Onderwerp</th>
+                          <th>Bedrijf</th>
+                          <th>Vestiging</th>
+                          <th>Actiepunt</th>
+                          <th>Verantw.</th>
+                          <th>Doorlooptijd</th>
+                          <th>Due</th>
+                          <th>Status</th>
+                          <th>Opmerking</th>
+                          <th>Uitstellen</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {klantActies.map((actie) => (
+                          <ActieRij
+                            key={actie.id}
+                            actie={actie}
+                            klantNaam={klantNaam(klantId)}
+                            panden={panden}
+                            onNavigeerNaarBron={(pand, herkomst) => {
+                              const klant = vindKlant(klantId)
+                              if (klant) onNavigeerNaarBron(klant, pand, herkomst)
+                            }}
+                            onUitgesteld={(label) => toon(`Uitgesteld met ${label}`)}
+                          />
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 ))
               )}

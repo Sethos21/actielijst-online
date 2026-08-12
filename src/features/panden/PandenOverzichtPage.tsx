@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Badge } from '../../components/Badge'
 import type { Klant } from '../klanten/types'
 import { useKlanten } from '../klanten/useKlanten'
-import { bepaalOnderhoudStatus } from '../onderhoud/dueDate'
+import { bepaalEffectieveStatus } from '../onderhoud/dueDate'
 import { useAlleOnderhoud } from '../onderhoud/useOnderhoud'
 import type { Pand } from './types'
 import { useAllePanden } from './usePanden'
@@ -50,7 +50,7 @@ export function PandenOverzichtPage({ onTerug, onSelectPand }: Props) {
           (item) =>
             item.pandId === rij.pand.id &&
             !item.gearchiveerdOp &&
-            bepaalOnderhoudStatus(item.volgendeDatum) === 'due',
+            bepaalEffectieveStatus(item) === 'due',
         ).length,
       }))
 

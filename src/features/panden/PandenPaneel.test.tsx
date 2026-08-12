@@ -9,6 +9,8 @@ const archiveer = vi.fn()
 const onSluiten = vi.fn()
 const onSelectPand = vi.fn()
 
+let mockFoutmelding: string | null = null
+
 vi.mock('./usePanden', () => ({
   usePanden: () => ({
     panden: [
@@ -23,6 +25,7 @@ vi.mock('./usePanden', () => ({
       },
     ],
     loading: false,
+    foutmelding: mockFoutmelding,
     addPand,
     updatePand,
     archiveer,
@@ -43,6 +46,17 @@ function renderPaneel() {
 describe('PandenPaneel', () => {
   afterEach(() => {
     vi.clearAllMocks()
+    mockFoutmelding = null
+  })
+
+  it('toont een foutmelding in plaats van de lijst als het laden mislukt', () => {
+    mockFoutmelding = 'Panden konden niet geladen worden. Probeer de pagina te verversen.'
+    renderPaneel()
+
+    expect(
+      screen.getByText('Panden konden niet geladen worden. Probeer de pagina te verversen.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Hoofdstraat 12')).not.toBeInTheDocument()
   })
 
   it('toont de klantnaam en de lijst met actieve panden', () => {

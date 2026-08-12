@@ -4,39 +4,50 @@ import { useActies } from '../acties/useActies'
 import { vraagArchiveerGegevens } from '../archief/archiveerPrompt'
 import { TEAMLEDEN } from '../team/teamleden'
 import {
-  bepaalOnderhoudStatus,
+  bepaalEffectieveStatus,
   formatKorteDatum,
   formatOnderhoudStatusLabel,
+  moetAutomatischResetten,
 } from './dueDate'
 import { OnderhoudStandaardlijstBeheer } from './OnderhoudStandaardlijstBeheer'
-import { ToevoegenVanuitStandaardlijst } from './ToevoegenVanuitStandaardlijst'
-import type { Onderhoud } from './types'
+import {
+  ONDERHOUD_HERHALING_OPTIES,
+  type Onderhoud,
+  type OnderhoudHerhaling,
+  type OnderhoudStatus,
+} from './types'
 import { useOnderhoud } from './useOnderhoud'
 
 interface Props {
   pandId: string
   klantId: string
   pandNaam: string
+  onNavigeerNaarActie: (actieId: string) => void
 }
 
-export function OnderhoudTab({ pandId, klantId, pandNaam }: Props) {
-  const { onderhoud, loading, vinkAf, updateOnderhoud, archiveer } = useOnderhoud(pandId)
+export function OnderhoudTab({ pandId, klantId, pandNaam, onNavigeerNaarActie }: Props) {
+  const { onderhoud, loading, markeerUitgevoerd, updateOnderhoud, archiveer } =
+    useOnderhoud(pandId)
   const { addActie } = useActies(klantId)
-  const [toevoegenOpen, setToevoegenOpen] = useState(false)
   const [beherenOpen, setBeherenOpen] = useState(false)
   const [bewerkItemId, setBewerkItemId] = useState<string | null>(null)
   const [bewerkNaam, setBewerkNaam] = useState('')
   const [bewerkLeverancier, setBewerkLeverancier] = useState('')
   const [bewerkVerantw, setBewerkVerantw] = useState<string>(TEAMLEDEN[0])
+  const [bewerkHerhaling, setBewerkHerhaling] = useState<OnderhoudHerhaling>('jaarlijks')
+  const [bewerkJaar, setBewerkJaar] = useState('')
+  const [bewerkLaatstUitgevoerd, setBewerkLaatstUitgevoerd] = useState('')
 
   const actieveItems = onderhoud.filter((item) => !item.gearchiveerdOp)
-  const alGekoppeldeNamen = new Set(actieveItems.map((item) => item.naam))
 
   function startBewerken(item: Onderhoud) {
     setBewerkItemId(item.id)
     setBewerkNaam(item.naam)
     setBewerkLeverancier(item.leverancier ?? '')
     setBewerkVerantw(item.verantw)
+    setBewerkHerhaling(item.herhaling)
+    setBewerkJaar(item.jaar ? String(item.jaar) : '')
+    setBewerkLaatstUitgevoerd(item.laatstUitgevoerdOp ?? '')
   }
 
   async function handleBewerkOpslaan(event: FormEvent) {
@@ -45,7 +56,10 @@ export function OnderhoudTab({ pandId, klantId, pandNaam }: Props) {
       await updateOnderhoud(bewerkItemId, {
         naam: bewerkNaam.trim(),
         verantw: bewerkVerantw,
+        herhaling: bewerkHerhaling,
         ...(bewerkLeverancier.trim() ? { leverancier: bewerkLeverancier.trim() } : {}),
+        ...(bewerkJaar.trim() ? { jaar: parseInt(bewerkJaar, 10) } : {}),
+        ...(bewerkLaatstUitgevoerd ? { laatstUitgevoerdOp: bewerkLaatstUitgevoerd } : {}),
       })
     }
     setBewerkItemId(null)
@@ -64,27 +78,15 @@ export function OnderhoudTab({ pandId, klantId, pandNaam }: Props) {
           <button type="button" onClick={() => setBeherenOpen(true)}>
             ⚙ Beheren
           </button>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={() => setToevoegenOpen((open) => !open)}
-          >
-            + Item toevoegen
-          </button>
         </div>
       </div>
 
-      {toevoegenOpen && (
-        <ToevoegenVanuitStandaardlijst
+      {beherenOpen && (
+        <OnderhoudStandaardlijstBeheer
           pandId={pandId}
           klantId={klantId}
-          alGekoppeldeNamen={alGekoppeldeNamen}
-          onGesloten={() => setToevoegenOpen(false)}
+          onSluiten={() => setBeherenOpen(false)}
         />
-      )}
-
-      {beherenOpen && (
-        <OnderhoudStandaardlijstBeheer onSluiten={() => setBeherenOpen(false)} />
       )}
 
       {loading ? (
@@ -125,6 +127,30 @@ export function OnderhoudTab({ pandId, klantId, pandNaam }: Props) {
                     </option>
                   ))}
                 </select>
+                <select
+                  aria-label={`Herhaling bewerken voor ${item.naam}`}
+                  value={bewerkHerhaling}
+                  onChange={(e) => setBewerkHerhaling(e.target.value as OnderhoudHerhaling)}
+                >
+                  {ONDERHOUD_HERHALING_OPTIES.map((optie) => (
+                    <option key={optie} value={optie}>
+                      {optie}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  aria-label={`Jaar bewerken voor ${item.naam}`}
+                  value={bewerkJaar}
+                  onChange={(e) => setBewerkJaar(e.target.value)}
+                  placeholder="Jaar"
+                />
+                <input
+                  type="date"
+                  aria-label={`Laatst uitgevoerd bewerken voor ${item.naam}`}
+                  value={bewerkLaatstUitgevoerd}
+                  onChange={(e) => setBewerkLaatstUitgevoerd(e.target.value)}
+                />
                 <button type="submit" className="btn-primary">
                   Opslaan
                 </button>
@@ -134,33 +160,58 @@ export function OnderhoudTab({ pandId, klantId, pandNaam }: Props) {
               </form>
             ) : (
               (() => {
-                const status = bepaalOnderhoudStatus(item.volgendeDatum)
-                const gedaan = status === 'ok'
+                const effectieveStatus = bepaalEffectieveStatus(item)
+                const gedaan = effectieveStatus === 'voltooid'
+                const automatischGereset =
+                  item.status === 'voltooid' && moetAutomatischResetten(item)
                 return (
                   <div className="check-item" key={item.id}>
                     <button
                       type="button"
                       className={gedaan ? 'check-vinkje gedaan' : 'check-vinkje'}
-                      onClick={() => vinkAf(item.id)}
-                      aria-label={`Afvinken: ${item.naam}`}
+                      onClick={() =>
+                        markeerUitgevoerd(item.id, new Date().toISOString().slice(0, 10))
+                      }
+                      aria-label={`Vandaag uitgevoerd: ${item.naam}`}
+                      title="Markeer als vandaag uitgevoerd"
                     >
                       {gedaan && '✓'}
                     </button>
                     <div className="check-info">
                       <div className={gedaan ? 'check-naam gedaan' : 'check-naam'}>
                         {item.naam}
+                        {item.jaar ? ` (${item.jaar})` : ''}
                       </div>
                       <div className="check-meta">
                         {item.leverancier ? `Leverancier: ${item.leverancier} · ` : ''}
                         {item.laatstUitgevoerdOp
-                          ? `Laatst uitgevoerd: ${formatKorteDatum(item.laatstUitgevoerdOp)}`
+                          ? `Laatst uitgevoerd: ${formatKorteDatum(
+                              new Date(item.laatstUitgevoerdOp).getTime(),
+                            )}`
                           : 'Nog niet uitgevoerd'}
                       </div>
+                      {automatischGereset && (
+                        <div className="check-auto-reset">🔄 automatisch gereset dit jaar</div>
+                      )}
                     </div>
                     <span className="check-herhaling">⟳ {item.herhaling}</span>
-                    <span className={`check-status ${status}`}>
-                      {formatOnderhoudStatusLabel(item.volgendeDatum)}
+                    <span className="check-voorstel">
+                      voorstel: {formatOnderhoudStatusLabel(item.volgendeDatum)}
                     </span>
+                    <select
+                      aria-label={`Status voor ${item.naam}`}
+                      className={`check-status check-status-${effectieveStatus}`}
+                      value={effectieveStatus}
+                      onChange={(e) =>
+                        updateOnderhoud(item.id, {
+                          status: e.target.value as OnderhoudStatus,
+                        })
+                      }
+                    >
+                      <option value="open">Open</option>
+                      <option value="due">Due</option>
+                      <option value="voltooid">Voltooid</option>
+                    </select>
                     <button
                       type="button"
                       className="icoon-knop"
@@ -180,8 +231,8 @@ export function OnderhoudTab({ pandId, klantId, pandNaam }: Props) {
                     <button
                       type="button"
                       className="check-actie-btn"
-                      onClick={() =>
-                        addActie(
+                      onClick={async () => {
+                        const id = await addActie(
                           bouwActieVanuitBron({
                             type: 'onderhoud',
                             bronId: item.id,
@@ -191,7 +242,8 @@ export function OnderhoudTab({ pandId, klantId, pandNaam }: Props) {
                             pandNaam,
                           }),
                         )
-                      }
+                        onNavigeerNaarActie(id)
+                      }}
                     >
                       + Actie aanmaken
                     </button>

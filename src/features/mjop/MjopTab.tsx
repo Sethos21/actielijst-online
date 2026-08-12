@@ -14,14 +14,15 @@ interface Props {
   pandId: string
   klantId: string
   pandNaam: string
+  onNavigeerNaarActie: (actieId: string) => void
 }
 
 function formatBedrag(bedrag: number): string {
   return `€ ${bedrag.toLocaleString('nl-NL')}`
 }
 
-export function MjopTab({ pandId, klantId, pandNaam }: Props) {
-  const { posten, loading, addPost, updatePost, archiveer } = useMjop(pandId)
+export function MjopTab({ pandId, klantId, pandNaam, onNavigeerNaarActie }: Props) {
+  const { posten, loading, foutmelding, addPost, updatePost, archiveer } = useMjop(pandId)
   const { addActie } = useActies(klantId)
   const [formulierOpen, setFormulierOpen] = useState(false)
   const [standaardlijstOpen, setStandaardlijstOpen] = useState(false)
@@ -180,7 +181,9 @@ export function MjopTab({ pandId, klantId, pandNaam }: Props) {
         </form>
       )}
 
-      {loading ? (
+      {foutmelding ? (
+        <p className="foutmelding">{foutmelding}</p>
+      ) : loading ? (
         <p>MJOP laden...</p>
       ) : actievePosten.length === 0 ? (
         <div className="leeg-state">
@@ -231,8 +234,8 @@ export function MjopTab({ pandId, klantId, pandNaam }: Props) {
                 <button
                   type="button"
                   className="check-actie-btn"
-                  onClick={() =>
-                    addActie(
+                  onClick={async () => {
+                    const id = await addActie(
                       bouwActieVanuitBron({
                         type: 'mjop',
                         bronId: post.id,
@@ -242,7 +245,8 @@ export function MjopTab({ pandId, klantId, pandNaam }: Props) {
                         pandNaam,
                       }),
                     )
-                  }
+                    onNavigeerNaarActie(id)
+                  }}
                 >
                   + Actie aanmaken
                 </button>

@@ -12,6 +12,7 @@ interface Props {
   pandId: string
   klantId: string
   pandNaam: string
+  onNavigeerNaarActie: (actieId: string) => void
 }
 
 const TAG_LABELS: Record<DocumentTag, string> = {
@@ -19,13 +20,27 @@ const TAG_LABELS: Record<DocumentTag, string> = {
   keuring: 'Keuring',
   contract: 'Contract',
   overig: 'Overig',
+  certificaat: 'Certificaat',
+  offerte: 'Offerte',
+  factuur: 'Factuur',
+  tekeningen: 'Tekeningen',
 }
 
-export function DocumentenTab({ pandId, klantId, pandNaam }: Props) {
+type PreviewType = 'pdf' | 'afbeelding' | 'geen'
+
+function bepaalPreviewType(naam: string): PreviewType {
+  const extensie = naam.split('.').pop()?.toLowerCase()
+  if (extensie === 'pdf') return 'pdf'
+  if (extensie && ['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(extensie)) return 'afbeelding'
+  return 'geen'
+}
+
+export function DocumentenTab({ pandId, klantId, pandNaam, onNavigeerNaarActie }: Props) {
   const { documenten, loading, uploadDocument, updateOpmerking, updateTag, archiveer } =
     useDocumenten(pandId)
   const { addActie } = useActies(klantId)
   const [formulierOpen, setFormulierOpen] = useState(false)
+  const [bekekenDocument, setBekekenDocument] = useState<Document | null>(null)
   const [bestand, setBestand] = useState<File | null>(null)
   const [tag, setTag] = useState<DocumentTag>('energielabel')
   const [geuploadDoor, setGeuploadDoor] = useState<string>(TEAMLEDEN[0])
@@ -35,6 +50,21 @@ export function DocumentenTab({ pandId, klantId, pandNaam }: Props) {
   const [nieuweOpmerking, setNieuweOpmerking] = useState('')
 
   const actieveDocumenten = documenten.filter((document) => !document.gearchiveerdOp)
+
+  function handleUploadFormOpen() {
+    setBekekenDocument(null)
+    setFormulierOpen((open) => !open)
+  }
+
+  function handleBekijken(document: Document) {
+    setBekekenDocument(document)
+    setFormulierOpen(true)
+  }
+
+  function handlePaneelSluiten() {
+    setFormulierOpen(false)
+    setBekekenDocument(null)
+  }
 
   async function handleUpload(event: FormEvent) {
     event.preventDefault()
@@ -47,6 +77,7 @@ export function DocumentenTab({ pandId, klantId, pandNaam }: Props) {
       setGeuploadDoor(TEAMLEDEN[0])
       setOpmerking('')
       setFormulierOpen(false)
+      setBekekenDocument(null)
     } finally {
       setBezigMetUploaden(false)
     }
@@ -78,74 +109,110 @@ export function DocumentenTab({ pandId, klantId, pandNaam }: Props) {
           >
             ⬇ Alles als ZIP
           </button>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={() => setFormulierOpen((open) => !open)}
-          >
+          <button type="button" className="btn-primary" onClick={handleUploadFormOpen}>
             + Document uploaden
           </button>
         </div>
       </div>
 
       {formulierOpen && (
-        <form onSubmit={handleUpload} className="document-upload-form">
-          <label>
-            Bestand
-            <input
-              type="file"
-              aria-label="Bestand"
-              onChange={(e) => setBestand(e.target.files?.[0] ?? null)}
-            />
-          </label>
-          <label>
-            Type
-            <select
-              aria-label="Type document"
-              value={tag}
-              onChange={(e) => setTag(e.target.value as DocumentTag)}
+        <div className={bekekenDocument ? 'document-view-paneel' : undefined}>
+          {bekekenDocument && (
+            <div className="document-preview">
+              <div className="document-preview-header">
+                <span className="document-preview-naam">{bekekenDocument.naam}</span>
+                <a
+                  href={bekekenDocument.storageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="document-preview-open"
+                >
+                  Bekijk volledig document ⬈
+                </a>
+              </div>
+              <div className="document-preview-frame">
+                {bepaalPreviewType(bekekenDocument.naam) === 'pdf' ? (
+                  <iframe
+                    src={bekekenDocument.storageUrl}
+                    title={bekekenDocument.naam}
+                  />
+                ) : bepaalPreviewType(bekekenDocument.naam) === 'afbeelding' ? (
+                  <img src={bekekenDocument.storageUrl} alt={bekekenDocument.naam} />
+                ) : (
+                  <div className="document-geen-preview">
+                    Geen preview beschikbaar voor dit bestandstype.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          <form onSubmit={handleUpload} className="document-upload-form">
+            <button
+              type="button"
+              className="document-paneel-sluiten"
+              aria-label="Sluiten"
+              onClick={handlePaneelSluiten}
             >
-              <option value="energielabel">Energielabel</option>
-              <option value="keuring">Keuring</option>
-              <option value="contract">Contract</option>
-              <option value="overig">Overig</option>
-            </select>
-          </label>
-          <label>
-            Geüpload door
-            <select
-              aria-label="Geüpload door"
-              value={geuploadDoor}
-              onChange={(e) => setGeuploadDoor(e.target.value)}
+              ✕
+            </button>
+            <label>
+              Bestand
+              <input
+                type="file"
+                aria-label="Bestand"
+                onChange={(e) => setBestand(e.target.files?.[0] ?? null)}
+              />
+            </label>
+            <label>
+              Type
+              <select
+                aria-label="Type document"
+                value={tag}
+                onChange={(e) => setTag(e.target.value as DocumentTag)}
+              >
+                {Object.entries(TAG_LABELS).map(([waarde, label]) => (
+                  <option key={waarde} value={waarde}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Geüpload door
+              <select
+                aria-label="Geüpload door"
+                value={geuploadDoor}
+                onChange={(e) => setGeuploadDoor(e.target.value)}
+              >
+                {TEAMLEDEN.map((lid) => (
+                  <option key={lid} value={lid}>
+                    {lid}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Opmerking (optioneel)
+              <textarea
+                aria-label="Opmerking bij document"
+                value={opmerking}
+                onChange={(e) => setOpmerking(e.target.value)}
+                placeholder={
+                  'Bijv. geldigheidsdatum, bijzonderheden... Staat het document niet in de ' +
+                  'cloud maar op een lokale/netwerkserver? Zet hier het pad neer, bijv. ' +
+                  '\\\\server\\documenten\\pand12'
+                }
+              />
+            </label>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={!bestand || bezigMetUploaden}
             >
-              {TEAMLEDEN.map((lid) => (
-                <option key={lid} value={lid}>
-                  {lid}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Opmerking (optioneel)
-            <textarea
-              aria-label="Opmerking bij document"
-              value={opmerking}
-              onChange={(e) => setOpmerking(e.target.value)}
-              placeholder={
-                'Bijv. geldigheidsdatum, bijzonderheden... Staat het document niet in de ' +
-                'cloud maar op een lokale/netwerkserver? Zet hier het pad neer, bijv. ' +
-                '\\\\server\\documenten\\pand12'
-              }
-            />
-          </label>
-          <button
-            type="submit"
-            className="btn-primary"
-            disabled={!bestand || bezigMetUploaden}
-          >
-            {bezigMetUploaden ? 'Bezig met uploaden...' : 'Uploaden'}
-          </button>
-        </form>
+              {bezigMetUploaden ? 'Bezig met uploaden...' : 'Uploaden'}
+            </button>
+          </form>
+        </div>
       )}
 
       {loading ? (
@@ -195,6 +262,13 @@ export function DocumentenTab({ pandId, klantId, pandNaam }: Props) {
                 </a>
                 <button
                   type="button"
+                  className="check-actie-btn"
+                  onClick={() => handleBekijken(document)}
+                >
+                  + Bekijken
+                </button>
+                <button
+                  type="button"
                   className="icoon-knop"
                   aria-label={`Archiveren: ${document.naam}`}
                   onClick={() => handleArchiveren(document)}
@@ -204,8 +278,8 @@ export function DocumentenTab({ pandId, klantId, pandNaam }: Props) {
                 <button
                   type="button"
                   className="check-actie-btn"
-                  onClick={() =>
-                    addActie(
+                  onClick={async () => {
+                    const id = await addActie(
                       bouwActieVanuitBron({
                         type: 'document',
                         bronId: document.id,
@@ -215,7 +289,8 @@ export function DocumentenTab({ pandId, klantId, pandNaam }: Props) {
                         pandNaam,
                       }),
                     )
-                  }
+                    onNavigeerNaarActie(id)
+                  }}
                 >
                   + Actie aanmaken
                 </button>

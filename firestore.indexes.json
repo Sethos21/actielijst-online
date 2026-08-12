@@ -1,4 +1,21 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "panden",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "klantId", "order": "ASCENDING" },
+        { "fieldPath": "naam", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mjop",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "pandId", "order": "ASCENDING" },
+        { "fieldPath": "jaar", "order": "ASCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }

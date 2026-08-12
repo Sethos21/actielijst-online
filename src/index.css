@@ -451,6 +451,7 @@ body,
 }
 .check-bewerk-form {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
@@ -564,6 +565,14 @@ h1.titel {
   font-size: 13px;
   color: var(--text-muted);
 }
+.foutmelding {
+  background: var(--red-bg);
+  border: 1px solid var(--red);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--red);
+}
 .leeg-sub {
   font-size: 11px;
   color: var(--text-muted);
@@ -664,16 +673,18 @@ h1.titel {
   font-weight: 600;
   padding: 3px 9px;
   border-radius: 20px;
+  border: none;
+  cursor: pointer;
 }
-.check-status.due {
+.check-status-open {
+  background: var(--surface);
+  color: var(--text-muted);
+}
+.check-status-due {
   background: var(--red-bg);
   color: var(--red);
 }
-.check-status.gepland {
-  background: var(--amber-bg);
-  color: var(--amber);
-}
-.check-status.ok {
+.check-status-voltooid {
   background: var(--green-bg);
   color: var(--green);
 }
@@ -683,6 +694,16 @@ h1.titel {
   background: var(--blue-bg);
   padding: 2px 7px;
   border-radius: 10px;
+}
+.check-voorstel {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.check-auto-reset {
+  font-size: 10px;
+  color: var(--amber);
+  margin-top: 2px;
 }
 /* ---- Actie-aanmaken vanuit onderhoud/mjop/document ---- */
 .check-actie-btn {
@@ -717,6 +738,7 @@ h1.titel {
 
 /* ---- Documenten-tab ---- */
 .document-upload-form {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -725,6 +747,88 @@ h1.titel {
   border-radius: var(--radius);
   padding: 14px;
   margin-bottom: 14px;
+}
+.document-view-paneel {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.document-view-paneel .document-upload-form {
+  flex: 0 0 260px;
+  margin-bottom: 0;
+}
+.document-preview {
+  flex: 1;
+  min-width: 0;
+  background: var(--white);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 10px;
+}
+.document-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+.document-preview-naam {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.document-preview-open {
+  flex-shrink: 0;
+  color: var(--navy);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.document-preview-frame {
+  height: 420px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.document-preview-frame iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+.document-preview-frame img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+.document-geen-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.document-paneel-sluiten {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px;
+  border-radius: var(--radius);
+}
+.document-paneel-sluiten:hover {
+  background: var(--blue-bg);
 }
 .document-upload-form label {
   display: flex;
@@ -810,6 +914,22 @@ h1.titel {
 .doc-tag-overig {
   background: var(--surface);
   color: var(--text-muted);
+}
+.doc-tag-certificaat {
+  background: var(--red-bg);
+  color: var(--red);
+}
+.doc-tag-offerte {
+  background: var(--yellow-bg);
+  color: var(--yellow);
+}
+.doc-tag-factuur {
+  background: var(--gold-light);
+  color: var(--navy);
+}
+.doc-tag-tekeningen {
+  background: var(--blue-bg-actief);
+  color: var(--navy);
 }
 .document-download {
   display: flex;
@@ -1252,6 +1372,20 @@ table.panden-overzicht td {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+.rapportage-kwartaal-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.rapportage-kwartaal-label select {
+  text-transform: none;
+  font-weight: 400;
 }
 .rapportage-info {
   border: 1px dashed var(--border-strong);
@@ -1990,6 +2124,12 @@ table.actielijst .cel-scroll select.status-select {
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
 }
+.standaardlijst-toevoegen-form select {
+  font-size: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
 .standaardlijst-toevoegen-paneel {
   background: var(--white);
   border: 1px solid var(--gold);
@@ -2082,6 +2222,41 @@ table.actielijst .cel-scroll select.status-select {
   padding: 8px 10px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
+}
+.pand-overzicht-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+.pand-overzicht-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  flex: 1;
+  min-width: 220px;
+}
+.pand-overzicht-form input {
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: none;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.pand-overzicht-opgeslagen {
+  font-size: 12px;
+  color: var(--green);
+  font-weight: 500;
 }
 .mjop-jaargroep {
   margin-bottom: 14px;
@@ -2492,42 +2667,21 @@ table.actielijst .cel-scroll select.status-select {
 }
 .mijn-acties-klantgroep-titel {
   display: block;
+  background: transparent;
+  border: none;
+  padding: 0;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-muted);
   margin-bottom: 8px;
+  cursor: pointer;
 }
-.mijn-acties-kaart {
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--white);
-  margin-bottom: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+.mijn-acties-klantgroep-titel:hover {
+  color: var(--navy);
+  text-decoration: underline;
 }
-.mijn-acties-kaart-onderwerp {
-  font-weight: 500;
-  font-size: 13px;
-}
-.mijn-acties-kaart-actie {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-.mijn-acties-kaart-meta {
-  margin-top: 3px;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.mijn-acties-kaart-vestiging {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
 /* ---- Dashboard ---- */
 .dashboard-sectie {
   margin-bottom: 24px;
@@ -2582,6 +2736,12 @@ table.actielijst .cel-scroll select.status-select {
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  cursor: pointer;
+  font: inherit;
+  transition: background-color 0.15s ease;
+}
+.dashboard-teamlid-kaart:hover {
+  background: var(--blue-bg);
 }
 .dashboard-teamlid-naam {
   font-size: 13px;

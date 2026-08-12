@@ -22,8 +22,13 @@ function maakRapport(overrides: Partial<KwartaalRapport> = {}): KwartaalRapport 
 }
 
 describe('bouwRapportageWerkboek', () => {
-  it('bevat klant, periode en de belangrijkste tellingen', () => {
-    const werkboek = bouwRapportageWerkboek(maakRapport(), { jaar: 2026, kwartaal: 2 }, XLSX)
+  it('bevat klant, periode en de belangrijkste tellingen bij één kwartaal', () => {
+    const werkboek = bouwRapportageWerkboek(
+      maakRapport(),
+      { jaar: 2026, kwartaal: 2 },
+      { jaar: 2026, kwartaal: 2 },
+      XLSX,
+    )
     const blad = werkboek.Sheets['Rapportage']
     const rijen = XLSX.utils.sheet_to_json<(string | number)[]>(blad, { header: 1 })
 
@@ -37,9 +42,23 @@ describe('bouwRapportageWerkboek', () => {
     expect(rijen).toContainEqual(['Vertrekkend', 1])
   })
 
+  it('toont een kwartaal-range als het rapport meerdere kwartalen beslaat', () => {
+    const werkboek = bouwRapportageWerkboek(
+      maakRapport(),
+      { jaar: 2026, kwartaal: 2 },
+      { jaar: 2026, kwartaal: 4 },
+      XLSX,
+    )
+    const blad = werkboek.Sheets['Rapportage']
+    const rijen = XLSX.utils.sheet_to_json<(string | number)[]>(blad, { header: 1 })
+
+    expect(rijen[1]).toEqual(['Kwartaal', 'Q2 2026 t/m Q4 2026'])
+  })
+
   it('laat gemiddelde doorlooptijd leeg als die null is', () => {
     const werkboek = bouwRapportageWerkboek(
       maakRapport({ gemiddeldeDoorlooptijdDagen: null }),
+      { jaar: 2026, kwartaal: 2 },
       { jaar: 2026, kwartaal: 2 },
       XLSX,
     )
@@ -52,8 +71,14 @@ describe('bouwRapportageWerkboek', () => {
 
 describe('bestandsnaamVoor', () => {
   it('bouwt een veilige bestandsnaam met klant en kwartaal', () => {
-    expect(bestandsnaamVoor('Malcon B.V.', { jaar: 2026, kwartaal: 2 })).toBe(
-      'Rapportage_Malcon_B_V_Q2_2026.xlsx',
-    )
+    expect(
+      bestandsnaamVoor('Malcon B.V.', { jaar: 2026, kwartaal: 2 }, { jaar: 2026, kwartaal: 2 }),
+    ).toBe('Rapportage_Malcon_B_V_Q2_2026.xlsx')
+  })
+
+  it('bouwt een bestandsnaam met een kwartaal-range als van en tot verschillen', () => {
+    expect(
+      bestandsnaamVoor('Malcon B.V.', { jaar: 2026, kwartaal: 2 }, { jaar: 2026, kwartaal: 4 }),
+    ).toBe('Rapportage_Malcon_B_V_Q2_2026_tm_Q4_2026.xlsx')
   })
 })

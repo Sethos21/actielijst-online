@@ -1,4 +1,12 @@
-export type DocumentTag = 'energielabel' | 'keuring' | 'contract' | 'overig'
+export type DocumentTag =
+  | 'energielabel'
+  | 'keuring'
+  | 'contract'
+  | 'overig'
+  | 'certificaat'
+  | 'offerte'
+  | 'factuur'
+  | 'tekeningen'
 
 export interface Document {
   id: string
