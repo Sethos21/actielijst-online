@@ -74,23 +74,25 @@ export function OnderhoudStandaardlijstBeheer({ pandId, klantId, onSluiten }: Pr
         <ul className="standaardlijst-lijst">
           {types.map((type) => (
             <li key={type.id} className="standaardlijst-item">
-              <input
-                type="checkbox"
-                checked={alGekoppeld.has(type.naam)}
-                onChange={() => toggleGekoppeld(type)}
-                aria-label={`${type.naam} toevoegen aan dit pand`}
-              />
-              <span className="standaardlijst-icoon">{type.icoon}</span>
-              <span className="standaardlijst-naam">{type.naam}</span>
-              <span className="check-herhaling">⟳ {type.herhaling}</span>
-              <button
-                type="button"
-                className="icoon-knop"
-                aria-label={`Verwijderen: ${type.naam}`}
-                onClick={() => verwijderType(type.id)}
-              >
-                ✕
-              </button>
+              <div className="standaardlijst-item-rij">
+                <input
+                  type="checkbox"
+                  checked={alGekoppeld.has(type.naam)}
+                  onChange={() => toggleGekoppeld(type)}
+                  aria-label={`${type.naam} toevoegen aan dit pand`}
+                />
+                <span className="standaardlijst-icoon">{type.icoon}</span>
+                <span className="standaardlijst-naam">{type.naam}</span>
+                <span className="check-herhaling">⟳ {type.herhaling}</span>
+                <button
+                  type="button"
+                  className="icoon-knop"
+                  aria-label={`Verwijderen: ${type.naam}`}
+                  onClick={() => verwijderType(type.id)}
+                >
+                  ✕
+                </button>
+              </div>
             </li>
           ))}
         </ul>

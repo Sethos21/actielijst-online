@@ -15,6 +15,14 @@ interface Props {
   onSluiten: () => void
 }
 
+const CATEGORIE_VOLGORDE: MjopCategorie[] = ['onderhoud', 'verbouwing-renovatie', 'vervanging']
+
+const CATEGORIE_STIP_KLASSE: Record<MjopCategorie, string> = {
+  onderhoud: 'categorie-stip-onderhoud',
+  'verbouwing-renovatie': 'categorie-stip-verbouwing',
+  vervanging: 'categorie-stip-vervanging',
+}
+
 export function MjopStandaardlijstBeheer({ pandId, klantId, onSluiten }: Props) {
   const { types, loading, voegTypeToe, verwijderType } = useMjopStandaardlijst()
   const { posten, addPost, archiveer } = useMjop(pandId)
@@ -59,6 +67,8 @@ export function MjopStandaardlijstBeheer({ pandId, klantId, onSluiten }: Props) 
 
   return (
     <Modal titel="MJOP-standaardlijst beheren" onSluiten={onSluiten}>
+      <p className="modal-sub">Systeembreed, door het hele team aan te passen</p>
+
       <label className="standaardlijst-leverancier-label">
         Toegevoegd door
         <select
@@ -79,61 +89,75 @@ export function MjopStandaardlijstBeheer({ pandId, klantId, onSluiten }: Props) 
       ) : types.length === 0 ? (
         <p>Nog geen standaardtypen.</p>
       ) : (
-        <ul className="standaardlijst-lijst">
-          {types.map((type) => {
-            const gekoppeld = alGekoppeld.has(type.naam)
-            return (
-              <li key={type.id} className="standaardlijst-item">
-                <input
-                  type="checkbox"
-                  checked={gekoppeld}
-                  onChange={() => toggleGekoppeld(type)}
-                  aria-label={`${type.naam} toevoegen aan dit pand`}
-                />
-                <span className="standaardlijst-icoon">{type.icoon}</span>
-                <span className="standaardlijst-naam">{type.naam}</span>
-                <span className="mjop-categorie-label">
-                  {MJOP_CATEGORIE_LABELS[type.categorie]}
-                </span>
-                {!gekoppeld && (
-                  <div className="mjop-standaardlijst-detailvelden">
-                    <label className="standaardlijst-leverancier-label">
-                      Jaar voor &quot;{type.naam}&quot;
-                      <input
-                        aria-label={`Jaar voor ${type.naam}`}
-                        type="number"
-                        value={jaren[type.id] ?? String(huidigJaar)}
-                        onChange={(e) =>
-                          setJaren((huidig) => ({ ...huidig, [type.id]: e.target.value }))
-                        }
-                      />
-                    </label>
-                    <label className="standaardlijst-leverancier-label">
-                      Geschat bedrag voor &quot;{type.naam}&quot;
-                      <input
-                        aria-label={`Geschat bedrag voor ${type.naam}`}
-                        type="number"
-                        placeholder="0"
-                        value={bedragen[type.id] ?? ''}
-                        onChange={(e) =>
-                          setBedragen((huidig) => ({ ...huidig, [type.id]: e.target.value }))
-                        }
-                      />
-                    </label>
-                  </div>
-                )}
-                <button
-                  type="button"
-                  className="icoon-knop"
-                  aria-label={`Verwijderen: ${type.naam}`}
-                  onClick={() => verwijderType(type.id)}
-                >
-                  ✕
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+        CATEGORIE_VOLGORDE.map((cat) => {
+          const typesInCategorie = types.filter((type) => type.categorie === cat)
+          if (typesInCategorie.length === 0) return null
+          return (
+            <div className="categorie-groep" key={cat}>
+              <div className="categorie-label">
+                <span className={`categorie-stip ${CATEGORIE_STIP_KLASSE[cat]}`} />
+                {MJOP_CATEGORIE_LABELS[cat]}
+              </div>
+              <ul className="standaardlijst-lijst">
+                {typesInCategorie.map((type) => {
+                  const gekoppeld = alGekoppeld.has(type.naam)
+                  return (
+                    <li key={type.id} className="standaardlijst-item">
+                      <div className="standaardlijst-item-rij">
+                        <input
+                          type="checkbox"
+                          checked={gekoppeld}
+                          onChange={() => toggleGekoppeld(type)}
+                          aria-label={`${type.naam} toevoegen aan dit pand`}
+                        />
+                        <span className="standaardlijst-icoon">{type.icoon}</span>
+                        <span className="standaardlijst-naam">{type.naam}</span>
+                        <button
+                          type="button"
+                          className="icoon-knop"
+                          aria-label={`Verwijderen: ${type.naam}`}
+                          onClick={() => verwijderType(type.id)}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      {!gekoppeld && (
+                        <div className="mjop-standaardlijst-detailvelden">
+                          <label className="standaardlijst-leverancier-label">
+                            Jaar voor &quot;{type.naam}&quot;
+                            <input
+                              aria-label={`Jaar voor ${type.naam}`}
+                              type="number"
+                              value={jaren[type.id] ?? String(huidigJaar)}
+                              onChange={(e) =>
+                                setJaren((huidig) => ({ ...huidig, [type.id]: e.target.value }))
+                              }
+                            />
+                          </label>
+                          <label className="standaardlijst-leverancier-label">
+                            Geschat bedrag voor &quot;{type.naam}&quot;
+                            <input
+                              aria-label={`Geschat bedrag voor ${type.naam}`}
+                              type="number"
+                              placeholder="0"
+                              value={bedragen[type.id] ?? ''}
+                              onChange={(e) =>
+                                setBedragen((huidig) => ({
+                                  ...huidig,
+                                  [type.id]: e.target.value,
+                                }))
+                              }
+                            />
+                          </label>
+                        </div>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )
+        })
       )}
 
       <form onSubmit={handleSubmit} className="standaardlijst-toevoegen-form">
