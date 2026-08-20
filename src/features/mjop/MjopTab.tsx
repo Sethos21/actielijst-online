@@ -5,7 +5,6 @@ import { vraagArchiveerGegevens } from '../archief/archiveerPrompt'
 import { TEAMLEDEN } from '../team/teamleden'
 import { MjopStandaardlijstBeheer } from './MjopStandaardlijstBeheer'
 import { berekenMjopSamenvatting, groepeerPerJaar } from './mjopLogica'
-import { ToevoegenVanuitStandaardlijst } from './ToevoegenVanuitStandaardlijst'
 import type { MjopCategorie, MjopPost, MjopStatus } from './types'
 import { MJOP_CATEGORIE_LABELS } from './useMjopStandaardlijst'
 import { useMjop } from './useMjop'
@@ -25,7 +24,6 @@ export function MjopTab({ pandId, klantId, pandNaam, onNavigeerNaarActie }: Prop
   const { posten, loading, foutmelding, addPost, updatePost, archiveer } = useMjop(pandId)
   const { addActie } = useActies(klantId)
   const [formulierOpen, setFormulierOpen] = useState(false)
-  const [standaardlijstOpen, setStandaardlijstOpen] = useState(false)
   const [beherenOpen, setBeherenOpen] = useState(false)
   const [naam, setNaam] = useState('')
   const huidigJaar = new Date().getFullYear()
@@ -37,7 +35,6 @@ export function MjopTab({ pandId, klantId, pandNaam, onNavigeerNaarActie }: Prop
   const actievePosten = posten.filter((post) => !post.gearchiveerdOp)
   const samenvatting = berekenMjopSamenvatting(actievePosten, huidigJaar)
   const groepen = groepeerPerJaar(actievePosten)
-  const alGekoppeldeNamen = new Set(actievePosten.map((post) => post.naam))
 
   function handleArchiveren(post: MjopPost) {
     const gegevens = vraagArchiveerGegevens()
@@ -91,12 +88,6 @@ export function MjopTab({ pandId, klantId, pandNaam, onNavigeerNaarActie }: Prop
           </button>
           <button
             type="button"
-            onClick={() => setStandaardlijstOpen((open) => !open)}
-          >
-            + Vanuit standaardlijst
-          </button>
-          <button
-            type="button"
             className="btn-primary"
             onClick={() => setFormulierOpen((open) => !open)}
           >
@@ -105,17 +96,12 @@ export function MjopTab({ pandId, klantId, pandNaam, onNavigeerNaarActie }: Prop
         </div>
       </div>
 
-      {standaardlijstOpen && (
-        <ToevoegenVanuitStandaardlijst
+      {beherenOpen && (
+        <MjopStandaardlijstBeheer
           pandId={pandId}
           klantId={klantId}
-          alGekoppeldeNamen={alGekoppeldeNamen}
-          onGesloten={() => setStandaardlijstOpen(false)}
+          onSluiten={() => setBeherenOpen(false)}
         />
-      )}
-
-      {beherenOpen && (
-        <MjopStandaardlijstBeheer onSluiten={() => setBeherenOpen(false)} />
       )}
 
       {formulierOpen && (

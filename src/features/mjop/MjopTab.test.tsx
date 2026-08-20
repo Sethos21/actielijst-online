@@ -238,37 +238,6 @@ describe('MjopTab', () => {
     expect(screen.getByText('Dakbedekking vervangen')).toBeInTheDocument()
   })
 
-  it('voegt een post toe vanuit de standaardlijst met jaar, bedrag en categorie', async () => {
-    mockStandaardTypes = [
-      { id: 't1', naam: 'Dakbedekking vervangen', categorie: 'vervanging', icoon: '🏗️', aangemaaktOp: 1 },
-    ]
-    const user = userEvent.setup()
-    renderTab()
-
-    await user.click(screen.getByRole('button', { name: '+ Vanuit standaardlijst' }))
-    await user.click(screen.getByRole('checkbox', { name: /Dakbedekking vervangen/ }))
-    await user.clear(screen.getByLabelText('Jaar voor "Dakbedekking vervangen"'))
-    await user.type(screen.getByLabelText('Jaar voor "Dakbedekking vervangen"'), '2030')
-    await user.type(
-      screen.getByLabelText('Geschat bedrag voor "Dakbedekking vervangen"'),
-      '35000',
-    )
-    await user.click(
-      screen.getByRole('button', { name: '1 item toevoegen aan dit pand' }),
-    )
-
-    expect(addPost).toHaveBeenCalledWith({
-      klantId: 'klant-1',
-      naam: 'Dakbedekking vervangen',
-      categorie: 'vervanging',
-      jaar: 2030,
-      geschatBedrag: 35000,
-      status: 'gepland',
-      toegevoegdDoor: 'Ton',
-      aangemaaktOp: expect.any(Number),
-    })
-  })
-
   it('maakt een actie aan vanuit een MJOP-post, met pand en herkomst gevuld', async () => {
     mockPosten = [
       {
