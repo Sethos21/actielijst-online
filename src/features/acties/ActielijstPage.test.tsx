@@ -103,6 +103,14 @@ const { deleteActie, updateActie, uitstellen } = vi.hoisted(() => ({
 // lijst, nodig om te testen dat een snel-toegevoegde actie na sorteren
 // onderin blijft staan. updateActie/deleteActie/uitstellen zijn module-level
 // exports (ActieRij.tsx importeert ze rechtstreeks, niet via de hook).
+//
+// addActieVertragingMs simuleert de race tussen Firestore's onSnapshot
+// (die `acties` hier via setActies bijwerkt, vergelijkbaar met hoe de
+// lokale cache-update vaak eerder binnenkomt) en de belofte die addActie
+// zelf teruggeeft (vergelijkbaar met addDoc()'s promise, die soms pas ná
+// die cache-update resolvet) — zie de test verderop die hierop leunt.
+let addActieVertragingMs = 0
+
 vi.mock('./useActies', () => ({
   updateActie,
   deleteActie,
@@ -120,6 +128,9 @@ vi.mock('./useActies', () => ({
         }, 0)
         const ref = nieuw.ref?.trim() || String(hoogsteRef + 1)
         setActies((huidig) => [...huidig, { ...nieuw, ref, id, klantId: 'klant-1' }])
+        if (addActieVertragingMs > 0) {
+          await new Promise((resolve) => setTimeout(resolve, addActieVertragingMs))
+        }
         return id
       }),
     }
@@ -132,6 +143,7 @@ describe('ActielijstPage', () => {
     deleteActie.mockClear()
     updateActie.mockClear()
     mockPanden = []
+    addActieVertragingMs = 0
   })
 
   it('roept onPandenOpen aan bij klikken op de Panden-knop, zonder badge als er geen panden zijn', () => {
@@ -504,6 +516,32 @@ describe('ActielijstPage', () => {
     const laatsteRij = rijen[rijen.length - 1]
     // De net toegevoegde rij heeft nog geen actiepunt ingevuld — dat bewijst
     // dat dít de nieuwe rij is, en die staat als laatste in de tabel.
+    expect(within(laatsteRij).getByLabelText('Actiepunt')).toHaveValue('')
+  })
+
+  it('blijft onderin staan ook als de acties-lijst bijwerkt vóórdat addActie() zelf resolvet (race condition)', async () => {
+    // Simuleert dat Firestore's onSnapshot de lijst al bijwerkt terwijl de
+    // addActie()-belofte zelf pas iets later resolvet — precies het scenario
+    // waarin setNieuweRijIds() ná de await te laat zou komen.
+    addActieVertragingMs = 20
+    const user = userEvent.setup()
+    render(
+      <ActielijstPage
+        klantId="klant-1"
+        klantNaam="Malcon"
+        onTerug={vi.fn()}
+        onPandenOpen={vi.fn()}
+        onNavigeerNaarBron={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: /^Vestiging[▲▼▾]/ }))
+    await user.click(
+      screen.getByRole('button', { name: '+ Nieuwe actie toevoegen' }),
+    )
+
+    const rijen = await screen.findAllByRole('row')
+    const laatsteRij = rijen[rijen.length - 1]
     expect(within(laatsteRij).getByLabelText('Actiepunt')).toHaveValue('')
   })
 

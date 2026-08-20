@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { VerantwoordelijkeSelect } from '../../components/VerantwoordelijkeSelect'
 import { useToast } from '../../components/useToast'
 import { TEAMLEDEN, type Teamlid } from '../team/teamleden'
@@ -89,6 +89,33 @@ export function ActielijstPage({
   // blijven staan, ook als er op een kolom gesorteerd is — anders verdwijnt
   // een net toegevoegde lege rij ergens middenin de lijst.
   const [nieuweRijIds, setNieuweRijIds] = useState<Set<string>>(new Set())
+
+  // Firestore's onSnapshot-update na een lokale addDoc() kan eerder
+  // binnenkomen dan de await addActie()-belofte in handleSubmit/
+  // handleSnelToevoegen zelf resolvet — daardoor kwam setNieuweRijIds soms
+  // te laat en sorteerde een net toegevoegde rij kort mee in plaats van
+  // vast onderaan te blijven. Dit effect pint een nieuwe actie reactief
+  // zodra 'ie in `acties` verschijnt, onafhankelijk van die volgorde.
+  const vorigeActieIdsRef = useRef<Set<string>>(new Set(acties.map((a) => a.id)))
+  const wachtOpNieuweRijenRef = useRef(0)
+  useEffect(() => {
+    const huidigeIds = new Set(acties.map((a) => a.id))
+    if (wachtOpNieuweRijenRef.current > 0) {
+      const nieuw = acties.filter((a) => !vorigeActieIdsRef.current.has(a.id))
+      if (nieuw.length > 0) {
+        setNieuweRijIds((huidig) => {
+          const volgende = new Set(huidig)
+          nieuw.forEach((a) => volgende.add(a.id))
+          return volgende
+        })
+        wachtOpNieuweRijenRef.current = Math.max(
+          0,
+          wachtOpNieuweRijenRef.current - nieuw.length,
+        )
+      }
+    }
+    vorigeActieIdsRef.current = huidigeIds
+  }, [acties])
 
   // Na "+ Actie aanmaken" vanuit Onderhoud/Documenten/MJOP: de nieuwe actie
   // blijft (net als snel-toegevoegde rijen) onderin gepind, en zodra de rij
@@ -188,6 +215,7 @@ export function ActielijstPage({
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     if (!nieuw.actie.trim()) return
+    wachtOpNieuweRijenRef.current += 1
     const id = await addActie({
       onderwerp: nieuw.onderwerp,
       bedrijf: nieuw.bedrijf,
@@ -223,6 +251,7 @@ export function ActielijstPage({
 
   /** Snel een lege actie onderaan toevoegen — daarna verder invullen in de rij zelf. */
   async function handleSnelToevoegen() {
+    wachtOpNieuweRijenRef.current += 1
     const id = await addActie({
       onderwerp: '',
       bedrijf: '',

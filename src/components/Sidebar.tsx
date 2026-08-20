@@ -1,6 +1,6 @@
 import type { Klant } from '../features/klanten/types'
 import { useActieStats } from '../features/acties/useActieStats'
-import { useKlanten } from '../features/klanten/useKlanten'
+import { actieveKlanten, useKlanten } from '../features/klanten/useKlanten'
 
 type Weergave = 'klantoverzicht' | 'mijn-acties' | 'dashboard' | 'rapportage' | 'archief'
 
@@ -31,7 +31,8 @@ export function Sidebar({
   gebruikerEmail,
   onUitloggen,
 }: Props) {
-  const { klanten } = useKlanten()
+  const { klanten: alleKlanten } = useKlanten()
+  const klanten = actieveKlanten(alleKlanten)
   const stats = useActieStats()
 
   return (

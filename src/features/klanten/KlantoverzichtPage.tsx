@@ -1,10 +1,11 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent, type MouseEvent } from 'react'
 import { Badge } from '../../components/Badge'
 import { formatteerDatum } from '../../lib/datum'
 import { useActieStats } from '../acties/useActieStats'
+import { vraagArchiveerGegevens } from '../archief/archiveerPrompt'
 import { useLaatsteVersieDatums } from '../versies/useLaatsteVersieDatums'
 import type { Klant } from './types'
-import { useKlanten } from './useKlanten'
+import { actieveKlanten, useKlanten } from './useKlanten'
 
 interface Props {
   onSelectKlant: (klant: Klant) => void
@@ -19,7 +20,8 @@ export function KlantoverzichtPage({
   onImporteren,
   onTerugNaarStart,
 }: Props) {
-  const { klanten, loading, addKlant } = useKlanten()
+  const { klanten: alleKlanten, loading, addKlant, archiveer } = useKlanten()
+  const klanten = actieveKlanten(alleKlanten)
   const stats = useActieStats()
   const laatsteVersieDatums = useLaatsteVersieDatums()
   const [zoekterm, setZoekterm] = useState('')
@@ -52,6 +54,12 @@ export function KlantoverzichtPage({
     event.preventDefault()
     await addKlant(nieuweKlant)
     setNieuweKlant('')
+  }
+
+  function handleArchiveren(klant: Klant, event: MouseEvent) {
+    event.stopPropagation()
+    const gegevens = vraagArchiveerGegevens()
+    if (gegevens) archiveer(klant.id, gegevens.door, gegevens.reden)
   }
 
   function kolomkop(label: string, veld: SortVeld) {
@@ -106,6 +114,7 @@ export function KlantoverzichtPage({
               {kolomkop('Klant', 'naam')}
               <th>Status</th>
               {kolomkop('Laatste versie', 'laatsteVersie')}
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -130,6 +139,16 @@ export function KlantoverzichtPage({
                     )}
                   </td>
                   <td>{laatsteVersie ? formatteerDatum(laatsteVersie) : '—'}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="icoon-knop"
+                      aria-label={`Archiveren: ${klant.naam}`}
+                      onClick={(event) => handleArchiveren(klant, event)}
+                    >
+                      📦
+                    </button>
+                  </td>
                 </tr>
               )
             })}

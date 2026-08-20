@@ -30,6 +30,8 @@ const KLANTEN = [
 
 vi.mock('../klanten/useKlanten', () => ({
   useKlanten: () => ({ klanten: KLANTEN, loading: false }),
+  actieveKlanten: (klanten: { gearchiveerdOp?: number }[]) =>
+    klanten.filter((k) => !k.gearchiveerdOp),
 }))
 
 function actie(overrides: Partial<ActieItem>): ActieItem {

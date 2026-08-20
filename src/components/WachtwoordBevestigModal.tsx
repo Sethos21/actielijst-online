@@ -4,7 +4,7 @@ import { Modal } from './Modal'
 
 interface Props {
   itemNaam: string
-  onBevestigd: () => void
+  onBevestigd: () => void | Promise<void>
   onAnnuleren: () => void
 }
 
@@ -19,9 +19,18 @@ export function WachtwoordBevestigModal({ itemNaam, onBevestigd, onAnnuleren }: 
     setFout(null)
     try {
       await bevestigMetWachtwoord(wachtwoord)
-      onBevestigd()
     } catch {
       setFout('Wachtwoord onjuist.')
+      setBezig(false)
+      return
+    }
+    try {
+      // Los van het wachtwoord: de verwijderactie zelf kan ook mislukken
+      // (bijv. omdat een klant nog gekoppelde acties/panden heeft) — die
+      // foutmelding moet hier zichtbaar worden, niet stil verdwijnen.
+      await onBevestigd()
+    } catch (err) {
+      setFout(err instanceof Error ? err.message : 'Verwijderen is niet gelukt.')
     } finally {
       setBezig(false)
     }

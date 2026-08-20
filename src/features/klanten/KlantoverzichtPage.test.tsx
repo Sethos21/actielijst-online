@@ -1,9 +1,11 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { vraagArchiveerGegevens } from '../archief/archiveerPrompt'
 import { KlantoverzichtPage } from './KlantoverzichtPage'
 
 const addKlant = vi.fn()
+const archiveer = vi.fn()
 const onSelectKlant = vi.fn()
 const onImporteren = vi.fn()
 const onTerugNaarStart = vi.fn()
@@ -16,7 +18,14 @@ vi.mock('./useKlanten', () => ({
     ],
     loading: false,
     addKlant,
+    archiveer,
   }),
+  actieveKlanten: (klanten: { gearchiveerdOp?: number }[]) =>
+    klanten.filter((k) => !k.gearchiveerdOp),
+}))
+
+vi.mock('../archief/archiveerPrompt', () => ({
+  vraagArchiveerGegevens: vi.fn(),
 }))
 
 vi.mock('../acties/useActieStats', () => ({
@@ -43,6 +52,15 @@ function renderScherm() {
 }
 
 describe('KlantoverzichtPage', () => {
+  afterEach(() => {
+    addKlant.mockClear()
+    archiveer.mockClear()
+    onSelectKlant.mockClear()
+    onImporteren.mockClear()
+    onTerugNaarStart.mockClear()
+    vi.mocked(vraagArchiveerGegevens).mockReset()
+  })
+
   it('toont klanten met hun open/due-badges, laatste versiedatum en filtert op zoekterm', async () => {
     const user = userEvent.setup()
     renderScherm()
@@ -92,5 +110,26 @@ describe('KlantoverzichtPage', () => {
 
     await user.click(screen.getByRole('button', { name: '← Terug naar start' }))
     expect(onTerugNaarStart).toHaveBeenCalledOnce()
+  })
+
+  it('archiveert een klant via de archiveerknop, zonder de rij te selecteren', async () => {
+    vi.mocked(vraagArchiveerGegevens).mockReturnValue({ door: 'Ton', reden: 'inactief' })
+    const user = userEvent.setup()
+    renderScherm()
+
+    await user.click(screen.getByLabelText('Archiveren: Malcon'))
+
+    expect(archiveer).toHaveBeenCalledWith('1', 'Ton', 'inactief')
+    expect(onSelectKlant).not.toHaveBeenCalled()
+  })
+
+  it('archiveert niet als de gebruiker de prompt annuleert', async () => {
+    vi.mocked(vraagArchiveerGegevens).mockReturnValue(null)
+    const user = userEvent.setup()
+    renderScherm()
+
+    await user.click(screen.getByLabelText('Archiveren: Malcon'))
+
+    expect(archiveer).not.toHaveBeenCalled()
   })
 })

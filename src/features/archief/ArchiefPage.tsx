@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { WachtwoordBevestigModal } from '../../components/WachtwoordBevestigModal'
 import { MAANDNAMEN } from '../huurdersmutaties/types'
-import { useKlanten } from '../klanten/useKlanten'
 import { herstelDocument, verwijderDocumentDefinitief } from '../documenten/useDocumenten'
+import { herstelKlant, useKlanten, verwijderKlantDefinitief } from '../klanten/useKlanten'
 import { herstelMjopPost, verwijderMjopPostDefinitief } from '../mjop/useMjop'
 import { herstelOnderhoud, verwijderOnderhoudDefinitief } from '../onderhoud/useOnderhoud'
 import { herstelPand, useAllePanden, verwijderPandDefinitief } from '../panden/usePanden'
@@ -15,6 +15,7 @@ const TYPE_ICOON: Record<ArchiefType, string> = {
   onderhoud: '🔧',
   document: '📄',
   mjop: '📅',
+  klant: '👤',
 }
 
 const TYPE_LABEL: Record<ArchiefType, string> = {
@@ -22,6 +23,7 @@ const TYPE_LABEL: Record<ArchiefType, string> = {
   onderhoud: 'Onderhoud',
   document: 'Document',
   mjop: 'MJOP',
+  klant: 'Klant',
 }
 
 const FILTER_LABEL: Record<ArchiefType, string> = {
@@ -29,6 +31,7 @@ const FILTER_LABEL: Record<ArchiefType, string> = {
   onderhoud: 'Onderhoud',
   document: 'Documenten',
   mjop: 'MJOP',
+  klant: 'Klanten',
 }
 
 function formatDatumNl(timestamp: number): string {
@@ -40,6 +43,7 @@ async function herstelItem(item: ArchiefItem) {
   if (item.type === 'pand') return herstelPand(item.id)
   if (item.type === 'onderhoud') return herstelOnderhoud(item.id)
   if (item.type === 'document') return herstelDocument(item.id)
+  if (item.type === 'klant') return herstelKlant(item.id)
   return herstelMjopPost(item.id)
 }
 
@@ -47,6 +51,7 @@ async function verwijderItemDefinitief(item: ArchiefItem) {
   if (item.type === 'pand') return verwijderPandDefinitief(item.id)
   if (item.type === 'onderhoud') return verwijderOnderhoudDefinitief(item.id)
   if (item.type === 'document') return verwijderDocumentDefinitief(item.id, item.storagePath ?? '')
+  if (item.type === 'klant') return verwijderKlantDefinitief(item.id)
   return verwijderMjopPostDefinitief(item.id)
 }
 
@@ -84,10 +89,12 @@ export function ArchiefPage() {
 
       <div className="archief-info-box">
         <b>Eén centraal scherm</b> voor alles wat gearchiveerd is — panden, onderhoudsitems,
-        documenten, MJOP-posten — over alle klanten heen. Filterbaar per type. Elk item kan
-        worden <b>hersteld</b> (terug naar actief) of <b>definitief verwijderd</b> (geen
-        terugweg, met bevestiging). De export-knop exporteert de huidige (gefilterde) lijst
-        als Excel of JSON, handig voordat je definitief opruimt.
+        documenten, MJOP-posten, klanten — over alle klanten heen. Filterbaar per type. Elk
+        item kan worden <b>hersteld</b> (terug naar actief) of <b>definitief verwijderd</b>{' '}
+        (geen terugweg, met bevestiging — een klant met nog gekoppelde acties of panden kan
+        pas definitief verwijderd worden nadat die eerst apart zijn opgeruimd). De export-knop
+        exporteert de huidige (gefilterde) lijst als Excel of JSON, handig voordat je
+        definitief opruimt.
       </div>
 
       <div className="archief-filter-tabs">
@@ -98,7 +105,7 @@ export function ArchiefPage() {
         >
           Alle <span className="archief-filter-count">{alleItems.length}</span>
         </button>
-        {(['pand', 'onderhoud', 'document', 'mjop'] as ArchiefType[]).map((type) => (
+        {(['pand', 'onderhoud', 'document', 'mjop', 'klant'] as ArchiefType[]).map((type) => (
           <button
             type="button"
             key={type}
@@ -151,8 +158,9 @@ export function ArchiefPage() {
               <div className="archief-info">
                 <div className="archief-naam">{item.naam}</div>
                 <div className="archief-meta">
-                  {item.type === 'pand' ? item.klantNaam : item.pandNaam} · Gearchiveerd{' '}
-                  {formatDatumNl(item.gearchiveerdOp)}
+                  {item.type === 'pand' && `${item.klantNaam} · `}
+                  {item.type !== 'pand' && item.type !== 'klant' && `${item.pandNaam} · `}
+                  Gearchiveerd {formatDatumNl(item.gearchiveerdOp)}
                   {item.gearchiveerdDoor ? ` door ${item.gearchiveerdDoor}` : ''}
                   {item.gearchiveerdReden ? ` · ${item.gearchiveerdReden}` : ''}
                 </div>

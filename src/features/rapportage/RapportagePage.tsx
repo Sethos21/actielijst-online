@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAlleActies } from '../acties/useAlleActies'
 import { useMutaties } from '../huurdersmutaties/useMutaties'
-import { useKlanten } from '../klanten/useKlanten'
+import { actieveKlanten, useKlanten } from '../klanten/useKlanten'
 import { useOnderhoudVoorKlant } from '../onderhoud/useOnderhoud'
 import { usePanden } from '../panden/usePanden'
 import {
@@ -23,7 +23,8 @@ function kwartaalSleutel(kwartaal: Kwartaal): string {
 }
 
 export function RapportagePage() {
-  const { klanten, loading: klantenLaden } = useKlanten()
+  const { klanten: alleKlanten, loading: klantenLaden } = useKlanten()
+  const klanten = actieveKlanten(alleKlanten)
   const [klantId, setKlantId] = useState('')
   const [vanKwartaal, setVanKwartaal] = useState<Kwartaal>(() => bepaalHuidigKwartaal())
   const [totKwartaal, setTotKwartaal] = useState<Kwartaal>(() => bepaalHuidigKwartaal())
