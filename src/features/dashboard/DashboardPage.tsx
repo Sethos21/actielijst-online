@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Badge } from '../../components/Badge'
 import { useAlleActies } from '../acties/useAlleActies'
 import type { Klant } from '../klanten/types'
-import { useKlanten } from '../klanten/useKlanten'
+import { actieveKlanten, useKlanten } from '../klanten/useKlanten'
 import { TEAMLEDEN, type Teamlid } from '../team/teamleden'
 import { initialen, teamlidKleurKlasse } from '../team/teamlidKleur'
 import {
@@ -18,7 +18,8 @@ interface Props {
 
 export function DashboardPage({ onSelectKlant, onSelectTeamlid }: Props) {
   const { acties, loading: actiesLaden } = useAlleActies()
-  const { klanten, loading: klantenLaden } = useKlanten()
+  const { klanten: alleKlanten, loading: klantenLaden } = useKlanten()
+  const klanten = actieveKlanten(alleKlanten)
 
   const totaal = useMemo(() => berekenTotaalStats(acties), [acties])
   const statsPerKlant = useMemo(() => berekenStatsPerKlant(acties), [acties])

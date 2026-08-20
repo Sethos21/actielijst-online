@@ -8,6 +8,7 @@ const COLLECTIES: { naam: string; type: ArchiefType }[] = [
   { naam: 'onderhoud', type: 'onderhoud' },
   { naam: 'documenten', type: 'document' },
   { naam: 'mjop', type: 'mjop' },
+  { naam: 'klanten', type: 'klant' },
 ]
 
 export function useArchief() {
@@ -16,6 +17,7 @@ export function useArchief() {
     onderhoud: [],
     document: [],
     mjop: [],
+    klant: [],
   })
   const [loading, setLoading] = useState(true)
 
@@ -34,7 +36,7 @@ export function useArchief() {
               id: d.id,
               type,
               naam: data.naam,
-              klantId: data.klantId,
+              klantId: type === 'klant' ? d.id : data.klantId,
               klantNaam: '', // ingevuld in ArchiefPage.tsx via klanten-lookup
               pandId: type === 'pand' ? undefined : data.pandId,
               pandNaam: undefined, // ingevuld in ArchiefPage.tsx via panden-lookup

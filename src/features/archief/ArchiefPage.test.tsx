@@ -12,6 +12,7 @@ let mockItems: Record<string, ArchiefItem[]> = {
   onderhoud: [],
   document: [],
   mjop: [],
+  klant: [],
 }
 
 function alleItems() {
@@ -24,8 +25,12 @@ vi.mock('./useArchief', () => ({
   useArchief: () => ({ items: mockItems, alleItems: alleItems(), loading: false }),
 }))
 
+const herstelKlant = vi.fn()
+const verwijderKlantDefinitief = vi.fn()
 vi.mock('../klanten/useKlanten', () => ({
   useKlanten: () => ({ klanten: KLANTEN, loading: false }),
+  herstelKlant: (id: string) => herstelKlant(id),
+  verwijderKlantDefinitief: (id: string) => verwijderKlantDefinitief(id),
 }))
 
 const herstelPand = vi.fn()
@@ -98,9 +103,22 @@ function onderhoudItem(overrides: Partial<ArchiefItem> = {}): ArchiefItem {
   }
 }
 
+function klantItem(overrides: Partial<ArchiefItem> = {}): ArchiefItem {
+  return {
+    id: 'k1',
+    type: 'klant',
+    naam: 'Malcon B.V.',
+    klantId: 'k1',
+    klantNaam: '',
+    gearchiveerdOp: new Date('2026-05-01').getTime(),
+    gearchiveerdDoor: 'Seth',
+    ...overrides,
+  }
+}
+
 describe('ArchiefPage', () => {
   afterEach(() => {
-    mockItems = { pand: [], onderhoud: [], document: [], mjop: [] }
+    mockItems = { pand: [], onderhoud: [], document: [], mjop: [], klant: [] }
     vi.clearAllMocks()
   })
 
@@ -110,7 +128,7 @@ describe('ArchiefPage', () => {
   })
 
   it('toont gearchiveerde items met klant/pand, datum, wie en reden', () => {
-    mockItems = { pand: [pandItem()], onderhoud: [onderhoudItem()], document: [], mjop: [] }
+    mockItems = { pand: [pandItem()], onderhoud: [onderhoudItem()], document: [], mjop: [], klant: [] }
     render(<ArchiefPage />)
 
     expect(screen.getByText('Molenweg 7, Gemert')).toBeInTheDocument()
@@ -125,7 +143,7 @@ describe('ArchiefPage', () => {
   })
 
   it('filtert op type via de filtertabs', async () => {
-    mockItems = { pand: [pandItem()], onderhoud: [onderhoudItem()], document: [], mjop: [] }
+    mockItems = { pand: [pandItem()], onderhoud: [onderhoudItem()], document: [], mjop: [], klant: [] }
     const user = userEvent.setup()
     render(<ArchiefPage />)
 
@@ -136,7 +154,7 @@ describe('ArchiefPage', () => {
   })
 
   it('filtert op zoekterm', async () => {
-    mockItems = { pand: [pandItem()], onderhoud: [onderhoudItem()], document: [], mjop: [] }
+    mockItems = { pand: [pandItem()], onderhoud: [onderhoudItem()], document: [], mjop: [], klant: [] }
     const user = userEvent.setup()
     render(<ArchiefPage />)
 
@@ -147,7 +165,7 @@ describe('ArchiefPage', () => {
   })
 
   it('herstelt een item via de Herstellen-knop, gebruikmakend van de juiste module', async () => {
-    mockItems = { pand: [], onderhoud: [onderhoudItem()], document: [], mjop: [] }
+    mockItems = { pand: [], onderhoud: [onderhoudItem()], document: [], mjop: [], klant: [] }
     const user = userEvent.setup()
     render(<ArchiefPage />)
 
@@ -173,6 +191,7 @@ describe('ArchiefPage', () => {
         },
       ],
       mjop: [],
+      klant: [],
     }
     bevestigMetWachtwoord.mockResolvedValueOnce(undefined)
     const user = userEvent.setup()
@@ -190,7 +209,7 @@ describe('ArchiefPage', () => {
   })
 
   it('exporteert de huidige gefilterde lijst naar Excel en JSON', async () => {
-    mockItems = { pand: [pandItem()], onderhoud: [onderhoudItem()], document: [], mjop: [] }
+    mockItems = { pand: [pandItem()], onderhoud: [onderhoudItem()], document: [], mjop: [], klant: [] }
     const user = userEvent.setup()
     render(<ArchiefPage />)
 
@@ -201,5 +220,56 @@ describe('ArchiefPage', () => {
     expect(exporteerArchiefNaarExcel).toHaveBeenCalledOnce()
     expect(exporteerArchiefNaarExcel.mock.calls[0][0]).toHaveLength(1)
     expect(exporteerArchiefNaarJson).toHaveBeenCalledOnce()
+  })
+
+  it('toont een gearchiveerde klant zonder klant-/pandprefix in de metaregel', () => {
+    mockItems = { pand: [], onderhoud: [], document: [], mjop: [], klant: [klantItem()] }
+    render(<ArchiefPage />)
+
+    expect(screen.getByText('Malcon B.V.')).toBeInTheDocument()
+    expect(screen.getByText('Gearchiveerd 1 mei 2026 door Seth')).toBeInTheDocument()
+  })
+
+  it('filtert op het klant-type via de filtertabs', async () => {
+    mockItems = { pand: [pandItem()], onderhoud: [], document: [], mjop: [], klant: [klantItem()] }
+    const user = userEvent.setup()
+    render(<ArchiefPage />)
+
+    await user.click(screen.getByRole('button', { name: /👤 Klanten/ }))
+
+    expect(screen.getAllByText('Malcon B.V.')).toHaveLength(1)
+    expect(screen.queryByText('Molenweg 7, Gemert')).not.toBeInTheDocument()
+  })
+
+  it('herstelt een gearchiveerde klant via de Herstellen-knop', async () => {
+    mockItems = { pand: [], onderhoud: [], document: [], mjop: [], klant: [klantItem()] }
+    const user = userEvent.setup()
+    render(<ArchiefPage />)
+
+    await user.click(screen.getByRole('button', { name: '↺ Herstellen' }))
+
+    expect(herstelKlant).toHaveBeenCalledWith('k1')
+  })
+
+  it('toont de foutmelding in de modal als een klant nog gekoppelde acties/panden heeft', async () => {
+    mockItems = { pand: [], onderhoud: [], document: [], mjop: [], klant: [klantItem()] }
+    bevestigMetWachtwoord.mockResolvedValueOnce(undefined)
+    verwijderKlantDefinitief.mockRejectedValueOnce(
+      new Error('Kan niet verwijderen: er zijn nog 3 acties gekoppeld aan deze klant.'),
+    )
+    const user = userEvent.setup()
+    render(<ArchiefPage />)
+
+    await user.click(screen.getByRole('button', { name: '🗑 Definitief' }))
+    const modal = screen.getByRole('dialog')
+    await user.type(within(modal).getByLabelText('Bevestig met je inlogwachtwoord'), 'geheim123')
+    await user.click(within(modal).getByRole('button', { name: 'Definitief verwijderen' }))
+
+    expect(
+      within(modal).getByText('Kan niet verwijderen: er zijn nog 3 acties gekoppeld aan deze klant.'),
+    ).toBeInTheDocument()
+    // De modal blijft open zodat de gebruiker de foutmelding leest — geen
+    // stille onSluiten() zoals bij een geslaagde verwijdering.
+    expect(screen.queryByText('Definitief verwijderen?')).toBeInTheDocument()
   })
 })

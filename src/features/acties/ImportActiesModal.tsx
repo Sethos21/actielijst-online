@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx'
 import { Modal } from '../../components/Modal'
 import { useToast } from '../../components/useToast'
 import { foutmelding, metTimeout } from '../../lib/metTimeout'
-import { useKlanten } from '../klanten/useKlanten'
+import { actieveKlanten, useKlanten } from '../klanten/useKlanten'
 import { TEAMLEDEN } from '../team/teamleden'
 import { importeerActies } from './bulkImporteren'
 import {
@@ -21,7 +21,8 @@ const VOORVERTONING_LIMIET = 20
 const IMPORT_TIMEOUT_MS = 30_000
 
 export function ImportActiesModal({ onSluiten, standaardKlantId }: Props) {
-  const { klanten, addKlant } = useKlanten()
+  const { klanten: alleKlanten, addKlant } = useKlanten()
+  const klanten = actieveKlanten(alleKlanten)
   const toon = useToast()
   const [gekozenKlantId, setGekozenKlantId] = useState(standaardKlantId ?? '')
   const [nieuweKlantNaam, setNieuweKlantNaam] = useState('')
@@ -158,6 +159,14 @@ export function ImportActiesModal({ onSluiten, standaardKlantId }: Props) {
               ` (${overgeslagen} afgeronde acties worden overgeslagen)`}
             . Controleer de voorvertoning voordat je bevestigt.
           </p>
+          {overgeslagen === 0 &&
+            geparsed.length / (geparsed.length + overgeslagen) > 0.9 && (
+              <p role="alert">
+                ⚠️ Bijna alle {geparsed.length} rijen zijn herkend als "open" — controleer
+                of de statuskolom in dit bestand correct wordt gelezen voordat je
+                importeert.
+              </p>
+            )}
           <table className="actielijst">
             <thead>
               <tr>

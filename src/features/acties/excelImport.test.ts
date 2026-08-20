@@ -76,6 +76,27 @@ describe('parseerActies', () => {
   it('laat dueDateOverride leeg als er geen Gereed-op-datum is', () => {
     expect(acties[1].dueDateOverride).toBeUndefined()
   })
+
+  it('leest kolommen op headertekst, niet op vaste positie — werkt ook bij een andere kolomvolgorde', () => {
+    const ANDERE_VOLGORDE: unknown[][] = [
+      [],
+      ['', 'Status', 'Ref', 'Bedrijf', 'Onderwerp', 'Datum', 'Vestiging', 'Actiepunt', 'Verantw.', 'Gereed op', 'Informant', 'Opmerking'],
+      ['', 'Open', 1, 'Malcon B.V', 'Onderhoud', new Date(2021, 2, 3), 'Vlijmen', 'Kas vervangen', 'Ton', '', '', ''],
+    ]
+
+    const [actie] = parseerActies(ANDERE_VOLGORDE, TEAMLEDEN)
+
+    expect(actie).toMatchObject({
+      ref: '1',
+      aangemaaktOp: '2021-03-03',
+      onderwerp: 'Onderhoud',
+      bedrijf: 'Malcon B.V',
+      vestiging: 'Vlijmen',
+      actie: 'Kas vervangen',
+      verantw: ['Ton'],
+      status: 'open',
+    })
+  })
 })
 
 describe('filterOpenActies', () => {

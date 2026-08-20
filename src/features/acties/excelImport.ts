@@ -15,11 +15,24 @@ export interface GeimporteerdeActie {
 
 /**
  * De bron-Excel heeft een metadata-blok (Vergadering/Aanwezigen/Datum/stats)
- * bovenaan het blad; de echte kolomkoppen staan op de rij waar kolom-index 1
- * de tekst "Ref" bevat. Alles daarvoor is niet relevant voor de import.
+ * bovenaan het blad; de echte kolomkoppen staan op de rij die ergens de tekst
+ * "Ref" bevat (niet per se op een vaste kolompositie — zie vindKolomIndex).
+ * Alles daarvoor is niet relevant voor de import.
  */
 export function vindHeaderRij(rijen: unknown[][]): number {
-  return rijen.findIndex((rij) => rij[1] === 'Ref')
+  return rijen.findIndex((rij) => rij.some((cel) => String(cel).trim() === 'Ref'))
+}
+
+/**
+ * Zoekt een kolom op basis van de headertekst in plaats van een vaste index
+ * — bestanden met een net iets andere kolomvolgorde dan het oorspronkelijke
+ * testbestand worden zo nog steeds correct gelezen, zolang de headernamen
+ * herkenbaar blijven.
+ */
+function vindKolomIndex(headerRij: unknown[], mogelijkeNamen: string[]): number {
+  return headerRij.findIndex((cel) =>
+    mogelijkeNamen.some((naam) => String(cel).trim().toLowerCase() === naam.toLowerCase()),
+  )
 }
 
 function normaliseerNaam(naam: string): string {
@@ -64,9 +77,9 @@ function parseStatus(ruweWaarde: unknown): ActieStatus {
 /**
  * Zet de ruwe 2D-grid van een geëxporteerd werkblad (bv. via
  * XLSX.utils.sheet_to_json(sheet, { header: 1 })) om naar acties in ons
- * datamodel. Kolomvolgorde is die van de BVC-actielijst-export: Ref, Datum,
- * Onderwerp, Bedrijf, Vestiging, Actiepunt, Verantw., Gereed op, Status,
- * Informant, Opmerking (kolom 0 is in de bron altijd leeg).
+ * datamodel. Kolommen worden herkend op headertekst (zie vindKolomIndex),
+ * niet op een vaste positie — bestanden met een afwijkende kolomvolgorde
+ * worden zo nog steeds correct gelezen.
  */
 export function parseerActies(
   rijen: unknown[][],
@@ -75,28 +88,41 @@ export function parseerActies(
   const headerIndex = vindHeaderRij(rijen)
   if (headerIndex === -1) return []
 
+  const headerRij = rijen[headerIndex]
+  const kolomRef = vindKolomIndex(headerRij, ['ref'])
+  const kolomDatum = vindKolomIndex(headerRij, ['datum'])
+  const kolomOnderwerp = vindKolomIndex(headerRij, ['onderwerp'])
+  const kolomBedrijf = vindKolomIndex(headerRij, ['bedrijf'])
+  const kolomVestiging = vindKolomIndex(headerRij, ['vestiging'])
+  const kolomActiepunt = vindKolomIndex(headerRij, ['actiepunt'])
+  const kolomVerantw = vindKolomIndex(headerRij, ['verantw.', 'verantw'])
+  const kolomGereedOp = vindKolomIndex(headerRij, ['gereed op'])
+  const kolomStatus = vindKolomIndex(headerRij, ['status'])
+  const kolomInformant = vindKolomIndex(headerRij, ['informant'])
+  const kolomOpmerking = vindKolomIndex(headerRij, ['opmerking'])
+
   const resultaat: GeimporteerdeActie[] = []
 
   for (let r = headerIndex + 1; r < rijen.length; r++) {
     const rij = rijen[r] ?? []
-    const ref = rij[1]
+    const ref = rij[kolomRef]
     // De echte datatabel is aaneengesloten; zodra de Ref-kolom leeg is, is
     // dat het einde van de data (de rest van het blad is lege opmaak-rommel).
     if (ref === undefined || ref === null || ref === '') break
 
-    const informant = String(rij[10] ?? '').trim()
-    const opmerking = String(rij[11] ?? '').trim()
+    const informant = String(rij[kolomInformant] ?? '').trim()
+    const opmerking = String(rij[kolomOpmerking] ?? '').trim()
 
     resultaat.push({
       ref: String(ref),
-      aangemaaktOp: naarIsoDatum(rij[2]) ?? new Date().toISOString().slice(0, 10),
-      onderwerp: String(rij[3] ?? ''),
-      bedrijf: String(rij[4] ?? ''),
-      vestiging: String(rij[5] ?? ''),
-      actie: String(rij[6] ?? ''),
-      verantw: parseVerantw(rij[7], teamleden),
-      dueDateOverride: naarIsoDatum(rij[8]),
-      status: parseStatus(rij[9]),
+      aangemaaktOp: naarIsoDatum(rij[kolomDatum]) ?? new Date().toISOString().slice(0, 10),
+      onderwerp: String(rij[kolomOnderwerp] ?? ''),
+      bedrijf: String(rij[kolomBedrijf] ?? ''),
+      vestiging: String(rij[kolomVestiging] ?? ''),
+      actie: String(rij[kolomActiepunt] ?? ''),
+      verantw: parseVerantw(rij[kolomVerantw], teamleden),
+      dueDateOverride: naarIsoDatum(rij[kolomGereedOp]),
+      status: parseStatus(rij[kolomStatus]),
       opmerking: informant ? `Informant: ${informant} — ${opmerking}` : opmerking,
     })
   }

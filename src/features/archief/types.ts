@@ -1,4 +1,4 @@
-export type ArchiefType = 'pand' | 'onderhoud' | 'document' | 'mjop'
+export type ArchiefType = 'pand' | 'onderhoud' | 'document' | 'mjop' | 'klant'
 
 export interface ArchiefItem {
   id: string
